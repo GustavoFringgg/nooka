@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "categoryId": 1,
+    "term": "vicarious",
+    "definition": "感同身受的",
+    "partOfSpeech": "形容詞",
+    "examples": ["She felt vicarious joy watching her friend succeed."]
+  },
+  {
+    "id": 2,
+    "categoryId": 1,
+    "term": "ambiguous",
+    "definition": "模稜兩可的",
+    "partOfSpeech": "形容詞",
+    "examples": ["The instructions were ambiguous and confused everyone."]
+  }
+]
