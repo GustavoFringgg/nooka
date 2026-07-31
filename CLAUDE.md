@@ -2,11 +2,18 @@
 
 英文單字卡片學習應用(flashcard learning app),需要會員登入機制。
 
+## 問答溝通偏好
+
+- 使用者(Derek)在學習後端概念,問題會一個一個接續著問。**只回答被問到的問題本身,不要延伸額外概念、不要主動補充「你可能也會想知道」的內容**,避免增加認知負荷。
+- 使用者會自己把他的理解回饋過來確認對不對,由他主導要往哪個方向延伸,不用預先幫他鋪陳。
+
 ## 現況
 
-專案剛起步,兩邊都還是預設模板,尚未寫任何業務邏輯:
-- `backend/Nooka.Api`:ASP.NET Core Web API 預設模板(`WeatherForecastController` 已移除)
-- `frontend/`:Nuxt 4 預設模板(`app.vue` 只有 `NuxtWelcome`)
+- `backend/Nooka.Api`:已有 Word / Category mock 資料層與唯讀 API,尚未接上真實資料庫、會員系統、Admin CRUD
+  - `Models/Word.cs`、`Models/Category.cs`:資料模型(欄位:`Term`、`Definition`、`PartOfSpeech`、`Examples` 等)
+  - `Repositories/IWordRepository.cs` + `InMemoryWordRepository.cs`:Repository 介面 + mock 實作,資料來自 `Data/words.json`,之後接 EF Core 只需新增 `EfWordRepository` 並改 DI 註冊
+  - `Controllers/WordsController.cs`:唯讀 API,`GET /api/words`、`GET /api/words/{id}`、`GET /api/words/category/{categoryId}`
+- `frontend/`:Nuxt 4 預設模板(`app.vue` 只有 `NuxtWelcome`),尚未開始開發
 
 ## 技術棧
 
@@ -41,7 +48,7 @@
 - [ ] **登入**:使用者可以用 Email + 密碼登入
 - [ ] **登出**:使用者可以登出,清除登入狀態
 - [ ] **忘記密碼**:使用者可透過 Email 收到重設密碼連結,導向前端重設密碼頁面完成重設(token 帶在網址上)
-- [ ] *(未來)* **Google 登入**:使用者可綁定 / 用 Google 帳號登入
+- [ ] _(未來)_ **Google 登入**:使用者可綁定 / 用 Google 帳號登入
   - 透過 Google 登入的帳號視為 Email 已驗證,不需再走 Email 驗證流程
 
 ### 單字卡學習(Flashcards)
@@ -55,8 +62,8 @@
 - [ ] **練習模式 - 選擇題**
 - [ ] **練習模式 - 消消樂(配對)**
 - [ ] **練習模式 - 打字拼寫**
-- [ ] *(未來)* 開放一般使用者自行建立卡片 / 卡片組
-- [ ] *(未來,考慮中)* 卡片加入「常用片語 / 慣用搭配詞」(collocation)欄位,加強記憶效果 — MVP 先用多筆例句(`Examples`)頂著,片語需人工 curate 內容成本高,暫不排入 MVP
+- [ ] _(未來)_ 開放一般使用者自行建立卡片 / 卡片組
+- [ ] _(未來,考慮中)_ 卡片加入「常用片語 / 慣用搭配詞」(collocation)欄位,加強記憶效果 — MVP 先用多筆例句(`Examples`)頂著,片語需人工 curate 內容成本高,暫不排入 MVP
 
 ### 介面(UI)
 
@@ -66,24 +73,47 @@
 
 ## 系統代辦事項(開發 / 基礎建設,非使用者故事)
 
-### 專案初始化
-- [x] 移除 backend 預設的 WeatherForecast 範例程式碼
-
 ### 資料庫 / 基礎建設
+
 - [ ] 接上 Supabase PostgreSQL(EF Core + Npgsql)
-- [ ] 設計單字卡資料模型(Word / Category)
+- [x] 設計單字卡資料模型(Word / Category)— 已建立 C# model,目前搭配 mock JSON + InMemoryRepository,尚未接真實 DB
 - [ ] 建立初版 migration 並套用到資料庫
+- [ ] 新增 `EfWordRepository`(接 Supabase 後取代 `InMemoryWordRepository`,`Program.cs` DI 註冊改一行即可)
 - [ ] 規劃常用查詢欄位索引(如 `UserId + NextReviewDate`、`CategoryId`)— 讀多寫少,先靠索引優化,暫不做讀寫分離(read replica),等實測有瓶頸再評估
 
 ### 會員系統底層
+
 - [ ] 導入 ASP.NET Identity + Role 機制(Admin / User)
 - [ ] JWT + httpOnly cookie + refresh token 機制
 - [ ] 本機密鑰改用 .NET User Secrets 管理(連線字串、JWT signing key),取代寫死在 appsettings.json — 非 MVP 必要項,先以 MVP 功能為主,之後再補
 
 ### 部署
+
 - [ ] 前端 Vercel 設定
 - [ ] 後端 Google Cloud Run 設定
 - [ ] CORS / Cookie(SameSite=None; Secure)設定
 
 ### 快取(暫緩)
+
 - [ ] 導入 Redis 做快取 / refresh token 撤銷名單 — 非 MVP 必要項,先跳過;等 Cloud Run 開多 instance 或需要 token 撤銷機制時再評估,現階段如需快取可用內建 `IMemoryCache`
+
+---
+
+以下由本人撰寫
+
+0729 (backed)
+
+1. 今日實作 [HttpGet]
+2. 新增 mock
+
+明日Todo:
+
+1. 了解 DI
+2. 開發前端頁面
+
+問題深入了解
+
+1. Repositories 是什麼 為什麼裡面是裝兩個 interface 命名怎麼算
+2. Controllers 命名怎麼判斷
+3. public WordsController(IWordRepository repository) 的 repository 是啥意思
+4. Task<IActionResult> 的 IActionResult 是啥意思
