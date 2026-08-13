@@ -6,6 +6,7 @@ public class WordsController : ControllerBase
 {
     private readonly IWordRepository _repository;
 
+
     public WordsController(IWordRepository repository)
     {
         _repository = repository;

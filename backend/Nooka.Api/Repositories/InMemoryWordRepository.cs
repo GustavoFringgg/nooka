@@ -16,7 +16,6 @@ public class InMemoryWordRepository : IWordRepository
     public Task<IEnumerable<Word>> GetAllAsync()
     {
         return Task.FromResult<IEnumerable<Word>>(_words);
-        // 回傳的東西是 Task<IEnumerable<Word>> —— 也就是一張「號碼牌」,上面寫著「之後會給你一個可迴圈的 Word 集合」 await 之後才會拿到
     }
 
     public Task<IEnumerable<Word>> GetByCategoryIdAsync(int categoryId)

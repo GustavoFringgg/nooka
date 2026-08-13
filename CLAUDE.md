@@ -13,7 +13,12 @@
   - `Models/Word.cs`、`Models/Category.cs`:資料模型(欄位:`Term`、`Definition`、`PartOfSpeech`、`Examples` 等)
   - `Repositories/IWordRepository.cs` + `InMemoryWordRepository.cs`:Repository 介面 + mock 實作,資料來自 `Data/words.json`,之後接 EF Core 只需新增 `EfWordRepository` 並改 DI 註冊
   - `Controllers/WordsController.cs`:唯讀 API,`GET /api/words`、`GET /api/words/{id}`、`GET /api/words/category/{categoryId}`
-- `frontend/`:Nuxt 4 預設模板(`app.vue` 只有 `NuxtWelcome`),尚未開始開發
+- `frontend/`:Nuxt 4,已啟用 file-based routing(`app.vue` 改用 `NuxtPage`)
+  - `design_handoff_velorah_hero/`(專案根目錄):Claude design 工具輸出的靜態 HTML/CSS 設計交付稿(品牌名「Velorah」是設計稿本身的,跟 Nooka 無關),`DESIGN_TOKENS.md` 記錄色票與 liquid-glass 玻璃質感元件規格,正在依此改造成 Nuxt 頁面,文字改成 Nooka 佔位字
+  - `app/pages/index.vue`:首頁,採**單頁式**方向 — 上方 100vh 影片 Hero(nav + 標題 + CTA),往下滾動接深藍色 Night Palette 內容區塊(分類/練習模式/學習紀錄卡片),不做「首頁只放 3D 圖、完整介紹另外開一頁」的方案(討論過兩個方向,選了這個,效果不理想可能會 roll back)
+  - `app/pages/home.vue`:單頁式方向確定前先做的獨立介紹頁原型,內容現在跟 `index.vue` 重複,先保留,之後可能移除或另作他用
+  - `app/assets/scss/_tokens.scss`、`_liquid-glass.scss`:共用設計 token(色票、字型變數、liquid-glass mixin),CSS 統一用 SCSS 管理,之後其他頁面要維持同一視覺系統可直接複用
+  - 這個首頁是行銷 / 訪客用的 landing page,跟下方「首頁書架」使用者故事(登入後瀏覽分類的書架頁)是不同頁面,兩者尚未串接
 
 ## 技術棧
 
@@ -110,10 +115,3 @@
 
 1. 了解 DI
 2. 開發前端頁面
-
-問題深入了解
-
-1. Repositories 是什麼 為什麼裡面是裝兩個 interface 命名怎麼算
-2. Controllers 命名怎麼判斷
-3. public WordsController(IWordRepository repository) 的 repository 是啥意思
-4. Task<IActionResult> 的 IActionResult 是啥意思

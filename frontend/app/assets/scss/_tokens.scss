@@ -1,0 +1,16 @@
+// Velorah 設計交付規格 (design_handoff_velorah_hero/DESIGN_TOKENS.md)
+
+$font-display: "Instrument Serif", serif;
+$font-body: "Inter", sans-serif;
+
+// 影片背景頁面專用色票(Hero)
+$color-background: hsl(201 100% 13%); // 影片載入失敗時的深藍色 fallback
+$color-foreground: hsl(0 0% 100%);
+$color-muted-foreground: hsl(240 4% 66%);
+
+// Velorah Night Palette —— 沒有影片背景的頁面用這組(Home、其他內頁)
+$night-bg: #081428;
+$night-bg-panel: #12294a;
+$night-accent: #f2b84b;
+$night-foreground: #f4efe4;
+$night-muted-foreground: #8fa3c2;
