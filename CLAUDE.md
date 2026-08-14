@@ -9,9 +9,11 @@
 
 ## 現況
 
-- `backend/Nooka.Api`:已有 Word / Category mock 資料層與唯讀 API,尚未接上真實資料庫、會員系統、Admin CRUD
-  - `Models/Word.cs`、`Models/Category.cs`:資料模型(欄位:`Term`、`Definition`、`PartOfSpeech`、`Examples` 等)
-  - `Repositories/IWordRepository.cs` + `InMemoryWordRepository.cs`:Repository 介面 + mock 實作,資料來自 `Data/words.json`,之後接 EF Core 只需新增 `EfWordRepository` 並改 DI 註冊
+- `backend/Nooka.Api`:已接上 Supabase PostgreSQL(EF Core + Npgsql),唯讀 API 正常運作
+  - `Models/Words.cs`、`Models/Category.cs`:資料模型(欄位:`Term`、`Definition`、`PartOfSpeech`、`Examples` 等)
+  - `Data/AppDbContext.cs`:EF Core DbContext,定義 `Words`、`Categories` 資料表
+  - `Repositories/IWordRepository.cs` + `EfWordRepository.cs`:Repository 介面 + EF Core 實作(已取代 InMemoryWordRepository)
+  - `Migrations/`:EF Core 初版 migration(InitialCreate),已套用到 Supabase
   - `Controllers/WordsController.cs`:唯讀 API,`GET /api/words`、`GET /api/words/{id}`、`GET /api/words/category/{categoryId}`
 - `frontend/`:Nuxt 4,已啟用 file-based routing(`app.vue` 改用 `NuxtPage`)
   - `design_handoff_velorah_hero/`(專案根目錄):Claude design 工具輸出的靜態 HTML/CSS 設計交付稿(品牌名「Velorah」是設計稿本身的,跟 Nooka 無關),`DESIGN_TOKENS.md` 記錄色票與 liquid-glass 玻璃質感元件規格,正在依此改造成 Nuxt 頁面,文字改成 Nooka 佔位字
@@ -43,6 +45,7 @@
   - 答對 / 答錯各對應一組固定的 quality 分數,餵進 SM-2 公式計算下次複習間隔(interval)與 ease factor
   - 答對不代表不用再複習,只是複習間隔會拉長
 - **開發階段**:先做 MVP(會員 + 卡片學習 + SM-2),AI 功能列為 Phase 2,MVP 完成上線後再疊加
+- **Word ↔ Category 關聯**:MVP 採方案 A(一個 Word 只屬於一個 Category,用單一 `CategoryId` 外鍵),未來視需求改為方案 B(多對多,加 `WordCategories` 中介表)
 
 ## 使用者故事(功能待辦 — 使用者看得到 / 用得到的東西)
 
