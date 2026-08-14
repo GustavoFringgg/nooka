@@ -1,3 +1,4 @@
+namespace Nooka.Api.Models;
 
 public class Category
 {

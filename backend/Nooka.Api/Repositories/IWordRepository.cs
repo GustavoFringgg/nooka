@@ -1,3 +1,4 @@
+using Nooka.Api.Models;
 public interface IWordRepository
 {
     Task<IEnumerable<Word>> GetAllAsync();

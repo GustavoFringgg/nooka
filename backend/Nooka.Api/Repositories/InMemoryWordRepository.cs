@@ -1,5 +1,5 @@
 using System.Text.Json;
-
+using Nooka.Api.Models;
 public class InMemoryWordRepository : IWordRepository
 {
     private readonly List<Word> _words;
