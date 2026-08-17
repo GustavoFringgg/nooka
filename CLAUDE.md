@@ -15,12 +15,41 @@
   - `Repositories/IWordRepository.cs` + `EfWordRepository.cs`:Repository 介面 + EF Core 實作(已取代 InMemoryWordRepository)
   - `Migrations/`:EF Core 初版 migration(InitialCreate),已套用到 Supabase
   - `Controllers/WordsController.cs`:唯讀 API,`GET /api/words`、`GET /api/words/{id}`、`GET /api/words/category/{categoryId}`
+  - `Program.cs`:已加上 CORS(`NuxtDev` policy,允許 `http://localhost:3000`),`UseCors` 放在 `UseAuthorization` 之前
+  - `Repositories/ICategoryRepository.cs` + `EfCategoryRepository.cs`:分類 Repository,仿照 Word 版本 pattern,已完成 `GetAllAsync()`、`GetByIdAsync(int)`;`CategoriesController.cs` 與 `Program.cs` 的 DI 註冊還沒做(見下方「進行中」)
 - `frontend/`:Nuxt 4,已啟用 file-based routing(`app.vue` 改用 `NuxtPage`)
   - `design_handoff_velorah_hero/`(專案根目錄):Claude design 工具輸出的靜態 HTML/CSS 設計交付稿(品牌名「Velorah」是設計稿本身的,跟 Nooka 無關),`DESIGN_TOKENS.md` 記錄色票與 liquid-glass 玻璃質感元件規格,正在依此改造成 Nuxt 頁面,文字改成 Nooka 佔位字
   - `app/pages/index.vue`:首頁,採**單頁式**方向 — 上方 100vh 影片 Hero(nav + 標題 + CTA),往下滾動接深藍色 Night Palette 內容區塊(分類/練習模式/學習紀錄卡片),不做「首頁只放 3D 圖、完整介紹另外開一頁」的方案(討論過兩個方向,選了這個,效果不理想可能會 roll back)
   - `app/pages/home.vue`:單頁式方向確定前先做的獨立介紹頁原型,內容現在跟 `index.vue` 重複,先保留,之後可能移除或另作他用
   - `app/assets/scss/_tokens.scss`、`_liquid-glass.scss`:共用設計 token(色票、字型變數、liquid-glass mixin),CSS 統一用 SCSS 管理,之後其他頁面要維持同一視覺系統可直接複用
   - 這個首頁是行銷 / 訪客用的 landing page,跟下方「首頁書架」使用者故事(登入後瀏覽分類的書架頁)是不同頁面,兩者尚未串接
+
+## 進行中:練習頁第一步 — 選擇題模式(串真實後端)
+
+練習功能的第一個垂直切片。流程:進入 `/practice` 練習頁 → 選擇要練習的書(分類)→ 進入該分類的選擇題測驗。分類清單直接串真的後端 API(不寫死在前端),因為 Derek 決定手動在 Supabase 補 `Categories`/`Words` 測試資料。
+
+**採分階段教學方式進行**(不是自動一次做完),每一步由 Derek 自己動手改,確認後才進下一步。詳細計畫存在 `C:\Users\USER\.claude\plans\reflective-growing-eagle.md`。
+
+### 目前進度
+
+- [x] 後端:`Program.cs` 加 CORS(`NuxtDev` policy)
+- [x] 後端:`ICategoryRepository.cs` + `EfCategoryRepository.cs`(`GetAllAsync`、`GetByIdAsync`)
+- [ ] 後端:`CategoriesController.cs`(暴露 `GET /api/categories`)
+- [ ] 後端:`Program.cs` 註冊 `ICategoryRepository` → `EfCategoryRepository` 的 DI
+- [ ] 前端:`nuxt.config.ts` 加 `runtimeConfig.public.apiBase`(`http://localhost:5016`)
+- [ ] 前端:`app/composables/useApi.ts`(`useApiUrl` helper)
+- [ ] 前端:`app/types/practice.ts`(`Category`、`Word` 型別,對齊後端 camelCase JSON)
+- [ ] 前端:`app/utils/quiz.ts`(`buildQuizQuestions`,含 Fisher–Yates `shuffle`)
+- [ ] 前端:`app/pages/practice/index.vue`(選書頁,抓 `GET /api/categories`,Night 色票 + liquid-glass 卡片)
+- [ ] 前端:`app/pages/practice/[categoryId]/choice.vue`(選擇題測驗頁,抓 `GET /api/words/category/{categoryId}`,單字 < 2 筆顯示不足提示,答題/計分/結束畫面)
+- [ ] 前端:`app/pages/index.vue` 的 `練習` nav 連結接上 `NuxtLink to="/practice"`
+- [ ] Derek 手動在 Supabase 補資料:`Categories` 至少 1 筆、`Words` 同分類至少 4 筆(目前只有 1 筆測試單字 `vicarious`,categoryId 1,`Categories` 表是空的)
+
+### 這個切片刻意不做的事
+
+- 不建立 `app/components/`(卡片/選項按鈕目前都只有單一使用位置,等第二種練習模式出現重複再抽出元件)
+- 不新增狀態管理套件(Pinia 等),測驗狀態用 `ref` 就夠
+- 不做作答結果的後端持久化(還沒有 SM-2 / 會員系統,這階段是純前端 session 狀態)
 
 ## 技術棧
 
@@ -106,15 +135,3 @@
 - [ ] 導入 Redis 做快取 / refresh token 撤銷名單 — 非 MVP 必要項,先跳過;等 Cloud Run 開多 instance 或需要 token 撤銷機制時再評估,現階段如需快取可用內建 `IMemoryCache`
 
 ---
-
-以下由本人撰寫
-
-0729 (backed)
-
-1. 今日實作 [HttpGet]
-2. 新增 mock
-
-明日Todo:
-
-1. 了解 DI
-2. 開發前端頁面
