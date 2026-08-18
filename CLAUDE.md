@@ -30,21 +30,6 @@
 
 **採分階段教學方式進行**(不是自動一次做完),每一步由 Derek 自己動手改,確認後才進下一步。詳細計畫存在 `C:\Users\USER\.claude\plans\reflective-growing-eagle.md`。
 
-### 目前進度
-
-- [x] 後端:`Program.cs` 加 CORS(`NuxtDev` policy)
-- [x] 後端:`ICategoryRepository.cs` + `EfCategoryRepository.cs`(`GetAllAsync`、`GetByIdAsync`)
-- [ ] 後端:`CategoriesController.cs`(暴露 `GET /api/categories`)
-- [ ] 後端:`Program.cs` 註冊 `ICategoryRepository` → `EfCategoryRepository` 的 DI
-- [ ] 前端:`nuxt.config.ts` 加 `runtimeConfig.public.apiBase`(`http://localhost:5016`)
-- [ ] 前端:`app/composables/useApi.ts`(`useApiUrl` helper)
-- [ ] 前端:`app/types/practice.ts`(`Category`、`Word` 型別,對齊後端 camelCase JSON)
-- [ ] 前端:`app/utils/quiz.ts`(`buildQuizQuestions`,含 Fisher–Yates `shuffle`)
-- [ ] 前端:`app/pages/practice/index.vue`(選書頁,抓 `GET /api/categories`,Night 色票 + liquid-glass 卡片)
-- [ ] 前端:`app/pages/practice/[categoryId]/choice.vue`(選擇題測驗頁,抓 `GET /api/words/category/{categoryId}`,單字 < 2 筆顯示不足提示,答題/計分/結束畫面)
-- [ ] 前端:`app/pages/index.vue` 的 `練習` nav 連結接上 `NuxtLink to="/practice"`
-- [ ] Derek 手動在 Supabase 補資料:`Categories` 至少 1 筆、`Words` 同分類至少 4 筆(目前只有 1 筆測試單字 `vicarious`,categoryId 1,`Categories` 表是空的)
-
 ### 這個切片刻意不做的事
 
 - 不建立 `app/components/`(卡片/選項按鈕目前都只有單一使用位置,等第二種練習模式出現重複再抽出元件)
@@ -135,3 +120,18 @@
 - [ ] 導入 Redis 做快取 / refresh token 撤銷名單 — 非 MVP 必要項,先跳過;等 Cloud Run 開多 instance 或需要 token 撤銷機制時再評估,現階段如需快取可用內建 `IMemoryCache`
 
 ---
+
+### 目前進度 2026/08/18
+
+- [x] 後端:`Program.cs` 加 CORS(`NuxtDev` policy)
+- [x] 後端:`ICategoryRepository.cs` + `EfCategoryRepository.cs`(`GetAllAsync`、`GetByIdAsync`)
+- [x] 後端:`CategoriesController.cs`(暴露 `GET /api/categories`)
+- [x] 後端:`Program.cs` 註冊 `ICategoryRepository` → `EfCategoryRepository` 的 DI
+- [ ] 前端:`nuxt.config.ts` 加 `runtimeConfig.public.apiBase`(`http://localhost:5016`)
+- [ ] 前端:`app/composables/useApi.ts`(`useApiUrl` helper)
+- [ ] 前端:`app/types/practice.ts`(`Category`、`Word` 型別,對齊後端 camelCase JSON)
+- [ ] 前端:`app/utils/quiz.ts`(`buildQuizQuestions`,含 Fisher–Yates `shuffle`)
+- [ ] 前端:`app/pages/practice/index.vue`(選書頁,抓 `GET /api/categories`,Night 色票 + liquid-glass 卡片)
+- [ ] 前端:`app/pages/practice/[categoryId]/choice.vue`(選擇題測驗頁,抓 `GET /api/words/category/{categoryId}`,單字 < 2 筆顯示不足提示,答題/計分/結束畫面)
+- [ ] 前端:`app/pages/index.vue` 的 `練習` nav 連結接上 `NuxtLink to="/practice"`
+- [ ] Derek 手動在 Supabase 補資料:`Categories` 至少 1 筆、`Words` 同分類至少 4 筆(目前只有 1 筆測試單字 `vicarious`,categoryId 1,`Categories` 表是空的)

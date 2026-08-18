@@ -9,4 +9,15 @@ public class AppDbContext : DbContext
 
     public DbSet<Word> Words { get; set; }
     public DbSet<Category> Categories { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Category>()
+            .Property(c => c.CreatedAt)
+            .HasDefaultValueSql("now()");
+
+        modelBuilder.Entity<Category>()
+            .Property(c => c.UpdatedAt)
+            .HasDefaultValueSql("now()");
+    }
 }

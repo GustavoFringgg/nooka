@@ -23,10 +23,7 @@ public class WordsController : ControllerBase
     public async Task<IActionResult> GetById(int id)
     {
         var word = await _repository.GetByIdAsync(id);
-        if (word is null)
-        {
-            return NotFound();
-        }
+        if (word is null) return NotFound();
         return Ok(word);
     }
 
