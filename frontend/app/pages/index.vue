@@ -39,19 +39,7 @@ onMounted(() => {
     <div class="hero">
       <video class="hero__video" autoplay loop muted playsinline src="/hero-video.mp4" />
 
-      <nav class="hero__nav">
-        <div class="hero__logo">Nooka<sup>&reg;</sup></div>
-
-        <div class="hero__navlinks">
-          <a href="#" class="hero__navlink hero__navlink--active">首頁</a>
-          <a href="#" class="hero__navlink">分類</a>
-          <a href="#" class="hero__navlink">練習</a>
-          <a href="#" class="hero__navlink">學習紀錄</a>
-          <a href="#" class="hero__navlink">登入</a>
-        </div>
-
-        <button class="hero__cta hero__cta--nav">開始學習</button>
-      </nav>
+      <AppNav />
 
       <section class="hero__content">
         <h1 class="hero__title animate-fade-rise">
@@ -110,65 +98,13 @@ onMounted(() => {
     z-index: 0;
   }
 
-  &__nav {
-    position: relative;
-    z-index: 10;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 24px 32px;
-    max-width: 1280px;
-    margin: 0 auto;
-  }
-
-  &__logo {
-    font-family: $font-display;
-    font-size: 30px;
-    letter-spacing: -0.02em;
-    color: $color-foreground;
-
-    sup {
-      font-size: 12px;
-    }
-  }
-
-  &__navlinks {
-    display: none;
-    gap: 32px;
-    align-items: center;
-
-    @media (min-width: 768px) {
-      display: flex;
-    }
-  }
-
-  &__navlink {
-    font-size: 14px;
-    color: $color-muted-foreground;
-    text-decoration: none;
-    transition: color 0.2s ease;
-
-    &:hover {
-      color: $color-foreground;
-    }
-
-    &--active {
-      color: $color-foreground;
-    }
-  }
-
   &__cta {
-    @include liquid-glass(0.01, 0.1, 0.45, 0.15);
+    @include liquid-glass(0.01, 0.1, 0.3);
     @include liquid-glass-hover;
     border-radius: 999px;
     color: $color-foreground;
     background-color: transparent;
     font-family: inherit;
-
-    &--nav {
-      padding: 10px 24px;
-      font-size: 14px;
-    }
 
     &--hero {
       padding: 20px 56px;

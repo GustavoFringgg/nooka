@@ -127,11 +127,11 @@
 - [x] 後端:`ICategoryRepository.cs` + `EfCategoryRepository.cs`(`GetAllAsync`、`GetByIdAsync`)
 - [x] 後端:`CategoriesController.cs`(暴露 `GET /api/categories`)
 - [x] 後端:`Program.cs` 註冊 `ICategoryRepository` → `EfCategoryRepository` 的 DI
-- [ ] 前端:`nuxt.config.ts` 加 `runtimeConfig.public.apiBase`(`http://localhost:5016`)
-- [ ] 前端:`app/composables/useApi.ts`(`useApiUrl` helper)
-- [ ] 前端:`app/types/practice.ts`(`Category`、`Word` 型別,對齊後端 camelCase JSON)
-- [ ] 前端:`app/utils/quiz.ts`(`buildQuizQuestions`,含 Fisher–Yates `shuffle`)
+- [x] 前端:`nuxt.config.ts` 加 `runtimeConfig.public.apiBase`(`http://localhost:5016`)
+- [x] 前端:`app/composables/useApi.ts`(`useApiUrl` helper)
+- [x] 前端:`app/types/practice.ts`(`Category`、`Word` 型別,對齊後端 camelCase JSON)
+- [x] 前端:`app/utils/quiz.ts`(`buildQuizQuestions`,含 Fisher–Yates `shuffle`)
 - [ ] 前端:`app/pages/practice/index.vue`(選書頁,抓 `GET /api/categories`,Night 色票 + liquid-glass 卡片)
-- [ ] 前端:`app/pages/practice/[categoryId]/choice.vue`(選擇題測驗頁,抓 `GET /api/words/category/{categoryId}`,單字 < 2 筆顯示不足提示,答題/計分/結束畫面)
+- [ ] 前端:`app/pages/practice/[categoryId]/choice.vue`(選擇題測驗頁,抓 `GET /api/words/category/{categoryId}`,4 選 1,答題/計分/結束畫面;單字數保證 > 4,不做不足提示)
 - [ ] 前端:`app/pages/index.vue` 的 `練習` nav 連結接上 `NuxtLink to="/practice"`
 - [x] Derek 手動在 Supabase 補資料:`Categories` 至少 1 筆、`Words` 同分類至少 4 筆(目前只有 1 筆測試單字 `vicarious`,categoryId 1,`Categories` 表是空的)
