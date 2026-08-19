@@ -1,16 +1,27 @@
 <script setup lang="ts">
 import type { Category, Word } from "~/types/practice"
+import type { QuizDirection } from "~/utils/quiz"
 
 const route = useRoute()
+const router = useRouter()
 const categoryId = route.params.categoryId
 
-const { data: category } = await useFetch<Category>(
-  useApiUrl(`/api/categories/${categoryId}`)
-)
+const { data: category } = await useFetch<Category>(useApiUrl(`/api/categories/${categoryId}`))
 
-const { data: words, pending, error } = await useFetch<Word[]>(
-  useApiUrl(`/api/words/category/${categoryId}`)
-)
+const { data: words, pending, error } = await useFetch<Word[]>(useApiUrl(`/api/words/category/${categoryId}`))
+
+const isChoiceSettingsOpen = ref(false)
+const direction = ref<QuizDirection>("enToCn")
+
+const directionOptions = [
+  { label: "看英文選中文", value: "enToCn" },
+  { label: "看中文選英文", value: "cnToEn" }
+]
+
+function startChoiceQuiz() {
+  isChoiceSettingsOpen.value = false
+  router.push(`/practice/${categoryId}/choice?direction=${direction.value}`)
+}
 </script>
 
 <template>
@@ -22,12 +33,22 @@ const { data: words, pending, error } = await useFetch<Word[]>(
     </header>
 
     <div class="max-w-7xl mx-auto mb-10 px-6 flex flex-wrap gap-4">
-      <NuxtLink
-        :to="`/practice/${categoryId}/choice`"
-        class="liquid-glass liquid-glass-hover px-6 py-3 font-body text-sm rounded-full no-underline cursor-pointer border-night-accent/50 text-night-accent"
+      <button
+        class="liquid-glass liquid-glass-hover px-6 py-3 font-body text-sm rounded-full cursor-pointer border-night-accent/50 text-night-accent"
+        @click="isChoiceSettingsOpen = true"
       >
         選擇題
-      </NuxtLink>
+      </button>
+
+      <UModal v-model:open="isChoiceSettingsOpen" title="設定你的測驗" description="選擇練習方向後開始測驗">
+        <template #body>
+          <URadioGroup v-model="direction" :items="directionOptions" />
+        </template>
+
+        <template #footer>
+          <UButton label="開始測試" block @click="startChoiceQuiz" />
+        </template>
+      </UModal>
       <button
         class="liquid-glass px-6 py-3 font-body text-sm text-night-fg rounded-full cursor-not-allowed opacity-50"
         disabled

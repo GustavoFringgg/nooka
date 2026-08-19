@@ -21,11 +21,11 @@
 - `frontend/`:Nuxt 4,已啟用 file-based routing(`app.vue` 改用 `NuxtPage`)
   - `design_handoff_velorah_hero/`(專案根目錄):Claude design 工具輸出的靜態 HTML/CSS 設計交付稿(品牌名「Velorah」是設計稿本身的,跟 Nooka 無關),`DESIGN_TOKENS.md` 記錄色票與 liquid-glass 玻璃質感元件規格,正在依此改造成 Nuxt 頁面,文字改成 Nooka 佔位字
   - `app/pages/index.vue`:首頁,採**單頁式**方向 — 上方 100vh 影片 Hero(nav + 標題 + CTA),往下滾動接深藍色 Night Palette 內容區塊(分類/練習模式/學習紀錄卡片),不做「首頁只放 3D 圖、完整介紹另外開一頁」的方案(討論過兩個方向,選了這個,效果不理想可能會 roll back)
-  - `app/pages/home.vue`:單頁式方向確定前先做的獨立介紹頁原型,內容現在跟 `index.vue` 重複,先保留,之後可能移除或另作他用
-  - `app/assets/scss/_tokens.scss`、`_liquid-glass.scss`:共用設計 token(色票、字型變數、liquid-glass mixin),CSS 統一用 SCSS 管理,之後其他頁面要維持同一視覺系統可直接複用
-    - `liquid-glass` mixin 已簡化:原本用 `::before` + 漸層 mask 做「上下強、中間透明」的邊框效果,左右邊框視覺上會消失,改成單純 `border: 1px solid rgba(255,255,255,$border-opacity)`,mixin 參數從 4 個(`$bg-opacity`/`$shadow-opacity`/`$border-strong`/`$border-soft`)簡化成 3 個(`$bg-opacity`/`$shadow-opacity`/`$border-opacity`),所有呼叫端(`AppNav.vue`、`index.vue` hero CTA)已同步改參數
-  - `app/components/AppNav.vue`:共用 nav 元件(首頁/練習/學習紀錄/登入),`active` 連結用 `useRoute()` 自動判斷,不用手動寫死;`index.vue`、`practice/index.vue` 都已改用這個元件
+  - `app/components/AppNav.vue`:共用 nav 元件(首頁/練習/學習紀錄/登入),`active` 連結用 `useRoute()` 自動判斷,不用手動寫死;`index.vue`、`practice/` 系列頁面都已改用這個元件
   - 這個首頁是行銷 / 訪客用的 landing page,跟下方「首頁書架」使用者故事(登入後瀏覽分類的書架頁)是不同頁面,兩者尚未串接
+  - `app/pages/practice/index.vue`:選書頁,已串真的 `GET /api/categories`
+  - `app/pages/practice/[categoryId]/index.vue`:分類單字列表頁,串 `GET /api/categories/{id}` + `GET /api/words/category/{categoryId}`,列表上方三個模式按鈕(選擇題可點、消消樂/打字拼寫 disable),點「選擇題」開 `UModal` 選練習方向(不換路由,避免重打 API),按「開始測試」才 `router.push` 帶 `?direction=` query 跳到 `choice.vue`
+  - `app/pages/practice/[categoryId]/choice.vue`:選擇題測驗頁,目前只讀 URL query 的 `direction` 顯示佔位文字,實際測驗畫面(題目/選項/答錯彈窗)還沒做
 
 ## 進行中:練習頁第一步 — 選擇題模式(串真實後端)
 
@@ -35,7 +35,8 @@
 
 **選擇題規格(2026/08/18 定案)**:
 - 4 選 1(1 正解 + 3 隨機干擾項),分類底下單字數保證 > 4,不做不足提示
-- 練習方向可選:「看英文選中文」或「看中文選英文」(`QuizDirection = 'enToCn' | 'cnToEn'`),使用者選完方向按 start 才進入測驗
+- 練習方向可選:「看英文選中文」或「看中文選英文」(`QuizDirection = 'enToCn' | 'cnToEn'`)
+  - **定案(2026/08/19)**:方向選擇的 `UModal` 放在 `[categoryId]/index.vue`(單字列表頁),不是 `choice.vue` 本身 —— 點「選擇題」只開 dialog、不換路由,避免取消時要重新導航導致重打 API(有延遲/閃爍);按「開始測試」才把選好的方向用 `?direction=` query 帶進 `choice.vue` 的網址
 - 答錯要跳出視窗:上半顯示使用者選到的(錯誤)選項完整內容,下半顯示正確答案完整內容(含例句、詞性)—— 所以 `QuizOption`/`QuizQuestion`(`types/practice.ts`)都各自帶完整 `Word` 物件,不是只存字串,答錯/答對都能直接拿到完整資料不用重新查找
 
 ### 這個切片刻意不做的事
@@ -48,6 +49,8 @@
 
 - **Backend**: ASP.NET Core (.NET 10), `backend/Nooka.Api`
 - **Frontend**: Nuxt 4 (Vue 3), `frontend/`
+  - **樣式**:Tailwind CSS v4(2026/08/19 從 SCSS 全面轉過來,`app/assets/scss/` 已刪除),色票/字型定義在 `app/assets/css/main.css` 的 `@theme`(`night-bg`/`night-panel`/`night-accent`/`night-fg`/`night-muted`、`hero-bg`/`hero-fg`/`hero-muted`、`font-display`/`font-body`),liquid-glass 玻璃質感效果改成 `@layer components` 的 `.liquid-glass`/`.liquid-glass-cta`/`.liquid-glass-hover` class
+  - **UI 元件庫**:Nuxt UI(`@nuxt/ui`,底層是 Reka UI + Tailwind),用於 `UModal`、`URadioGroup`、`UButton` 等互動元件;純版面/排版還是手刻 Tailwind class,不是每個東西都套件化
 - **Solution**: `Nooka.slnx`(目前只包含 backend 專案)
 
 ## 架構決策
@@ -100,7 +103,7 @@
 - [ ] **首頁書架**:以「書架」概念呈現,每本書 = 一個單字分類(旅遊、工作、商務等)
   - 書封暫不顯示學習進度(32/120、進度條等),先簡單呈現就好,是否需要之後再看
   - **定案(2026/08/19)**:「首頁書架」(登入後瀏覽分類)不另外做頁面,直接沿用 `/practice` 選書頁承擔這個角色,不做兩個平行的選書畫面。已先把 nav 上的「分類」項目拿掉(`AppNav.vue`),只留「練習」一個入口。流程統一,不分入口來源:`/practice`(選書)→ `/practice/[categoryId]`(分類單字列表頁)→ 選練習模式 → 各模式自己的路由(選擇題是 `/practice/[categoryId]/choice`)。現在先不加登入保護(middleware),等會員系統做出來再補
-- [ ] **分類單字列表頁**:點進一本書先看到該分類**所有單字的內容列表**,列表上方放「選擇題/消消樂/打字拼寫」三個模式按鈕(消消樂、打字拼寫先 disable,等選擇題做完再開放),點「選擇題」才切換路由進 `/practice/[categoryId]/choice`(方向選擇 + start 留在 choice 頁本身,規格不變)
+- [x] **分類單字列表頁**:點進一本書先看到該分類**所有單字的內容列表**,列表上方放「選擇題/消消樂/打字拼寫」三個模式按鈕(消消樂、打字拼寫先 disable),點「選擇題」開方向選擇 `UModal`(見上方「進行中」章節定案),按「開始測試」才切換路由進 `/practice/[categoryId]/choice?direction=...`
 
 ## 系統代辦事項(開發 / 基礎建設,非使用者故事)
 
@@ -142,7 +145,12 @@
 - [x] 前端:`app/utils/quiz.ts`(`buildQuizQuestions`,含 Fisher–Yates `shuffle`)
 - [x] 前端:`app/pages/practice/index.vue`(選書頁,Night 色票 + liquid-glass 卡片,做成書封/書架排版 — 直立比例卡片、左側書脊色條、堆疊陰影、底部書架層板線;目前資料是 mock,`GET /api/categories` 串接還沒換上,程式碼裡有 TODO 註解)
 - [x] 前端:`app/components/AppNav.vue`(共用 nav 元件,取代原本 `index.vue` 寫死的 nav 區塊,`active` 用路由自動判斷)—— 順便完成了原本「`練習` nav 連結接上 `/practice`」這個待辦
-- [ ] 前端:`app/pages/practice/index.vue` 換成真的打 `GET /api/categories`(目前是 mock 資料);書卡連結目標也要從 `/practice/${category.id}/choice` 改成 `/practice/${category.id}`(先進分類單字列表頁,不再直接跳測驗)
-- [ ] 前端:`app/pages/practice/[categoryId]/index.vue`(新增,分類單字列表頁,規格見上方「介面(UI)」章節)
-- [ ] 前端:`app/pages/practice/[categoryId]/choice.vue`(選擇題測驗頁,抓 `GET /api/words/category/{categoryId}`,4 選 1 + 方向選擇 + 答錯詳情視窗,規格見上方「進行中」章節;從分類單字列表頁點「選擇題」進入,不再由選書頁直接連過來)
+- [x] 前端:`app/pages/practice/index.vue` 換成真的打 `GET /api/categories`;書卡連結目標從 `/practice/${category.id}/choice` 改成 `/practice/${category.id}`
 - [x] Derek 手動在 Supabase 補資料:`Categories` 1 筆(`多益(600)`)、`Words` categoryId 1 已有 6 筆(`vicarious`、`handout`、`hysterical`、`hub`、`haltingly`、`hectic`)
+
+### 目前進度 2026/08/19
+
+- [x] 前端:整專案 CSS 從 SCSS 全面轉成 Tailwind CSS v4 + Nuxt UI(`@nuxt/ui`)— 裝 `tailwindcss`、`@nuxt/ui`,`app/assets/css/main.css` 用 `@theme` 定義色票/字型、`@layer components` 定義 `liquid-glass` 系列 class;刪除 `app/assets/scss/`,移除 `sass` 依賴;`AppNav.vue`、`index.vue`、`practice/index.vue`、`practice/[categoryId]/index.vue` 全部改寫成 Tailwind class
+- [x] 前端:`app/pages/practice/[categoryId]/index.vue`(新增,分類單字列表頁)— 列表上方三個模式按鈕(選擇題可點、消消樂/打字拼寫 disable),點「選擇題」用 `UModal` + `URadioGroup` 選練習方向,按「開始測試」才 `router.push` 帶 `?direction=` query 跳轉,避免不必要的路由切換/重打 API
+- [x] 前端:`app/pages/practice/[categoryId]/choice.vue`(新增,選擇題測驗頁骨架)— 目前只讀 URL query 的 `direction` 顯示佔位文字,實際測驗畫面(抓 `GET /api/words/category/{categoryId}`、4 選 1、答錯詳情視窗)還沒做
+- [ ] 前端:`choice.vue` 補上真正的測驗邏輯 — 抓單字、用 `utils/quiz.ts` 的 `buildQuizQuestions` 產生題目、渲染題目/選項、答對/答錯判斷、答錯詳情彈窗(規格見上方「進行中」章節)
