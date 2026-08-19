@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Instrument Serif", serif;
+  --font-body: "Inter", sans-serif;
+
+  /* Hero(影片背景頁面)色票 */
+  --color-hero-bg: hsl(201 100% 13%);
+  --color-hero-fg: hsl(0 0% 100%);
+  --color-hero-muted: hsl(240 4% 66%);
+
+  /* Night Palette(無影片背景的內頁)色票 */
+  --color-night-bg: #081428;
+  --color-night-panel: #12294a;
+  --color-night-accent: #f2b84b;
+  --color-night-fg: #f4efe4;
+  --color-night-muted: #8fa3c2;
+}
+
+@layer components {
+  /* 標準版 liquid-glass,對應原本 mixin 預設值 0.03 / 0.08 / 0.12 */
+  .liquid-glass {
+    @apply relative overflow-hidden border border-white/12 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)] backdrop-blur-[4px] bg-white/3;
+    background-blend-mode: luminosity;
+  }
+
+  /* CTA 按鈕版 liquid-glass,對應原本 liquid-glass(0.01, 0.1, 0.3) */
+  .liquid-glass-cta {
+    @apply relative overflow-hidden border border-white/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] backdrop-blur-[4px] bg-white/1;
+    background-blend-mode: luminosity;
+  }
+
+  .liquid-glass-hover {
+    @apply cursor-pointer transition-transform duration-250 ease-out hover:scale-[1.03];
+  }
+}
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-rise {
+  animation: fade-rise 0.8s ease-out both;
+}
+
+.animate-fade-rise-delay {
+  animation: fade-rise 0.8s ease-out 0.2s both;
+}
+
+.animate-fade-rise-delay-2 {
+  animation: fade-rise 0.8s ease-out 0.4s both;
+}

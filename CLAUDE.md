@@ -10,7 +10,8 @@
 ## 現況
 
 - `backend/Nooka.Api`:已接上 Supabase PostgreSQL(EF Core + Npgsql),唯讀 API 正常運作
-  - `Models/Words.cs`、`Models/Category.cs`:資料模型(欄位:`Term`、`Definition`、`PartOfSpeech`、`Examples` 等)
+  - `Models/Words.cs`:欄位 `Term`(英文單字)、`DefinitionCN`(中文意思)、`DefinitionEN`(英文釋義)、`PartOfSpeech`、`Examples`;`DefinitionCN`/`DefinitionEN` 是從原本單一 `Definition` 欄位拆出來的(migration rename 時工具猜錯方向,`Definition` 被重新命名成 `DefinitionEN`,`DefinitionCN` 是新欄位,已手動 SQL 修正資料位置)
+  - `Models/Category.cs`:欄位 `Name`、`Description`、`CreatedAt`、`UpdatedAt`(DB 端 `DEFAULT now()`,`AppDbContext.OnModelCreating` 用 Fluent API 設定,手動在 Supabase insert/update 時不用帶這兩欄)
   - `Data/AppDbContext.cs`:EF Core DbContext,定義 `Words`、`Categories` 資料表
   - `Repositories/IWordRepository.cs` + `EfWordRepository.cs`:Repository 介面 + EF Core 實作(已取代 InMemoryWordRepository)
   - `Migrations/`:EF Core 初版 migration(InitialCreate),已套用到 Supabase
@@ -22,6 +23,8 @@
   - `app/pages/index.vue`:首頁,採**單頁式**方向 — 上方 100vh 影片 Hero(nav + 標題 + CTA),往下滾動接深藍色 Night Palette 內容區塊(分類/練習模式/學習紀錄卡片),不做「首頁只放 3D 圖、完整介紹另外開一頁」的方案(討論過兩個方向,選了這個,效果不理想可能會 roll back)
   - `app/pages/home.vue`:單頁式方向確定前先做的獨立介紹頁原型,內容現在跟 `index.vue` 重複,先保留,之後可能移除或另作他用
   - `app/assets/scss/_tokens.scss`、`_liquid-glass.scss`:共用設計 token(色票、字型變數、liquid-glass mixin),CSS 統一用 SCSS 管理,之後其他頁面要維持同一視覺系統可直接複用
+    - `liquid-glass` mixin 已簡化:原本用 `::before` + 漸層 mask 做「上下強、中間透明」的邊框效果,左右邊框視覺上會消失,改成單純 `border: 1px solid rgba(255,255,255,$border-opacity)`,mixin 參數從 4 個(`$bg-opacity`/`$shadow-opacity`/`$border-strong`/`$border-soft`)簡化成 3 個(`$bg-opacity`/`$shadow-opacity`/`$border-opacity`),所有呼叫端(`AppNav.vue`、`index.vue` hero CTA)已同步改參數
+  - `app/components/AppNav.vue`:共用 nav 元件(首頁/練習/學習紀錄/登入),`active` 連結用 `useRoute()` 自動判斷,不用手動寫死;`index.vue`、`practice/index.vue` 都已改用這個元件
   - 這個首頁是行銷 / 訪客用的 landing page,跟下方「首頁書架」使用者故事(登入後瀏覽分類的書架頁)是不同頁面,兩者尚未串接
 
 ## 進行中:練習頁第一步 — 選擇題模式(串真實後端)
@@ -30,11 +33,16 @@
 
 **採分階段教學方式進行**(不是自動一次做完),每一步由 Derek 自己動手改,確認後才進下一步。詳細計畫存在 `C:\Users\USER\.claude\plans\reflective-growing-eagle.md`。
 
+**選擇題規格(2026/08/18 定案)**:
+- 4 選 1(1 正解 + 3 隨機干擾項),分類底下單字數保證 > 4,不做不足提示
+- 練習方向可選:「看英文選中文」或「看中文選英文」(`QuizDirection = 'enToCn' | 'cnToEn'`),使用者選完方向按 start 才進入測驗
+- 答錯要跳出視窗:上半顯示使用者選到的(錯誤)選項完整內容,下半顯示正確答案完整內容(含例句、詞性)—— 所以 `QuizOption`/`QuizQuestion`(`types/practice.ts`)都各自帶完整 `Word` 物件,不是只存字串,答錯/答對都能直接拿到完整資料不用重新查找
+
 ### 這個切片刻意不做的事
 
-- 不建立 `app/components/`(卡片/選項按鈕目前都只有單一使用位置,等第二種練習模式出現重複再抽出元件)
 - 不新增狀態管理套件(Pinia 等),測驗狀態用 `ref` 就夠
 - 不做作答結果的後端持久化(還沒有 SM-2 / 會員系統,這階段是純前端 session 狀態)
+- `app/components/` 原則上不建(單一使用位置的東西不抽元件),但 `AppNav.vue` 是例外 —— 因為 nav 已經有 2 個頁面在用(`index.vue`、`practice/index.vue`),符合「重複出現才抽元件」的原則
 
 ## 技術棧
 
@@ -91,7 +99,8 @@
 
 - [ ] **首頁書架**:以「書架」概念呈現,每本書 = 一個單字分類(旅遊、工作、商務等)
   - 書封暫不顯示學習進度(32/120、進度條等),先簡單呈現就好,是否需要之後再看
-- [ ] **分類單字列表頁**:點進一本書先看到該分類**所有單字的內容列表**,再從中選擇練習模式(消消樂/選擇題/打字拼寫)
+  - **定案(2026/08/19)**:「首頁書架」(登入後瀏覽分類)不另外做頁面,直接沿用 `/practice` 選書頁承擔這個角色,不做兩個平行的選書畫面。已先把 nav 上的「分類」項目拿掉(`AppNav.vue`),只留「練習」一個入口。流程統一,不分入口來源:`/practice`(選書)→ `/practice/[categoryId]`(分類單字列表頁)→ 選練習模式 → 各模式自己的路由(選擇題是 `/practice/[categoryId]/choice`)。現在先不加登入保護(middleware),等會員系統做出來再補
+- [ ] **分類單字列表頁**:點進一本書先看到該分類**所有單字的內容列表**,列表上方放「選擇題/消消樂/打字拼寫」三個模式按鈕(消消樂、打字拼寫先 disable,等選擇題做完再開放),點「選擇題」才切換路由進 `/practice/[categoryId]/choice`(方向選擇 + start 留在 choice 頁本身,規格不變)
 
 ## 系統代辦事項(開發 / 基礎建設,非使用者故事)
 
@@ -131,7 +140,9 @@
 - [x] 前端:`app/composables/useApi.ts`(`useApiUrl` helper)
 - [x] 前端:`app/types/practice.ts`(`Category`、`Word` 型別,對齊後端 camelCase JSON)
 - [x] 前端:`app/utils/quiz.ts`(`buildQuizQuestions`,含 Fisher–Yates `shuffle`)
-- [ ] 前端:`app/pages/practice/index.vue`(選書頁,抓 `GET /api/categories`,Night 色票 + liquid-glass 卡片)
-- [ ] 前端:`app/pages/practice/[categoryId]/choice.vue`(選擇題測驗頁,抓 `GET /api/words/category/{categoryId}`,4 選 1,答題/計分/結束畫面;單字數保證 > 4,不做不足提示)
-- [ ] 前端:`app/pages/index.vue` 的 `練習` nav 連結接上 `NuxtLink to="/practice"`
-- [x] Derek 手動在 Supabase 補資料:`Categories` 至少 1 筆、`Words` 同分類至少 4 筆(目前只有 1 筆測試單字 `vicarious`,categoryId 1,`Categories` 表是空的)
+- [x] 前端:`app/pages/practice/index.vue`(選書頁,Night 色票 + liquid-glass 卡片,做成書封/書架排版 — 直立比例卡片、左側書脊色條、堆疊陰影、底部書架層板線;目前資料是 mock,`GET /api/categories` 串接還沒換上,程式碼裡有 TODO 註解)
+- [x] 前端:`app/components/AppNav.vue`(共用 nav 元件,取代原本 `index.vue` 寫死的 nav 區塊,`active` 用路由自動判斷)—— 順便完成了原本「`練習` nav 連結接上 `/practice`」這個待辦
+- [ ] 前端:`app/pages/practice/index.vue` 換成真的打 `GET /api/categories`(目前是 mock 資料);書卡連結目標也要從 `/practice/${category.id}/choice` 改成 `/practice/${category.id}`(先進分類單字列表頁,不再直接跳測驗)
+- [ ] 前端:`app/pages/practice/[categoryId]/index.vue`(新增,分類單字列表頁,規格見上方「介面(UI)」章節)
+- [ ] 前端:`app/pages/practice/[categoryId]/choice.vue`(選擇題測驗頁,抓 `GET /api/words/category/{categoryId}`,4 選 1 + 方向選擇 + 答錯詳情視窗,規格見上方「進行中」章節;從分類單字列表頁點「選擇題」進入,不再由選書頁直接連過來)
+- [x] Derek 手動在 Supabase 補資料:`Categories` 1 筆(`多益(600)`)、`Words` categoryId 1 已有 6 筆(`vicarious`、`handout`、`hysterical`、`hub`、`haltingly`、`hectic`)

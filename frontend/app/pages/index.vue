@@ -36,189 +36,76 @@ onMounted(() => {
 
 <template>
   <div>
-    <div class="hero">
-      <video class="hero__video" autoplay loop muted playsinline src="/hero-video.mp4" />
+    <div class="relative w-full min-h-screen overflow-hidden font-body text-hero-fg bg-hero-bg">
+      <video
+        class="absolute inset-0 w-full h-full object-cover z-0"
+        autoplay
+        loop
+        muted
+        playsinline
+        src="/hero-video.mp4"
+      />
 
       <AppNav />
 
-      <section class="hero__content">
-        <h1 class="hero__title animate-fade-rise">
-          在<span class="hero__muted">寂靜</span>中,<br />
-          讓<span class="hero__muted">單字</span>生根發芽
+      <section class="relative z-10 flex flex-col items-center text-center px-6 pt-32 pb-40">
+        <h1
+          class="animate-fade-rise font-display font-normal text-[clamp(48px,9vw,120px)] leading-[0.95] tracking-[-2.46px] max-w-7xl m-0"
+        >
+          在<span class="text-hero-muted">寂靜</span>中,<br />
+          讓<span class="text-hero-muted">單字</span>生根發芽
         </h1>
-        <p class="hero__subtext animate-fade-rise-delay">
+        <p class="animate-fade-rise-delay text-hero-muted text-lg max-w-xl mt-8 leading-relaxed">
           佔位文字:這裡預留給 Nooka 的產品說明文案,示範版面與進場動畫用,待正式文案定稿後再替換。
         </p>
-        <button class="hero__cta hero__cta--hero animate-fade-rise-delay-2">開始學習</button>
+        <button
+          class="liquid-glass-cta liquid-glass-hover animate-fade-rise-delay-2 rounded-full bg-transparent text-hero-fg font-body mt-12 px-14 py-5 text-base border-0"
+        >
+          開始學習
+        </button>
       </section>
     </div>
 
-    <section class="feature">
-      <span class="feature__index">01</span>
-      <div class="feature__icon" />
-      <h2 class="feature__title">分類</h2>
-      <p class="feature__text">佔位文字:依主題整理的單字書架,例如航空、工程、資安、多益。</p>
+    <section
+      class="relative min-h-screen flex flex-col items-center justify-center text-center p-6 overflow-hidden bg-night-bg [&:nth-of-type(even)]:bg-night-panel"
+    >
+      <span
+        class="absolute top-12 font-display text-[clamp(80px,14vw,200px)] leading-none text-white/4 pointer-events-none select-none"
+        >01</span
+      >
+      <div class="w-14 h-14 rounded-2xl bg-night-accent mb-8" />
+      <h2 class="relative font-display font-normal text-[clamp(36px,6vw,64px)] text-night-fg mb-5">分類</h2>
+      <p class="relative max-w-[480px] text-night-muted text-base leading-[1.7]">
+        佔位文字:依主題整理的單字書架,例如航空、工程、資安、多益。
+      </p>
     </section>
 
-    <section class="feature">
-      <span class="feature__index">02</span>
-      <div class="feature__icon" />
-      <h2 class="feature__title">練習模式</h2>
-      <p class="feature__text">佔位文字:選擇題、消消樂、打字拼寫等多種練習方式。</p>
+    <section
+      class="relative min-h-screen flex flex-col items-center justify-center text-center p-6 overflow-hidden bg-night-bg [&:nth-of-type(even)]:bg-night-panel"
+    >
+      <span
+        class="absolute top-12 font-display text-[clamp(80px,14vw,200px)] leading-none text-white/4 pointer-events-none select-none"
+        >02</span
+      >
+      <div class="w-14 h-14 rounded-2xl bg-night-accent mb-8" />
+      <h2 class="relative font-display font-normal text-[clamp(36px,6vw,64px)] text-night-fg mb-5">練習模式</h2>
+      <p class="relative max-w-[480px] text-night-muted text-base leading-[1.7]">
+        佔位文字:選擇題、消消樂、打字拼寫等多種練習方式。
+      </p>
     </section>
 
-    <section class="feature">
-      <span class="feature__index">03</span>
-      <div class="feature__icon" />
-      <h2 class="feature__title">學習紀錄</h2>
-      <p class="feature__text">佔位文字:採用 SM-2 間隔重複,依答對狀況安排下次複習時間。</p>
+    <section
+      class="relative min-h-screen flex flex-col items-center justify-center text-center p-6 overflow-hidden bg-night-bg [&:nth-of-type(even)]:bg-night-panel"
+    >
+      <span
+        class="absolute top-12 font-display text-[clamp(80px,14vw,200px)] leading-none text-white/4 pointer-events-none select-none"
+        >03</span
+      >
+      <div class="w-14 h-14 rounded-2xl bg-night-accent mb-8" />
+      <h2 class="relative font-display font-normal text-[clamp(36px,6vw,64px)] text-night-fg mb-5">學習紀錄</h2>
+      <p class="relative max-w-[480px] text-night-muted text-base leading-[1.7]">
+        佔位文字:採用 SM-2 間隔重複,依答對狀況安排下次複習時間。
+      </p>
     </section>
   </div>
 </template>
-
-<style lang="scss" scoped>
-@use "../assets/scss/tokens" as *;
-@use "../assets/scss/liquid-glass" as *;
-
-.hero {
-  position: relative;
-  width: 100%;
-  min-height: 100vh;
-  overflow: hidden;
-  font-family: $font-body;
-  color: $color-foreground;
-  background: $color-background;
-
-  &__video {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: 0;
-  }
-
-  &__cta {
-    @include liquid-glass(0.01, 0.1, 0.3);
-    @include liquid-glass-hover;
-    border-radius: 999px;
-    color: $color-foreground;
-    background-color: transparent;
-    font-family: inherit;
-
-    &--hero {
-      padding: 20px 56px;
-      font-size: 16px;
-      margin-top: 48px;
-    }
-  }
-
-  &__content {
-    position: relative;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 128px 24px 160px;
-  }
-
-  &__title {
-    font-family: $font-display;
-    font-weight: 400;
-    font-size: clamp(48px, 9vw, 120px);
-    line-height: 0.95;
-    letter-spacing: -2.46px;
-    max-width: 1280px;
-    margin: 0;
-  }
-
-  &__muted {
-    color: $color-muted-foreground;
-  }
-
-  &__subtext {
-    color: $color-muted-foreground;
-    font-size: 18px;
-    max-width: 640px;
-    margin-top: 32px;
-    line-height: 1.6;
-  }
-}
-
-.feature {
-  position: relative;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 24px;
-  background: $night-bg;
-  overflow: hidden;
-
-  &:nth-of-type(even) {
-    background: $night-bg-panel;
-  }
-
-  &__index {
-    position: absolute;
-    top: 48px;
-    font-family: $font-display;
-    font-size: clamp(80px, 14vw, 200px);
-    line-height: 1;
-    color: rgba(255, 255, 255, 0.04);
-    pointer-events: none;
-    user-select: none;
-  }
-
-  &__icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 16px;
-    background: $night-accent;
-    margin-bottom: 32px;
-  }
-
-  &__title {
-    position: relative;
-    font-family: $font-display;
-    font-weight: 400;
-    font-size: clamp(36px, 6vw, 64px);
-    color: $night-foreground;
-    margin: 0 0 20px;
-  }
-
-  &__text {
-    position: relative;
-    max-width: 480px;
-    color: $night-muted-foreground;
-    font-size: 16px;
-    line-height: 1.7;
-  }
-}
-
-@keyframes fade-rise {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-rise {
-  animation: fade-rise 0.8s ease-out both;
-}
-
-.animate-fade-rise-delay {
-  animation: fade-rise 0.8s ease-out 0.2s both;
-}
-
-.animate-fade-rise-delay-2 {
-  animation: fade-rise 0.8s ease-out 0.4s both;
-}
-</style>
