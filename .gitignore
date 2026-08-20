@@ -3,6 +3,9 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+# AI tool local files
+PRODUCT.md
+
 # dotenv files
 .env
 

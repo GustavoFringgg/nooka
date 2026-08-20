@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { onMounted } from "vue";
+import { gsap } from "gsap"
+import { ScrollTrigger } from "gsap/ScrollTrigger"
+import { onMounted } from "vue"
 
 // 字型與版面規格取自 design_handoff_velorah_hero/VelorahHero.html
 useHead({
@@ -9,12 +9,12 @@ useHead({
     { rel: "preconnect", href: "https://fonts.googleapis.com" },
     {
       rel: "stylesheet",
-      href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap",
-    },
-  ],
-});
+      href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap"
+    }
+  ]
+})
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger)
 
 onMounted(() => {
   gsap.utils.toArray<HTMLElement>(".feature").forEach((section) => {
@@ -27,11 +27,11 @@ onMounted(() => {
       scrollTrigger: {
         trigger: section,
         start: "top 70%",
-        toggleActions: "play none none reverse",
-      },
-    });
-  });
-});
+        toggleActions: "play none none reverse"
+      }
+    })
+  })
+})
 </script>
 
 <template>
@@ -43,7 +43,7 @@ onMounted(() => {
         loop
         muted
         playsinline
-        src="/hero-video.mp4"
+        src="/herovideo2_HQ.mp4"
       />
 
       <AppNav />
@@ -52,8 +52,13 @@ onMounted(() => {
         <h1
           class="animate-fade-rise font-display font-normal text-[clamp(48px,9vw,120px)] leading-[0.95] tracking-[-2.46px] max-w-7xl m-0"
         >
-          在<span class="text-hero-muted">寂靜</span>中,<br />
-          讓<span class="text-hero-muted">單字</span>生根發芽
+          在
+          <span class="text-hero-muted">寂靜</span>
+          中,
+          <br />
+          讓
+          <span class="text-hero-muted">單字</span>
+          生根發芽
         </h1>
         <p class="animate-fade-rise-delay text-hero-muted text-lg max-w-xl mt-8 leading-relaxed">
           佔位文字:這裡預留給 Nooka 的產品說明文案,示範版面與進場動畫用,待正式文案定稿後再替換。
@@ -71,8 +76,9 @@ onMounted(() => {
     >
       <span
         class="absolute top-12 font-display text-[clamp(80px,14vw,200px)] leading-none text-white/4 pointer-events-none select-none"
-        >01</span
       >
+        01
+      </span>
       <div class="w-14 h-14 rounded-2xl bg-night-accent mb-8" />
       <h2 class="relative font-display font-normal text-[clamp(36px,6vw,64px)] text-night-fg mb-5">分類</h2>
       <p class="relative max-w-[480px] text-night-muted text-base leading-[1.7]">
@@ -85,8 +91,9 @@ onMounted(() => {
     >
       <span
         class="absolute top-12 font-display text-[clamp(80px,14vw,200px)] leading-none text-white/4 pointer-events-none select-none"
-        >02</span
       >
+        02
+      </span>
       <div class="w-14 h-14 rounded-2xl bg-night-accent mb-8" />
       <h2 class="relative font-display font-normal text-[clamp(36px,6vw,64px)] text-night-fg mb-5">練習模式</h2>
       <p class="relative max-w-[480px] text-night-muted text-base leading-[1.7]">
@@ -99,8 +106,9 @@ onMounted(() => {
     >
       <span
         class="absolute top-12 font-display text-[clamp(80px,14vw,200px)] leading-none text-white/4 pointer-events-none select-none"
-        >03</span
       >
+        03
+      </span>
       <div class="w-14 h-14 rounded-2xl bg-night-accent mb-8" />
       <h2 class="relative font-display font-normal text-[clamp(36px,6vw,64px)] text-night-fg mb-5">學習紀錄</h2>
       <p class="relative max-w-[480px] text-night-muted text-base leading-[1.7]">
