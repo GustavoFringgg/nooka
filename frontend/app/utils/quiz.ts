@@ -2,10 +2,10 @@ import type { Word, QuizOption, QuizQuestion } from "~/types/practice"
 
 export type QuizDirection = "enToCn" | "cnToEn"
 
-export function buildQuizQuestions(words: Word[], direction: QuizDirection): QuizQuestion[] {
+export function buildQuizQuestions(words: Word[], direction: QuizDirection, count?: number): QuizQuestion[] {
   const answerOption = (word: Word) => (direction === "enToCn" ? word.definitionCN : word.term)
 
-  return words.map((word) => {
+  const questions = words.map((word) => {
     const filtered = words.filter((w) => w.id !== word.id)
     const shuffledFiltered = shuffle(filtered)
     const distractors = shuffledFiltered.slice(0, 3)
@@ -20,6 +20,9 @@ export function buildQuizQuestions(words: Word[], direction: QuizDirection): Qui
     const prompt = direction === "enToCn" ? word.term : word.definitionCN
     return { word, prompt, options }
   })
+
+  const shuffledQuestions = shuffle(questions)
+  return count ? shuffledQuestions.slice(0, count) : shuffledQuestions
 }
 
 export function shuffle<T>(array: T[]): T[] {
