@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// TODO: 優化彈跳視窗 看英文選中文動畫
+// TODO: 優化彈跳視窗 sidebar
 import type { Category, Word } from "~/types/practice"
 import type { QuizDirection } from "~/utils/quiz"
 
@@ -9,18 +11,30 @@ const categoryId = route.params.categoryId
 const { data: category } = await useFetch<Category>(useApiUrl(`/api/categories/${categoryId}`))
 
 const { data: words, pending, error } = await useFetch<Word[]>(useApiUrl(`/api/words/category/${categoryId}`))
+console.log(useNuxtApp().payload.data)
 
 const isChoiceSettingsOpen = ref(false)
 const direction = ref<QuizDirection>("enToCn")
+const questionCount = ref(1)
+
+const maxQuestionCount = computed(() => words.value?.length ?? 1)
 
 const directionOptions = [
   { label: "看英文選中文", value: "enToCn" },
   { label: "看中文選英文", value: "cnToEn" }
 ]
 
+watch(
+  maxQuestionCount,
+  (max) => {
+    questionCount.value = max
+  },
+  { immediate: true }
+)
+
 function startChoiceQuiz() {
   isChoiceSettingsOpen.value = false
-  router.push(`/practice/${categoryId}/choice?direction=${direction.value}`)
+  router.push(`/practice/${categoryId}/choice?direction=${direction.value}&count=${questionCount.value}`)
 }
 </script>
 
@@ -43,6 +57,14 @@ function startChoiceQuiz() {
       <UModal v-model:open="isChoiceSettingsOpen" title="設定你的測驗" description="選擇練習方向後開始測驗">
         <template #body>
           <URadioGroup v-model="direction" :items="directionOptions" />
+
+          <div class="mt-6">
+            <div class="mb-2 flex items-center justify-between text-sm text-night-muted">
+              <span>題數</span>
+              <span class="text-night-fg">{{ questionCount }} 題</span>
+            </div>
+            <USlider v-model="questionCount" :min="1" :max="maxQuestionCount" :step="1" />
+          </div>
         </template>
 
         <template #footer>

@@ -70,6 +70,10 @@
   - 答對 / 答錯各對應一組固定的 quality 分數,餵進 SM-2 公式計算下次複習間隔(interval)與 ease factor
   - 答對不代表不用再複習,只是複習間隔會拉長
 - **開發階段**:先做 MVP(會員 + 卡片學習 + SM-2),AI 功能列為 Phase 2,MVP 完成上線後再疊加
+  - **AI 功能方向(2026/08/20 討論)**:鎖定以下兩個,都是「後台/演算法輔助,使用者無感」性質
+    1. **AI 輔助產生卡片內容**:Admin 貼文章/單字清單,AI 生成中英釋義、例句、詞性,人工審核後才發布,降低卡片內容 curate 成本(對應上面「片語需人工 curate 內容成本高」的痛點)
+    2. **語意向量(embedding)挑選干擾項**:每個單字的釋義預先算好 embedding 存 DB,出題時用 cosine similarity 挑語意相近的單字當選擇題干擾項,取代目前隨機挑同分類單字的做法;這步是一次性預計算 + 純數學比對,不用每次出題都即時呼叫 AI API
+    - **刻意不做**:AI 造句批改(使用者直接跟 AI 互動的功能)— 這種會被大量呼叫、目前沒有收費計畫,先不考慮
 - **Word ↔ Category 關聯**:MVP 採方案 A(一個 Word 只屬於一個 Category,用單一 `CategoryId` 外鍵),未來視需求改為方案 B(多對多,加 `WordCategories` 中介表)
 
 ## 使用者故事(功能待辦 — 使用者看得到 / 用得到的東西)
@@ -152,5 +156,5 @@
 
 - [x] 前端:整專案 CSS 從 SCSS 全面轉成 Tailwind CSS v4 + Nuxt UI(`@nuxt/ui`)— 裝 `tailwindcss`、`@nuxt/ui`,`app/assets/css/main.css` 用 `@theme` 定義色票/字型、`@layer components` 定義 `liquid-glass` 系列 class;刪除 `app/assets/scss/`,移除 `sass` 依賴;`AppNav.vue`、`index.vue`、`practice/index.vue`、`practice/[categoryId]/index.vue` 全部改寫成 Tailwind class
 - [x] 前端:`app/pages/practice/[categoryId]/index.vue`(新增,分類單字列表頁)— 列表上方三個模式按鈕(選擇題可點、消消樂/打字拼寫 disable),點「選擇題」用 `UModal` + `URadioGroup` 選練習方向,按「開始測試」才 `router.push` 帶 `?direction=` query 跳轉,避免不必要的路由切換/重打 API
-- [x] 前端:`app/pages/practice/[categoryId]/choice.vue`(新增,選擇題測驗頁骨架)— 目前只讀 URL query 的 `direction` 顯示佔位文字,實際測驗畫面(抓 `GET /api/words/category/{categoryId}`、4 選 1、答錯詳情視窗)還沒做
-- [ ] 前端:`choice.vue` 補上真正的測驗邏輯 — 抓單字、用 `utils/quiz.ts` 的 `buildQuizQuestions` 產生題目、渲染題目/選項、答對/答錯判斷、答錯詳情彈窗(規格見上方「進行中」章節)
+- [x] 前端:`app/pages/practice/[categoryId]/choice.vue`(選擇題測驗頁完整邏輯)— 抓單字、用 `utils/quiz.ts` 的 `buildQuizQuestions` 產生題目、渲染題目/選項、答對/答錯判斷、答錯詳情彈窗、答對特效(`SparkBurst`)
+- [x] 前端:`[categoryId]/index.vue` 的 `UModal` 加上題數滑桿(`USlider`,1 ~ 該分類單字數上限),`?count=` query 帶進 `choice.vue`

@@ -12,10 +12,11 @@ const route = useRoute()
 const currentIndex = ref(0)
 const questions = ref<QuizQuestion[]>([])
 const direction = (route.query.direction as QuizDirection) || "enToCn"
+const questionCount = Number(route.query.count) || undefined
 const categoryId = route.params.categoryId
 const { data: words, pending, error } = await useFetch<Word[]>(useApiUrl(`/api/words/category/${categoryId}`))
 
-if (words.value) questions.value = buildQuizQuestions(words.value, direction)
+if (words.value) questions.value = buildQuizQuestions(words.value, direction, questionCount)
 
 const currentQuestion = computed(() => questions.value[currentIndex.value])
 const progressPercent = computed(() =>
@@ -113,7 +114,7 @@ function nextQuestion() {
 
 function restartQuiz() {
   clearAutoAdvance()
-  if (words.value) questions.value = buildQuizQuestions(words.value, direction)
+  if (words.value) questions.value = buildQuizQuestions(words.value, direction, questionCount)
   currentIndex.value = 0
   score.value = 0
   selectedOption.value = null
