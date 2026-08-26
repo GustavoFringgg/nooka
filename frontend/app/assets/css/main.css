@@ -2,13 +2,16 @@
 @import "@nuxt/ui";
 
 @theme {
-  --font-display: "Instrument Serif", serif;
-  --font-body: "Inter", sans-serif;
+  --font-display: "Newreader", serif;
+  --font-body: "Work Sans", "Noto Sans TC", sans-serif;
 
-  /* Hero(影片背景頁面)色票 */
-  --color-hero-bg: hsl(201 100% 13%);
-  --color-hero-fg: hsl(0 0% 100%);
-  --color-hero-muted: hsl(240 4% 66%);
+  /* Paper Palette(米白/襯線,首頁 + nav 共用)色票 */
+  --color-paper-bg: #f7f2e9;
+  --color-paper-bg-alt: #f0e9d8;
+  --color-paper-fg: #2b2a25;
+  --color-paper-muted: #6b6558;
+  --color-paper-primary: #3c5a44;
+  --color-paper-accent: #c1653b;
 
   /* Night Palette(無影片背景的內頁)色票 */
   --color-night-bg: #081428;
@@ -57,6 +60,19 @@
 
 .animate-fade-rise-delay-2 {
   animation: fade-rise 0.8s ease-out 0.4s both;
+}
+
+@keyframes shelf-scroll {
+  from {
+    transform: translateY(-50%) translateX(0);
+  }
+  to {
+    transform: translateY(-50%) translateX(-50%);
+  }
+}
+
+.animate-shelf-scroll {
+  animation: shelf-scroll 16s linear infinite;
 }
 
 .countdown-badge {
