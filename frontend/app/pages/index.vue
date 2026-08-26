@@ -18,7 +18,7 @@ const seedWords = [
   { word: "hectic", meaning: "忙亂的" },
   { word: "hub", meaning: "中心樞紐" },
   { word: "hysterical", meaning: "歇斯底里的" },
-  { word: "handout", meaning: "講義;施捨" },
+  { word: "handout", meaning: "講義;施捨" }
 ]
 
 const wordIndex = ref(0)
@@ -39,7 +39,7 @@ const shelfBooks = [
   { label: "航空", from: "#8f4128", to: "#C1653B", fg: "#fbeee7", width: 52, height: 180 },
   { label: "工程", from: "#4c4640", to: "#6B6558", fg: "#f5f3ef", width: 64, height: 230 },
   { label: "資安", from: "#2c433a", to: "#3C5A44", fg: "#f2f5f0", width: 56, height: 196 },
-  { label: "商務", from: "#8f4128", to: "#C1653B", fg: "#fbeee7", width: 68, height: 222 },
+  { label: "商務", from: "#8f4128", to: "#C1653B", fg: "#fbeee7", width: 68, height: 222 }
 ]
 const shelfLoop = [...shelfBooks, ...shelfBooks]
 
@@ -54,7 +54,7 @@ const goPractice = () => navigateTo("/practice")
     <section class="relative overflow-hidden bg-paper-bg px-6 md:px-12 py-20 md:py-24">
       <div
         class="absolute w-[620px] h-[620px] -right-40 -top-56 rounded-full pointer-events-none"
-        style="background: radial-gradient(circle, rgba(193,101,59,.12), transparent 65%)"
+        style="background: radial-gradient(circle, rgba(193, 101, 59, 0.12), transparent 65%)"
       />
 
       <div class="relative max-w-7xl mx-auto grid md:grid-cols-[1.1fr_.9fr] gap-16 items-center">
@@ -66,12 +66,19 @@ const goPractice = () => navigateTo("/practice")
             間隔重複排程,記了就不容易忘
           </div>
 
-          <h1 class="m-0 font-display font-normal text-[clamp(40px,6vw,76px)] leading-[1.08] tracking-[-1px] text-paper-fg">
-            一天十分鐘,<br />把單字<span class="italic text-paper-accent">真的</span>記住
+          <h1
+            class="m-0 font-display font-normal text-[clamp(40px,6vw,76px)] leading-[1.08] tracking-[-1px] text-paper-fg"
+          >
+            一天十分鐘,
+            <br />
+            把單字
+            <span class="italic text-paper-accent">真的</span>
+            記住
           </h1>
 
           <p class="mt-6 max-w-[440px] text-paper-muted text-[17px] leading-[1.75]">
-            挑一本你需要的單字書 — 多益、航空、資安 — 用選擇題快速練過一輪。答錯的會被排到更近的時間再問你一次,答對的就往後放。
+            挑一本你需要的單字書 — 多益、航空、資安 —
+            用選擇題快速練過一輪。答錯的會被排到更近的時間再問你一次,答對的就往後放。
           </p>
 
           <div class="flex flex-wrap gap-3.5 mt-9">
@@ -105,8 +112,8 @@ const goPractice = () => navigateTo("/practice")
           >
             <div class="text-paper-muted text-[10.5px] tracking-[.12em] uppercase">多益(600)</div>
             <div>
-              <div class="font-display text-[34px] leading-[1.08] text-paper-fg">{{ seedWords[wordIndex].word }}</div>
-              <div class="text-paper-accent text-sm mt-2">{{ seedWords[wordIndex].meaning }}</div>
+              <div class="font-display text-[34px] leading-[1.08] text-paper-fg">{{ seedWords[wordIndex]!.word }}</div>
+              <div class="text-paper-accent text-sm mt-2">{{ seedWords[wordIndex]!.meaning }}</div>
             </div>
             <div class="flex gap-1.5">
               <span class="w-5.5 h-[3px] rounded-full bg-paper-primary" />
@@ -123,7 +130,9 @@ const goPractice = () => navigateTo("/practice")
       <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-0 items-center px-6 md:pl-12">
         <div class="md:pr-16">
           <div class="w-13 h-13 rounded-2xl bg-paper-primary mb-6" />
-          <h2 class="m-0 font-display font-normal text-[clamp(32px,4.5vw,52px)] text-paper-fg">先選書,不用先想從哪開始</h2>
+          <h2 class="m-0 font-display font-normal text-[clamp(32px,4.5vw,52px)] text-paper-fg">
+            先選書,不用先想從哪開始
+          </h2>
           <p class="mt-5 max-w-[440px] text-paper-muted text-base leading-[1.8]">
             單字依主題整理成一本一本的書。要考多益就開多益,工作上要看資安文件就開資安 — 你只要挑一本,剩下的順序我們排。
           </p>
@@ -140,7 +149,7 @@ const goPractice = () => navigateTo("/practice")
               :style="{
                 width: book.width + 'px',
                 height: book.height + 'px',
-                background: `linear-gradient(90deg, ${book.from}, ${book.to} 12%, ${book.to} 88%, ${book.from})`,
+                background: `linear-gradient(90deg, ${book.from}, ${book.to} 12%, ${book.to} 88%, ${book.from})`
               }"
             >
               <span
@@ -185,19 +194,26 @@ const goPractice = () => navigateTo("/practice")
             class="relative p-7 rounded-[22px] border-[1.5px] border-paper-primary bg-white/70 backdrop-blur-[4px] transition-transform duration-250 ease-out hover:-translate-y-1.5 cursor-pointer"
             @click="goPractice"
           >
-            <span class="absolute top-4.5 right-4.5 px-3 py-1 rounded-full bg-paper-primary text-paper-bg text-[11.5px]">
+            <span
+              class="absolute top-4.5 right-4.5 px-3 py-1 rounded-full bg-paper-primary text-paper-bg text-[11.5px]"
+            >
               推薦先玩這個
             </span>
             <div class="w-[220px] h-[120px] mx-auto mt-8.5 mb-6 flex flex-col gap-1.5 justify-center">
-              <div class="px-3.5 py-2 rounded-[10px] border border-paper-fg/15 bg-paper-bg text-paper-muted text-[13px]">
+              <div
+                class="px-3.5 py-2 rounded-[10px] border border-paper-fg/15 bg-paper-bg text-paper-muted text-[13px]"
+              >
                 忙亂的
               </div>
               <div
                 class="px-3.5 py-2 rounded-[10px] border border-paper-accent/55 bg-paper-accent/14 text-paper-fg text-[13px] flex justify-between"
               >
-                <span>吞吞吐吐地</span><span class="text-paper-accent">✓</span>
+                <span>吞吞吐吐地</span>
+                <span class="text-paper-accent">✓</span>
               </div>
-              <div class="px-3.5 py-2 rounded-[10px] border border-paper-fg/15 bg-paper-bg text-paper-muted text-[13px]">
+              <div
+                class="px-3.5 py-2 rounded-[10px] border border-paper-fg/15 bg-paper-bg text-paper-muted text-[13px]"
+              >
                 中心樞紐
               </div>
             </div>
@@ -208,7 +224,9 @@ const goPractice = () => navigateTo("/practice")
           <div
             class="relative p-7 rounded-[22px] border border-dashed border-paper-fg/20 bg-white/28 opacity-75 cursor-not-allowed transition-[transform,opacity] duration-250 ease-out hover:-translate-y-1 hover:opacity-95"
           >
-            <span class="absolute top-4.5 right-4.5 px-3 py-1 rounded-full bg-paper-fg/10 text-paper-muted text-[11.5px]">
+            <span
+              class="absolute top-4.5 right-4.5 px-3 py-1 rounded-full bg-paper-fg/10 text-paper-muted text-[11.5px]"
+            >
               即將推出
             </span>
             <div class="w-[220px] h-[120px] mx-auto mb-6 flex items-center justify-center gap-2">
@@ -241,11 +259,16 @@ const goPractice = () => navigateTo("/practice")
               <span class="text-[#9c4a3c] text-base">✕</span>
             </div>
             <div class="font-display text-[32px] text-paper-fg">
-              hectic <span class="font-body text-[15px] text-paper-muted">adj.</span>
+              hectic
+              <span class="font-body text-[15px] text-paper-muted">adj.</span>
             </div>
             <div class="text-paper-fg text-[15px] mt-1.5">忙亂的</div>
-            <div class="text-paper-muted text-[13.5px] mt-2.5 leading-[1.7]">Full of incessant or frantic activity.</div>
-            <div class="text-paper-muted text-[13px] mt-2 italic leading-[1.6]">"It's been a hectic week at the office."</div>
+            <div class="text-paper-muted text-[13.5px] mt-2.5 leading-[1.7]">
+              Full of incessant or frantic activity.
+            </div>
+            <div class="text-paper-muted text-[13px] mt-2 italic leading-[1.6]">
+              "It's been a hectic week at the office."
+            </div>
           </div>
 
           <div class="p-6 rounded-[18px] border border-paper-primary/45 bg-paper-primary/10">
@@ -254,11 +277,16 @@ const goPractice = () => navigateTo("/practice")
               <span class="text-paper-primary text-base">✓</span>
             </div>
             <div class="font-display text-[32px] text-paper-fg">
-              haltingly <span class="font-body text-[15px] text-paper-muted">adv.</span>
+              haltingly
+              <span class="font-body text-[15px] text-paper-muted">adv.</span>
             </div>
             <div class="text-paper-fg text-[15px] mt-1.5">吞吞吐吐地</div>
-            <div class="text-paper-muted text-[13.5px] mt-2.5 leading-[1.7]">In a hesitant or faltering way, pausing often.</div>
-            <div class="text-paper-muted text-[13px] mt-2 italic leading-[1.6]">"He explained the accident haltingly, still shaken."</div>
+            <div class="text-paper-muted text-[13.5px] mt-2.5 leading-[1.7]">
+              In a hesitant or faltering way, pausing often.
+            </div>
+            <div class="text-paper-muted text-[13px] mt-2 italic leading-[1.6]">
+              "He explained the accident haltingly, still shaken."
+            </div>
           </div>
         </div>
 
@@ -271,8 +299,12 @@ const goPractice = () => navigateTo("/practice")
           </p>
           <div class="flex flex-wrap gap-2.5 mt-7">
             <span class="px-4 py-2 rounded-full border border-paper-fg/20 text-paper-fg text-sm">選擇題</span>
-            <span class="px-4 py-2 rounded-full border border-paper-fg/12 text-paper-muted text-sm">消消樂 · 即將推出</span>
-            <span class="px-4 py-2 rounded-full border border-paper-fg/12 text-paper-muted text-sm">打字拼寫 · 即將推出</span>
+            <span class="px-4 py-2 rounded-full border border-paper-fg/12 text-paper-muted text-sm">
+              消消樂 · 即將推出
+            </span>
+            <span class="px-4 py-2 rounded-full border border-paper-fg/12 text-paper-muted text-sm">
+              打字拼寫 · 即將推出
+            </span>
           </div>
         </div>
       </div>
@@ -286,7 +318,8 @@ const goPractice = () => navigateTo("/practice")
           <h2 class="m-0 font-display font-normal text-[clamp(32px,4.5vw,52px)] text-paper-fg">為什麼會記得住?</h2>
           <p class="mt-5 max-w-[460px] text-paper-muted text-base leading-[1.8]">
             人腦本來就會忘記 — 這條線是沒有複習的話,記憶會怎麼往下掉。Nooka 用
-            <span class="text-paper-fg font-medium">SM-2 間隔重複演算法</span>,在你快要忘記之前叫你回來看一眼,每答對一次,下次的間隔就拉得更長;答錯,馬上排回明天。
+            <span class="text-paper-fg font-medium">SM-2 間隔重複演算法</span>
+            ,在你快要忘記之前叫你回來看一眼,每答對一次,下次的間隔就拉得更長;答錯,馬上排回明天。
           </p>
           <div class="flex flex-col gap-2.5 mt-7">
             <div class="flex items-baseline gap-2.5">
@@ -317,13 +350,21 @@ const goPractice = () => navigateTo("/practice")
               <circle cx="420" cy="15" r="6" fill="#3C5A44" />
             </g>
             <text x="70" y="252" text-anchor="middle" fill="#6B6558" font-size="13" font-family="Work Sans">明天</text>
-            <text x="160" y="252" text-anchor="middle" fill="#6B6558" font-size="13" font-family="Work Sans">4 天後</text>
-            <text x="270" y="252" text-anchor="middle" fill="#6B6558" font-size="13" font-family="Work Sans">2 週後</text>
-            <text x="420" y="252" text-anchor="middle" fill="#6B6558" font-size="13" font-family="Work Sans">1 個月後</text>
+            <text x="160" y="252" text-anchor="middle" fill="#6B6558" font-size="13" font-family="Work Sans">
+              4 天後
+            </text>
+            <text x="270" y="252" text-anchor="middle" fill="#6B6558" font-size="13" font-family="Work Sans">
+              2 週後
+            </text>
+            <text x="420" y="252" text-anchor="middle" fill="#6B6558" font-size="13" font-family="Work Sans">
+              1 個月後
+            </text>
           </svg>
           <div class="mt-4.5 flex flex-wrap items-center gap-2.5 text-paper-muted text-[13px]">
-            <span class="w-4 h-0.5 bg-paper-accent inline-block" />沒複習會忘記的速度
-            <span class="w-2 h-2 rounded-full bg-paper-primary inline-block ml-4" />每次答對後,記憶被重新拉高
+            <span class="w-4 h-0.5 bg-paper-accent inline-block" />
+            沒複習會忘記的速度
+            <span class="w-2 h-2 rounded-full bg-paper-primary inline-block ml-4" />
+            每次答對後,記憶被重新拉高
           </div>
         </div>
       </div>
@@ -331,7 +372,9 @@ const goPractice = () => navigateTo("/practice")
 
     <!-- 6. CTA + footer -->
     <section class="bg-paper-bg-alt py-20 px-6 md:px-12 pb-14 text-center">
-      <h2 class="mx-auto max-w-[600px] m-0 font-display font-normal text-[clamp(28px,4vw,42px)] text-paper-fg leading-[1.25]">
+      <h2
+        class="mx-auto max-w-[600px] m-0 font-display font-normal text-[clamp(28px,4vw,42px)] text-paper-fg leading-[1.25]"
+      >
         先練六個字,看看有沒有感覺
       </h2>
       <button
@@ -342,7 +385,10 @@ const goPractice = () => navigateTo("/practice")
       </button>
 
       <div class="max-w-7xl mx-auto mt-11 pt-6 border-t border-paper-fg/15 flex justify-between items-center">
-        <span class="font-display italic text-xl text-paper-fg">Nooka<sup class="text-[10px] not-italic">&reg;</sup></span>
+        <span class="font-display italic text-xl text-paper-fg">
+          Nooka
+          <sup class="text-[10px] not-italic">&reg;</sup>
+        </span>
         <span class="text-paper-muted text-[13px]">© 2026 Nooka · 用對的節奏背單字</span>
       </div>
     </section>

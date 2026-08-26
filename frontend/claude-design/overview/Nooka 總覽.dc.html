@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/organic-639efa55-6982-430f-a759-a18e31d86e53/styles.css">
+<script src="_ds/organic-639efa55-6982-430f-a759-a18e31d86e53/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newreader:ital,wght@0,400;0,500;1,400;1,500&family=Work+Sans:wght@400;500;600&display=swap">
+<style>
+  body { margin: 0; background: #F7F2E9; }
+  a { color: var(--color-accent-700); text-decoration: none; }
+  a:hover { color: var(--color-accent); }
+  .bento { display: grid !important; gap: var(--space-4);
+    grid-template-columns: 1.1fr 1fr 1fr;
+    grid-template-areas:
+      "words   words   books"
+      "wordcard quote  quote"
+      "status  weak    weak"; }
+  .bento .a-words { grid-area: words; }
+  .bento .a-books { grid-area: books; }
+  .bento .a-wordcard { grid-area: wordcard; }
+  .bento .a-quote { grid-area: quote; }
+  .bento .a-status { grid-area: status; }
+  .bento .a-weak { grid-area: weak; }
+  @media (max-width: 760px) {
+    .bento { grid-template-columns: 1fr !important;
+      grid-template-areas: "words" "books" "wordcard" "quote" "status" "weak" !important; }
+    .nav span { display: none; }
+  }
+</style>
+</helmet>
+
+<nav style="display:flex; align-items:center; justify-content:space-between; padding:22px 48px; border-bottom:1px solid rgba(43,42,37,.15);">
+  <div style="font-family:'Newreader',serif; font-style:italic; font-size:30px; color:#2B2A25; letter-spacing:-0.5px;">Nooka<sup style="font-size:11px; font-style:normal;">&reg;</sup></div>
+  <div style="display:flex; gap:32px; font-size:14px; font-family:'Work Sans',sans-serif;">
+    <span style="color:#6B6558;">首頁</span>
+    <span style="color:#2B2A25; border-bottom:2px solid #3C5A44; padding-bottom:2px;">總覽</span>
+    <span style="color:#6B6558;">練習</span>
+    <span style="color:#6B6558;">學習紀錄</span>
+    <span style="color:#6B6558;">登入</span>
+  </div>
+  <div style="padding:11px 24px; border-radius:999px; background:#3C5A44; color:#F7F2E9; font-size:14px; font-weight:500; font-family:'Work Sans',sans-serif; cursor:pointer; transition:transform .25s ease, background .25s ease;" style-hover="transform:scale(1.03); background:#C1653B;" onClick="{{ toggleLogin }}">{{ loginBtnLabel }}</div>
+</nav>
+
+<div style="max-width:1200px; margin:0 auto; padding:0 clamp(16px,5vw,72px) 96px; font-family:var(--font-body);">
+
+  <div style="margin:32px 0 40px;">
+    <span class="kicker" style="display:block; font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:600; color:var(--color-accent-700); margin-bottom:8px;">學習儀表板</span>
+    <h1 style="font-family:var(--font-heading); font-size:clamp(32px,4vw,48px); margin:0; margin-left:-0.028em;">今天也背一點單字吧</h1>
+  </div>
+
+  <div class="bento" style="width:100%;">
+
+    <div class="a-words card elev-md" style="padding:var(--space-6); position:relative; overflow:hidden; background:var(--color-accent-100);">
+      <div style="position:absolute; right:-40px; top:-40px; width:140px; height:140px; border-radius:50%; background:var(--color-accent-200); pointer-events:none;"></div>
+      <div style="position:relative;">
+        <div class="card-kicker">單字庫總數</div>
+        <div style="font-family:var(--font-heading); font-size:64px; color:var(--color-accent-700); line-height:1; margin-top:8px;">{{ totalWordsDisplay }}</div>
+        <div class="card-body" style="margin-top:8px;">收錄在所有主題書架裡的單字</div>
+      </div>
+    </div>
+
+    <div class="a-books card elev-sm" style="padding:var(--space-6); display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; background:var(--color-accent-2-100);">
+      <div style="width:64px; height:64px; border-radius:50%; background:var(--color-accent-2-500); color:var(--color-bg); display:flex; align-items:center; justify-content:center; font-family:var(--font-heading); font-size:28px; margin-bottom:12px;">{{ totalBooks }}</div>
+      <div class="card-kicker">主題書架</div>
+      <div class="card-body" style="margin-top:4px;">多益、航空、工程、資安…</div>
+    </div>
+
+    <div class="a-wordcard card elev-md" style="padding:var(--space-6); background:var(--color-neutral-900); color:var(--color-bg);">
+      <div style="font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--color-accent-300);">每日一字</div>
+      <div style="font-family:var(--font-heading); font-size:38px; margin-top:10px;">{{ dailyWord }}</div>
+      <div style="color:var(--color-accent-200); font-size:15px; margin-top:6px;">{{ dailyMeaning }} <span style="opacity:.6; font-size:13px;">· {{ dailyPos }}</span></div>
+    </div>
+
+    <div class="a-quote card elev-sm" style="padding:var(--space-6); display:flex; flex-direction:column; justify-content:center;">
+      <div class="card-kicker">每日一句</div>
+      <p style="font-family:var(--font-heading); font-size:22px; line-height:1.4; margin:10px 0 0;">"{{ dailyQuoteEn }}"</p>
+      <p style="color:var(--color-neutral-700); font-size:14px; margin-top:10px;">{{ dailyQuoteZh }}</p>
+    </div>
+
+    <sc-if value="{{ !loggedIn }}">
+      <div class="a-status card elev-sm" style="padding:var(--space-6); display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
+        <h3 style="font-family:var(--font-heading); font-size:22px; margin:0;">看看你的學習狀況</h3>
+        <p class="card-body" style="margin:8px 0 16px;">登入後可看已學單字量與最容易忘記的字。</p>
+        <button class="btn btn-primary" onClick="{{ toggleLogin }}">登入 / 註冊</button>
+      </div>
+      <div class="a-weak card elev-sm" style="padding:var(--space-6); opacity:.5; filter:blur(1.5px); pointer-events:none;">
+        <div class="card-kicker">最容易忘記的 5 個字</div>
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:12px;">
+          <sc-for list="{{ weakWords }}" as="w" hint-placeholder-count="5">
+            <div style="display:flex; align-items:center; gap:14px;">
+              <span style="font-family:var(--font-heading); font-size:18px; width:110px;">{{ w.word }}</span>
+              <span style="color:var(--color-neutral-700); font-size:14px; width:90px;">{{ w.meaning }}</span>
+              <div style="flex:1; height:6px; border-radius:999px; background:var(--color-neutral-200);"><div style="height:100%; border-radius:999px; background:var(--color-accent); width:{{ w.pct }}%;"></div></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ loggedIn }}">
+      <div class="a-status card elev-sm" style="padding:var(--space-6); display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; background:var(--color-accent-2-100);">
+        <div class="card-kicker">你已經學了</div>
+        <div style="font-family:var(--font-heading); font-size:52px; color:var(--color-accent-2-700); line-height:1; margin-top:6px;">{{ userLearned }}</div>
+        <div class="card-body" style="margin-top:6px;">個單字，持續累積中</div>
+      </div>
+      <div class="a-weak card elev-sm" style="padding:var(--space-6);">
+        <div class="card-kicker">最容易忘記的 5 個字</div>
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:12px;">
+          <sc-for list="{{ weakWords }}" as="w" hint-placeholder-count="5">
+            <div style="display:flex; align-items:center; gap:14px;">
+              <span style="font-family:var(--font-heading); font-size:18px; width:110px;">{{ w.word }}</span>
+              <span style="color:var(--color-neutral-700); font-size:14px; width:90px;">{{ w.meaning }}</span>
+              <div style="flex:1; height:6px; border-radius:999px; background:var(--color-neutral-200);"><div style="height:100%; border-radius:999px; background:var(--color-accent); width:{{ w.pct }}%;"></div></div>
+              <span class="tag tag-outline" style="font-size:12px;">錯 {{ w.misses }} 次</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = { loggedIn: false, countUp: 0 };
+  totalWordsTarget = 1240;
+  componentDidMount() {
+    const dur = 1400, start = performance.now();
+    const step = (t) => {
+      const p = Math.min(1, (t - start) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      this.setState({ countUp: Math.round(eased * this.totalWordsTarget) });
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  weakWords = [
+    { word: "haltingly", meaning: "吞吞吐吐地", misses: 6, pct: 90 },
+    { word: "vicarious", meaning: "替代的感受", misses: 5, pct: 74 },
+    { word: "hectic", meaning: "忙亂的", misses: 4, pct: 60 },
+    { word: "hub", meaning: "中心樞紐", misses: 3, pct: 44 },
+    { word: "handout", meaning: "講義；施捨", misses: 2, pct: 28 }
+  ];
+  renderVals() {
+    const weak = this.weakWords.map(w => ({ ...w, barStyle: `width:${w.pct}%` }));
+    return {
+      loggedIn: this.state.loggedIn,
+      loginBtnLabel: this.state.loggedIn ? "登出（預覽）" : "登入（預覽）",
+      toggleLogin: () => this.setState(s => ({ loggedIn: !s.loggedIn })),
+      totalWords: "1,240",
+      totalWordsDisplay: this.state.countUp.toLocaleString(),
+      totalBooks: "6",
+      dailyWord: "haltingly",
+      dailyMeaning: "吞吞吐吐地",
+      dailyPos: "adv.",
+      dailyQuoteEn: "He explained the accident haltingly, still shaken.",
+      dailyQuoteZh: "他吞吞吐吐地說明了這場事故，還處於驚嚇中。",
+      userLearned: "182",
+      weakWords: weak
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,13 +1,19 @@
 <script setup lang="ts">
 const route = useRoute()
+const loggedIn = useDemoLoggedIn()
 
 const links = [
   { label: "首頁", to: "/" },
-  { label: "里程碑", to: "#" },
+  { label: "總覽", to: "/overview" },
   { label: "練習", to: "/practice" },
   { label: "學習紀錄", to: "#" },
   { label: "登入", to: "#" },
 ]
+
+const ctaLabel = computed(() => (loggedIn.value ? "登出" : "登入 / 註冊"))
+const toggleLoggedIn = () => {
+  loggedIn.value = !loggedIn.value
+}
 </script>
 
 <template>
@@ -32,8 +38,9 @@ const links = [
 
     <button
       class="rounded-full bg-paper-primary text-paper-bg font-body px-6 py-2.5 text-sm font-medium border-0 cursor-pointer transition-[transform,background-color] duration-250 ease-out hover:scale-[1.03] hover:bg-paper-accent"
+      @click="toggleLoggedIn"
     >
-      免費開始
+      {{ ctaLabel }}
     </button>
   </nav>
 </template>
