@@ -36,7 +36,7 @@ const particles: SparkParticle[] = Array.from({ length: SPARK_COUNT }, (_, i) =>
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--color-night-accent);
+  background: var(--color-paper-accent);
   opacity: 0;
   animation: spark-fly 1s ease-out both;
   animation-delay: var(--delay, 0ms);
@@ -45,7 +45,7 @@ const particles: SparkParticle[] = Array.from({ length: SPARK_COUNT }, (_, i) =>
 .spark-warm {
   width: 4px;
   height: 4px;
-  background: var(--color-night-fg);
+  background: var(--color-paper-primary);
 }
 
 @keyframes spark-fly {

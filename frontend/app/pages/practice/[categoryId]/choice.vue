@@ -8,15 +8,95 @@ interface AnswerLogEntry {
   correct: boolean
 }
 
+// TODO: 接上真的後端(mock 書本 categoryId 有真實資料)後,整段 mockWords + effectiveWords fallback 都要刪掉,
+// 改回直接用 words.value(目前是因為前端還沒接後端,先讓沒 API 也能測選擇題畫面)
+const mockWords: Word[] = [
+  {
+    id: -1,
+    categoryId: -1,
+    term: "vicarious",
+    definitionCN: "替代的感受",
+    definitionEN: "experienced through someone else's actions or feelings",
+    partOfSpeech: "形容詞",
+    examples: ["She felt a vicarious thrill watching her daughter perform."]
+  },
+  {
+    id: -2,
+    categoryId: -1,
+    term: "haltingly",
+    definitionCN: "吞吞吐吐地",
+    definitionEN: "in a hesitant or uncertain manner",
+    partOfSpeech: "副詞",
+    examples: ["He spoke haltingly, unsure of the right words."]
+  },
+  {
+    id: -3,
+    categoryId: -1,
+    term: "hectic",
+    definitionCN: "忙亂的",
+    definitionEN: "full of frantic activity",
+    partOfSpeech: "形容詞",
+    examples: ["It was a hectic day at the office."]
+  },
+  {
+    id: -4,
+    categoryId: -1,
+    term: "hub",
+    definitionCN: "中心樞紐",
+    definitionEN: "the effective center of an activity or region",
+    partOfSpeech: "名詞",
+    examples: ["The airport is a major hub for international flights."]
+  },
+  {
+    id: -5,
+    categoryId: -1,
+    term: "hysterical",
+    definitionCN: "歇斯底里的",
+    definitionEN: "affected by wildly uncontrolled emotion",
+    partOfSpeech: "形容詞",
+    examples: ["The crowd became hysterical when the band appeared."]
+  },
+  {
+    id: -6,
+    categoryId: -1,
+    term: "handout",
+    definitionCN: "講義;施捨",
+    definitionEN: "a document given free to people at a meeting or class",
+    partOfSpeech: "名詞",
+    examples: ["The teacher gave each student a handout."]
+  },
+  {
+    id: -7,
+    categoryId: -1,
+    term: "ambiguous",
+    definitionCN: "模稜兩可的",
+    definitionEN: "open to more than one interpretation",
+    partOfSpeech: "形容詞",
+    examples: ["The instructions were ambiguous and confused everyone."]
+  },
+  {
+    id: -8,
+    categoryId: -1,
+    term: "candid",
+    definitionCN: "坦率的",
+    definitionEN: "truthful and straightforward",
+    partOfSpeech: "形容詞",
+    examples: ["She gave a candid answer to the reporter's question."]
+  }
+]
+
 const route = useRoute()
 const currentIndex = ref(0)
 const questions = ref<QuizQuestion[]>([])
 const direction = (route.query.direction as QuizDirection) || "enToCn"
 const questionCount = Number(route.query.count) || undefined
 const categoryId = route.params.categoryId
-const { data: words, pending, error } = await useFetch<Word[]>(useApiUrl(`/api/words/category/${categoryId}`))
+// TODO: mock fallback 刪除後,要把 error 加回來,失敗時顯示「載入失敗」而不是靜默 fallback
+const { data: words, pending } = await useFetch<Word[]>(useApiUrl(`/api/words/category/${categoryId}`))
 
-if (words.value) questions.value = buildQuizQuestions(words.value, direction, questionCount)
+const effectiveWords = computed(() => (words.value && words.value.length > 0 ? words.value : mockWords))
+
+if (effectiveWords.value.length) questions.value = buildQuizQuestions(effectiveWords.value, direction, questionCount)
 
 const currentQuestion = computed(() => questions.value[currentIndex.value])
 const progressPercent = computed(() =>
@@ -88,19 +168,21 @@ function selectOption(option: QuizOption) {
 }
 
 function optionClasses(option: QuizOption) {
-  if (!isAnswered.value) return "liquid-glass-hover cursor-pointer"
+  if (!isAnswered.value) {
+    return "border-paper-fg/15 bg-paper-bg hover:border-paper-primary/40 hover:-translate-y-0.5 cursor-pointer"
+  }
   if (isCorrectOption(option)) {
-    const base = "border-emerald-400/50 bg-emerald-400/8"
+    const base = "border-emerald-500/50 bg-emerald-500/8"
     return showSparkBurst.value ? `${base} overflow-visible` : base
   }
-  if (option === selectedOption.value) return "border-rose-400/50 bg-rose-400/8"
-  return "opacity-40"
+  if (option === selectedOption.value) return "border-rose-500/50 bg-rose-500/8"
+  return "border-paper-fg/10 bg-paper-bg opacity-40"
 }
 
 function letterClasses(option: QuizOption) {
-  if (isAnswered.value && isCorrectOption(option)) return "border-emerald-400/60 text-emerald-300"
-  if (isAnswered.value && option === selectedOption.value) return "border-rose-400/60 text-rose-300"
-  return "border-white/20 text-night-muted"
+  if (isAnswered.value && isCorrectOption(option)) return "border-emerald-500/60 text-emerald-600"
+  if (isAnswered.value && option === selectedOption.value) return "border-rose-500/60 text-rose-600"
+  return "border-paper-fg/20 text-paper-muted"
 }
 
 function nextQuestion() {
@@ -114,7 +196,7 @@ function nextQuestion() {
 
 function restartQuiz() {
   clearAutoAdvance()
-  if (words.value) questions.value = buildQuizQuestions(words.value, direction, questionCount)
+  questions.value = buildQuizQuestions(effectiveWords.value, direction, questionCount)
   currentIndex.value = 0
   score.value = 0
   selectedOption.value = null
@@ -126,22 +208,21 @@ function restartQuiz() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-night-bg font-body text-night-fg pb-20">
+  <div class="min-h-screen bg-paper-bg font-body text-paper-fg pb-20" style="color-scheme: light">
     <AppNav />
 
-    <p v-if="pending" class="text-center text-night-muted py-24">載入中...</p>
-    <p v-else-if="error" class="text-center text-night-muted py-24">載入失敗,請稍後再試</p>
+    <p v-if="pending" class="text-center text-paper-muted py-24">載入中...</p>
 
     <template v-else>
       <div v-if="currentQuestion" class="max-w-2xl mx-auto px-6 pt-8">
         <div class="mb-10">
-          <div class="flex items-center justify-between mb-2 text-sm text-night-muted">
+          <div class="flex items-center justify-between mb-2 text-sm text-paper-muted">
             <span>第 {{ currentIndex + 1 }} / {{ questions.length }} 題</span>
-            <span class="text-night-accent">{{ score }} 分</span>
+            <span class="text-paper-accent">{{ score }} 分</span>
           </div>
-          <div class="h-1.5 rounded-full bg-white/8 overflow-hidden">
+          <div class="h-1.5 rounded-full bg-paper-fg/10 overflow-hidden">
             <div
-              class="h-full rounded-full bg-night-accent transition-[width] duration-500 ease-out"
+              class="h-full rounded-full bg-paper-primary transition-[width] duration-500 ease-out"
               :style="{ width: `${progressPercent}%` }"
             />
           </div>
@@ -149,9 +230,9 @@ function restartQuiz() {
 
         <div
           :key="currentIndex"
-          class="liquid-glass rounded-3xl px-8 py-16 text-center mb-8 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.6)] animate-fade-rise"
+          class="rounded-3xl px-8 py-16 text-center mb-8 bg-paper-bg border border-paper-fg/10 shadow-[0_24px_60px_-30px_rgba(43,42,37,0.35)] animate-fade-rise"
         >
-          <h1 class="font-display font-normal text-4xl sm:text-5xl leading-snug m-0">
+          <h1 class="font-display font-normal text-4xl sm:text-5xl leading-snug m-0 text-paper-fg">
             {{ currentQuestion.prompt }}
           </h1>
         </div>
@@ -160,7 +241,7 @@ function restartQuiz() {
           <button
             v-for="(option, i) in currentQuestion.options"
             :key="option.word.id"
-            class="liquid-glass relative rounded-2xl px-5 py-5 pl-14 text-left transition-all duration-200"
+            class="relative rounded-2xl border px-5 py-5 pl-14 text-left transition-all duration-200"
             :class="optionClasses(option)"
             :disabled="isAnswered"
             @click="selectOption(option)"
@@ -206,7 +287,7 @@ function restartQuiz() {
         <div v-if="isAnswered" class="flex items-center justify-center gap-6">
           <button
             v-if="lastAnswerLog && !lastAnswerLog.correct"
-            class="text-sm text-night-muted underline decoration-white/20 underline-offset-4 transition-colors hover:text-night-fg cursor-pointer"
+            class="text-sm text-paper-muted underline decoration-paper-fg/20 underline-offset-4 transition-colors hover:text-paper-fg cursor-pointer"
             @click="isReviewOpen = true"
           >
             再看一次詳解
@@ -214,7 +295,7 @@ function restartQuiz() {
           <UButton
             :label="currentIndex + 1 < questions.length ? '下一題' : '查看結果'"
             size="xl"
-            class="px-12"
+            class="px-12 bg-paper-primary text-paper-bg hover:bg-paper-accent"
             @click="nextQuestion"
           >
             <template v-if="lastAnswerLog?.correct" #trailing>
@@ -225,38 +306,55 @@ function restartQuiz() {
       </div>
 
       <div v-else class="max-w-2xl mx-auto px-6 pt-16 text-center">
-        <h1 class="font-display font-normal text-4xl mb-2">測驗結束</h1>
-        <p class="text-night-muted mb-10">
+        <h1 class="font-display font-normal text-4xl mb-2 text-paper-fg">測驗結束</h1>
+        <p class="text-paper-muted mb-10">
           你答對了
-          <span class="text-night-accent">{{ score }}</span>
+          <span class="text-paper-accent">{{ score }}</span>
           / {{ questions.length }} 題
         </p>
 
         <div v-if="missed.length" class="text-left mb-12">
-          <h2 class="font-display font-normal text-xl mb-4">這幾個單字再複習一下</h2>
+          <h2 class="font-display font-normal text-xl mb-4 text-paper-fg">這幾個單字再複習一下</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <article
               v-for="entry in missed"
               :key="entry.question.word.id"
-              class="liquid-glass rounded-2xl p-5 bg-night-panel"
+              class="rounded-2xl p-5 bg-paper-bg-alt border border-paper-fg/10"
             >
               <div class="flex items-baseline justify-between mb-1.5">
-                <h3 class="font-display font-normal text-lg m-0">{{ entry.question.word.term }}</h3>
-                <span class="text-xs text-night-accent shrink-0">{{ entry.question.word.partOfSpeech }}</span>
+                <h3 class="font-display font-normal text-lg m-0 text-paper-fg">{{ entry.question.word.term }}</h3>
+                <span class="text-xs text-paper-accent shrink-0">{{ entry.question.word.partOfSpeech }}</span>
               </div>
-              <p class="text-sm text-night-muted m-0">{{ entry.question.word.definitionCN }}</p>
+              <p class="text-sm text-paper-muted m-0">{{ entry.question.word.definitionCN }}</p>
             </article>
           </div>
         </div>
 
         <div class="flex justify-center gap-4">
-          <UButton label="再練習一次" @click="restartQuiz" />
-          <UButton label="返回選擇分類" color="neutral" variant="outline" @click="navigateTo('/practice')" />
+          <UButton label="再練習一次" class="bg-paper-primary text-paper-bg hover:bg-paper-accent" @click="restartQuiz" />
+          <UButton
+            label="返回選擇分類"
+            color="neutral"
+            variant="outline"
+            class="bg-transparent border-paper-fg/25 text-paper-fg hover:bg-paper-fg/5"
+            @click="navigateTo('/practice')"
+          />
         </div>
       </div>
     </template>
 
-    <UModal v-model:open="isReviewOpen" title="答錯了,來看看正確答案">
+    <UModal
+      v-model:open="isReviewOpen"
+      title="答錯了,來看看正確答案"
+      :ui="{
+        content: 'bg-paper-bg text-paper-fg ring-paper-fg/10 divide-paper-fg/10',
+        header: 'border-paper-fg/10',
+        footer: 'border-paper-fg/10',
+        title: 'text-paper-fg font-display text-2xl font-normal',
+        close: 'text-paper-muted hover:bg-paper-fg/10 hover:text-paper-fg',
+        overlay: 'bg-paper-fg/40'
+      }"
+    >
       <template #body>
         <div class="space-y-4">
           <div
@@ -264,12 +362,18 @@ function restartQuiz() {
             :key="card.key"
             class="rounded-2xl border p-5"
             :class="
-              card.tone === 'correct' ? 'bg-night-accent/6 border-night-accent/25' : 'bg-rose-500/6 border-rose-500/20'
+              card.tone === 'correct'
+                ? 'bg-paper-primary/6 border-paper-primary/25'
+                : 'bg-rose-500/6 border-rose-500/20'
             "
           >
             <div
               class="inline-flex items-center gap-1.5 mb-3 rounded-full px-2.5 py-1 text-xs"
-              :class="card.tone === 'correct' ? 'bg-night-accent/15 text-night-accent' : 'bg-rose-500/15 text-rose-300'"
+              :class="
+                card.tone === 'correct'
+                  ? 'bg-paper-primary/15 text-paper-primary'
+                  : 'bg-rose-500/15 text-rose-600'
+              "
             >
               <svg
                 v-if="card.tone === 'correct'"
@@ -298,14 +402,14 @@ function restartQuiz() {
               {{ card.label }}
             </div>
             <div class="flex items-baseline justify-between gap-3 mb-1.5">
-              <h3 class="font-display font-normal text-xl m-0">{{ card.word.term }}</h3>
-              <span class="text-xs text-night-muted shrink-0">{{ card.word.partOfSpeech }}</span>
+              <h3 class="font-display font-normal text-xl m-0 text-paper-fg">{{ card.word.term }}</h3>
+              <span class="text-xs text-paper-muted shrink-0">{{ card.word.partOfSpeech }}</span>
             </div>
-            <p class="text-[15px] mb-1">{{ card.word.definitionCN }}</p>
-            <p class="text-[13px] text-night-muted mb-2">{{ card.word.definitionEN }}</p>
+            <p class="text-[15px] mb-1 text-paper-fg">{{ card.word.definitionCN }}</p>
+            <p class="text-[13px] text-paper-muted mb-2">{{ card.word.definitionEN }}</p>
             <ul
               v-if="card.word.examples?.length"
-              class="m-0 pl-[18px] text-xs text-night-muted leading-relaxed space-y-0.5"
+              class="m-0 pl-[18px] text-xs text-paper-muted leading-relaxed space-y-0.5"
             >
               <li v-for="(example, i) in card.word.examples" :key="i">{{ example }}</li>
             </ul>
@@ -314,7 +418,12 @@ function restartQuiz() {
       </template>
 
       <template #footer>
-        <UButton label="繼續下一題" block @click="nextQuestion" />
+        <UButton
+          label="繼續下一題"
+          block
+          class="bg-paper-primary text-paper-bg hover:bg-paper-accent"
+          @click="nextQuestion"
+        />
       </template>
     </UModal>
   </div>

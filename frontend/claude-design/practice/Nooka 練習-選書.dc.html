@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newreader:ital,wght@0,400;0,500;1,400;1,500&family=Work+Sans:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+  body { margin: 0; background: #F7F2E9; }
+  a { color: #3C5A44; text-decoration: none; }
+  a:hover { color: #C1653B; }
+  @keyframes previewPulse { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  @keyframes previewArrow { 0%,100% { opacity: .35; transform: translateX(0); } 50% { opacity: 1; transform: translateX(6px); } }
+</style>
+</helmet>
+
+<div style="font-family:'Work Sans','Noto Sans TC',sans-serif; min-height:100vh;">
+
+  <nav style="display:flex; align-items:center; justify-content:space-between; padding:14px 48px; border-bottom:1px solid rgba(43,42,37,.15);">
+    <div style="font-family:'Newreader',serif; font-style:italic; font-size:30px; color:#2B2A25;">Nooka<sup style="font-size:11px; font-style:normal;">&reg;</sup></div>
+    <div style="display:flex; gap:32px; font-size:14px;">
+      <span style="color:#6B6558;">首頁</span>
+      <span style="color:#6B6558;">總覽</span>
+      <span style="color:#2B2A25; border-bottom:2px solid #3C5A44; padding-bottom:2px;">練習</span>
+      <span style="color:#6B6558;">學習紀錄</span>
+      <span style="color:#6B6558;">登入</span>
+    </div>
+    <div style="padding:11px 24px; border-radius:999px; background:#3C5A44; color:#F7F2E9; font-size:14px; font-weight:500;">免費開始</div>
+  </nav>
+
+  <div style="background:#F0E9D8; padding:0 0 48px;"><div style="max-width:1440px; margin:0 auto; padding:0 48px;">
+    <div style="max-width:1040px; margin:0 auto;">
+    <h1 style="margin:0; font-family:'Newreader',serif; font-weight:400; font-size:44px; color:#2B2A25;">先選一本書</h1>
+    <p style="margin:14px 0 28px; color:#6B6558; font-size:16px; max-width:520px; line-height:1.7;">挑你現在最需要的主題，選好之後再決定要用哪種方式練。</p>
+
+    <hr style="border:none; border-top:1px solid rgba(43,42,37,.15); margin:0 0 28px;">
+
+    <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:36px;">
+      <div style="flex:1; min-width:160px; padding:20px 26px; border-radius:999px; background:rgba(43,42,37,.08); color:#9c9384; font-size:16px; font-weight:600; text-align:center; cursor:not-allowed;">單字卡 <span style="font-size:12px;">· 即將推出</span></div>
+      <div style="flex:1; min-width:160px; padding:20px 26px; border-radius:999px; background:{{ modeBg }}; color:{{ modeColor }}; font-size:16px; font-weight:600; text-align:center; cursor:{{ nextCursor }}; transition:transform .25s ease;" style-hover="{{ nextHoverStyle }}" onClick="{{ goMcq }}">選擇題</div>
+      <div style="flex:1; min-width:160px; padding:20px 26px; border-radius:999px; background:rgba(43,42,37,.08); color:#9c9384; font-size:16px; font-weight:600; text-align:center; cursor:not-allowed;">打字拼寫 <span style="font-size:12px;">· 即將推出</span></div>
+    </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1.15fr .85fr; gap:48px; align-items:start;">
+    <div>
+    <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:28px 24px; height:598px; box-sizing:border-box; overflow-y:auto; padding:28px 4px 4px 0;">
+      <sc-for list="{{ books }}" as="b" hint-placeholder-count="6">
+        <div style="cursor:pointer; perspective:800px;" onClick="{{ b.select }}">
+          <div style="display:flex; border-radius:3px 10px 10px 3px; box-shadow:{{ b.shadow }}; transition:transform .25s cubic-bezier(.2,.7,.3,1), box-shadow .25s ease; transform:{{ b.transform }};" style-hover="transform:translateY(-10px) rotate(-1.5deg); box-shadow:0 26px 34px -18px rgba(43,42,37,.4);">
+            <div style="width:14px; border-radius:3px 0 0 3px; background:{{ b.spineColor }};"></div>
+            <div style="flex:1; position:relative; background:{{ b.color }}; padding:22px 20px; min-height:190px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:inset -10px 0 14px -12px rgba(0,0,0,.35);">
+              <div style="position:absolute; right:0; top:2px; bottom:2px; width:6px; background:repeating-linear-gradient(180deg, rgba(255,255,255,.5) 0px, rgba(255,255,255,.5) 1px, transparent 1px, transparent 3px); border-radius:0 6px 6px 0;"></div>
+              <sc-if value="{{ b.selected }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute; top:-2px; right:18px; width:26px; height:38px; background:#3C5A44; clip-path:polygon(0 0,100% 0,100% 100%,50% 78%,0 100%); box-shadow:0 4px 8px rgba(43,42,37,.3); z-index:1;"></span>
+              </sc-if>
+              <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <span style="font-family:'Noto Sans TC',sans-serif; font-size:11px; letter-spacing:.1em; color:rgba(255,255,255,.75); text-transform:uppercase;">單字書</span>
+              </div>
+              <div>
+                <div style="font-family:'Newreader',serif; font-size:26px; color:#fff; line-height:1.2; text-shadow:0 1px 2px rgba(0,0,0,.15);">{{ b.name }}</div>
+                <div style="color:rgba(255,255,255,.85); font-size:13px; margin-top:6px;">{{ b.count }} 個單字 · 已練 {{ b.done }}</div>
+                <div style="height:4px; border-radius:999px; background:rgba(255,255,255,.28); margin-top:10px;">
+                  <div style="height:100%; border-radius:999px; background:#fff; width:{{ b.pct }}%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    </div>
+
+    <div style="position:sticky; top:24px; background:#F7F2E9; border-radius:20px; padding:28px; box-shadow:0 20px 40px -26px rgba(43,42,37,.3); height:598px; box-sizing:border-box; display:flex; flex-direction:column;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:6px;">
+        <div style="width:14px; height:14px; border-radius:4px; background:{{ selectedColor }};"></div>
+        <span style="font-family:'Newreader',serif; font-size:26px; color:#2B2A25;">{{ selectedName }}</span>
+      </div>
+      <p style="margin:0 0 20px; color:#6B6558; font-size:13.5px;">{{ selectedCount }} 個單字 · 已練 {{ selectedDone }}</p>
+      <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px; flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; width:100%; box-sizing:border-box; padding-right:6px; align-content:start;">
+        <sc-for list="{{ previewWords }}" as="w" hint-placeholder-count="20">
+          <div style="padding:12px 4px; border-bottom:1px solid rgba(43,42,37,.12); box-sizing:border-box;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;">
+              <span style="font-family:'Newreader',serif; font-size:17px; color:#2B2A25;">{{ w.en }}</span>
+              <span style="color:#6B6558; font-size:12.5px; text-align:right;">{{ w.zh }}</span>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:4px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="color:#9c9384; font-size:11.5px; font-family:ui-monospace,'SF Mono','Source Code Pro',monospace;">{{ w.ipa }}</span>
+                <span style="width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#9c9384; cursor:pointer; transition:background .15s ease, color .15s ease;" style-hover="background:rgba(43,42,37,.08); color:#3C5A44;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3z"></path><path d="M16.5 12c0-1.77-.77-3.29-2-4.24v8.48c1.23-.95 2-2.47 2-4.24z" opacity=".7"></path></svg>
+                </span>
+              </div>
+              <span style="font-size:11px; color:{{ w.posTextColor }}; background:{{ w.posBg }}; padding:1px 7px; border-radius:999px; flex-shrink:0;">{{ w.pos }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ showModal }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(43,42,37,.45); display:flex; align-items:center; justify-content:center; z-index:50;" onClick="{{ closeModal }}">
+      <div style="width:600px; background:#F7F2E9; border-radius:24px; padding:36px; box-shadow:0 40px 60px -20px rgba(43,42,37,.4);" onClick="{{ stopClick }}">
+        <div style="color:#6B6558; font-size:13px; letter-spacing:.14em; text-transform:uppercase;">{{ modeLabel }}設定</div>
+        <h3 style="margin:10px 0 24px; font-family:'Newreader',serif; font-weight:400; font-size:28px; color:#2B2A25;">練習方向</h3>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:28px;">
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:center; gap:12px; padding:14px 18px; border-radius:14px; border:1.5px solid {{ dirEnBorder }}; background:{{ dirEnBg }}; cursor:pointer;" onClick="{{ setDirEn }}">
+              <span style="width:18px; height:18px; border-radius:50%; border:2px solid #3C5A44; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="width:9px; height:9px; border-radius:50%; background:{{ dirEnDot }};"></span></span>
+              <span style="color:#2B2A25; font-size:15px;">看英文，選中文答案</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; padding:14px 18px; border-radius:14px; border:1.5px solid {{ dirZhBorder }}; background:{{ dirZhBg }}; cursor:pointer;" onClick="{{ setDirZh }}">
+              <span style="width:18px; height:18px; border-radius:50%; border:2px solid #3C5A44; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="width:9px; height:9px; border-radius:50%; background:{{ dirZhDot }};"></span></span>
+              <span style="color:#2B2A25; font-size:15px;">看中文，選英文答案</span>
+            </div>
+          </div>
+
+          <div style="background:#F0E9D8; border-radius:16px; padding:20px; min-height:112px; display:flex; align-items:center; justify-content:center; gap:10px;">
+            <sc-if value="{{ isEn2Zh }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:6px; animation:previewPulse 1.8s ease-in-out infinite;">
+                <div style="width:74px; height:56px; border-radius:10px; border:1.5px solid #3C5A44; background:#fff; display:flex; align-items:center; justify-content:center; font-family:'Newreader',serif; font-size:15px; color:#2B2A25;">word</div>
+                <span style="font-size:10px; color:#6B6558;">EN</span>
+              </div>
+              <div style="color:#C1653B; font-size:20px; animation:previewArrow 1.8s ease-in-out infinite;">→</div>
+              <div style="display:flex; flex-direction:column; gap:5px;">
+                <div style="width:60px; height:16px; border-radius:6px; background:rgba(43,42,37,.1);"></div>
+                <div style="width:60px; height:16px; border-radius:6px; background:#3C5A44;"></div>
+                <div style="width:60px; height:16px; border-radius:6px; background:rgba(43,42,37,.1);"></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ !isEn2Zh }}">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:6px; animation:previewPulse 1.8s ease-in-out infinite;">
+                <div style="width:74px; height:56px; border-radius:10px; border:1.5px solid #3C5A44; background:#fff; display:flex; align-items:center; justify-content:center; font-family:'Newreader',serif; font-size:15px; color:#2B2A25;">中文</div>
+                <span style="font-size:10px; color:#6B6558;">中</span>
+              </div>
+              <div style="color:#C1653B; font-size:20px; animation:previewArrow 1.8s ease-in-out infinite;">→</div>
+              <div style="display:flex; flex-direction:column; gap:5px;">
+                <div style="width:60px; height:16px; border-radius:6px; background:rgba(43,42,37,.1);"></div>
+                <div style="width:60px; height:16px; border-radius:6px; background:#3C5A44;"></div>
+                <div style="width:60px; height:16px; border-radius:6px; background:rgba(43,42,37,.1);"></div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="margin-top:28px; padding-top:24px; border-top:1px solid rgba(43,42,37,.15);">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="color:#2B2A25; font-size:15px; font-weight:500;">題目數量</span>
+            <span style="color:#C1653B; font-family:'Newreader',serif; font-size:22px;">{{ count }}</span>
+          </div>
+          <input type="range" min="{{ minCount }}" max="{{ maxCount }}" step="1" value="{{ count }}" onInput="{{ onCountInput }}" style="width:100%; margin-top:14px; accent-color:#3C5A44;">
+          <div style="display:flex; justify-content:space-between; color:#9c9384; font-size:12px; margin-top:4px;"><span>{{ minCount }}</span><span>{{ maxCount }}</span></div>
+        </div>
+
+        <div style="display:flex; gap:12px; margin-top:32px;">
+          <div style="flex:1; padding:14px; border-radius:999px; border:1px solid rgba(43,42,37,.2); color:#2B2A25; font-size:15px; text-align:center; cursor:pointer;" onClick="{{ closeModal }}">取消</div>
+          <div style="flex:2; padding:14px; border-radius:999px; background:#3C5A44; color:#F7F2E9; font-size:15px; font-weight:600; text-align:center; cursor:pointer;" onClick="{{ startPractice }}">開始練習</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = { selected: "toeic", showModal: false, modalMode: null, direction: "en2zh", count: 15 };
+  bookData = [
+    { id: "toeic", name: "多益(600)", color: "#b08434", spineColor: "#8a6425", count: 6, done: 3, pct: 50 },
+    { id: "security", name: "資安用", color: "#9c4a3c", spineColor: "#78392e", count: 40, done: 0, pct: 0 },
+    { id: "aviation", name: "航空用", color: "#3e6e8e", spineColor: "#2d5670", count: 35, done: 0, pct: 0 },
+    { id: "biz", name: "商務", color: "#6b4c6e", spineColor: "#503a52", count: 28, done: 5, pct: 18 },
+    { id: "eng", name: "工程", color: "#6e7a3e", spineColor: "#535c2f", count: 32, done: 0, pct: 0 },
+    { id: "travel", name: "旅遊", color: "#2f6e6b", spineColor: "#235350", count: 20, done: 20, pct: 100 },
+    { id: "medical", name: "醫療用", color: "#a13f5e", spineColor: "#7a2f47", count: 30, done: 0, pct: 0 },
+    { id: "finance", name: "金融", color: "#4a5a8a", spineColor: "#37436a", count: 26, done: 8, pct: 31 },
+    { id: "daily", name: "生活會話", color: "#8a7a3e", spineColor: "#6a5e2f", count: 24, done: 24, pct: 100 }
+  ];
+  demoWords = [
+    ["vicarious","替代的感受","形容詞","vaɪˈkɛrɪəs"],["haltingly","吞吞吐吐地","副詞","ˈhɔltɪŋli"],["hectic","忙亂的","形容詞","ˈhɛktɪk"],["hub","中心樞紐","名詞","hʌb"],
+    ["hysterical","歇斯底里的","形容詞","hɪˈstɛrɪkl"],["handout","講義；施捨","名詞","ˈhændaʊt"],["ambiguous","模稜兩可的","形容詞","æmˈbɪgjuəs"],["candid","坦率的","形容詞","ˈkændɪd"],
+    ["diligent","勤奮的","形容詞","ˈdɪlədʒənt"],["eloquent","雄辯的","形容詞","ˈɛləkwənt"],["frugal","節儉的","形容詞","ˈfrugl̩"],["gregarious","善於社交的","形容詞","grɪˈgɛriəs"],
+    ["hinder","阻礙","動詞","ˈhɪndɚ"],["intricate","複雜精細的","形容詞","ˈɪntrɪkɪt"],["jubilant","歡欣鼓舞的","形容詞","ˈdʒublənt"],["keen","敏銳的；渴望的","形容詞","kin"],
+    ["lucid","清晰易懂的","形容詞","ˈlusɪd"],["meticulous","一絲不苟的","形容詞","məˈtɪkjələs"],["novice","新手","名詞","ˈnɑvɪs"],["obsolete","過時的","形容詞","ˌɑbsəˈlit"]
+  ];
+  renderVals() {
+    const books = this.bookData.map(b => ({
+      ...b,
+      selected: this.state.selected === b.id,
+      transform: this.state.selected === b.id ? "translateY(-10px) rotate(-1.5deg)" : "none",
+      shadow: this.state.selected === b.id ? "0 26px 34px -18px rgba(43,42,37,.4)" : "0 10px 18px -14px rgba(43,42,37,.3)",
+      select: () => this.setState({ selected: b.id })
+    }));
+    const hasSelection = !!this.state.selected;
+    const selectedBook = this.bookData.find(b => b.id === this.state.selected);
+    const posColors = {
+      "形容詞": { bg: "rgba(193,101,59,.16)", text: "#8f4128" },
+      "副詞": { bg: "rgba(60,90,68,.16)", text: "#2c433a" },
+      "動詞": { bg: "rgba(156,74,60,.16)", text: "#78392e" },
+      "名詞": { bg: "rgba(62,110,142,.16)", text: "#2d5670" }
+    };
+    const previewWords = this.demoWords.slice(0, selectedBook ? Math.min(20, selectedBook.count) : 20).map(([en, zh, pos, ipa]) => {
+      const c = posColors[pos] || { bg: "rgba(43,42,37,.08)", text: "#6B6558" };
+      return { en, zh, pos, ipa: `/${ipa}/`, posBg: c.bg, posTextColor: c.text };
+    });
+    return {
+      books,
+      previewWords,
+      selectedName: selectedBook ? selectedBook.name : "",
+      selectedCount: selectedBook ? selectedBook.count : "",
+      selectedDone: selectedBook ? selectedBook.done : "",
+      selectedColor: selectedBook ? selectedBook.color : "#3C5A44",
+      modeBg: hasSelection ? "#3C5A44" : "rgba(43,42,37,.15)",
+      modeColor: hasSelection ? "#F7F2E9" : "#9c9384",
+      nextCursor: hasSelection ? "pointer" : "not-allowed",
+      nextHoverStyle: hasSelection ? "transform:translateY(-2px);" : "",
+      goFlashcard: () => { if (hasSelection) this.setState({ showModal: true, modalMode: "flashcard", count: Math.min(this.state.count, selectedBook.count) }); },
+      goMcq: () => { if (hasSelection) this.setState({ showModal: true, modalMode: "mcq", count: Math.min(this.state.count, selectedBook.count) }); },
+      goTyping: () => { if (hasSelection) this.setState({ showModal: true, modalMode: "typing", count: Math.min(this.state.count, selectedBook.count) }); },
+      showModal: this.state.showModal,
+      modeLabel: { flashcard: "單字卡", mcq: "選擇題", typing: "打字拼寫" }[this.state.modalMode] || "",
+      closeModal: () => this.setState({ showModal: false }),
+      stopClick: (e) => e.stopPropagation(),
+      dirEnBorder: this.state.direction === "en2zh" ? "#3C5A44" : "rgba(43,42,37,.15)",
+      dirEnBg: this.state.direction === "en2zh" ? "rgba(60,90,68,.08)" : "transparent",
+      dirEnDot: this.state.direction === "en2zh" ? "#3C5A44" : "transparent",
+      dirZhBorder: this.state.direction === "zh2en" ? "#3C5A44" : "rgba(43,42,37,.15)",
+      dirZhBg: this.state.direction === "zh2en" ? "rgba(60,90,68,.08)" : "transparent",
+      dirZhDot: this.state.direction === "zh2en" ? "#3C5A44" : "transparent",
+      setDirEn: () => this.setState({ direction: "en2zh" }),
+      setDirZh: () => this.setState({ direction: "zh2en" }),
+      isEn2Zh: this.state.direction === "en2zh",
+      minCount: Math.min(5, selectedBook ? selectedBook.count : 30),
+      count: Math.min(this.state.count, selectedBook ? selectedBook.count : 30),
+      maxCount: selectedBook ? selectedBook.count : 30,
+      onCountInput: (e) => this.setState({ count: Number(e.target.value) }),
+      startPractice: () => alert(`開始練習：${this.state.selected} · ${this.state.modalMode} · ${this.state.direction} · ${this.state.count} 題（下一輪再做）`)
+    };
+  }
+}
+</script>
+</body>
+</html>
