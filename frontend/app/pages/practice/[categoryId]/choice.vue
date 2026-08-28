@@ -108,6 +108,7 @@ const selectedOption = ref<QuizOption | null>(null)
 const isAnswered = ref(false)
 const isReviewOpen = ref(false)
 const answerLog = ref<AnswerLogEntry[]>([])
+const highlightedIndex = ref(0)
 
 const showSparkBurst = ref(false)
 
@@ -167,21 +168,75 @@ function selectOption(option: QuizOption) {
   if (!correct) isReviewOpen.value = true
 }
 
-function optionClasses(option: QuizOption) {
+const OPTION_COLS = 2
+
+function moveHighlight(deltaRow: number, deltaCol: number) {
+  const len = currentQuestion.value?.options.length
+  if (!len) return
+  const row = Math.floor(highlightedIndex.value / OPTION_COLS)
+  const col = highlightedIndex.value % OPTION_COLS
+  const maxRow = Math.floor((len - 1) / OPTION_COLS)
+  const newRow = Math.min(Math.max(row + deltaRow, 0), maxRow)
+  const newCol = Math.min(Math.max(col + deltaCol, 0), OPTION_COLS - 1)
+  const newIndex = newRow * OPTION_COLS + newCol
+  if (newIndex < len) highlightedIndex.value = newIndex
+}
+
+function confirmHighlighted() {
+  const option = currentQuestion.value?.options[highlightedIndex.value]
+  if (option) selectOption(option)
+}
+
+function handleKeydown(e: KeyboardEvent) {
+  if (!currentQuestion.value) return
+
+  if (isAnswered.value) {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      nextQuestion()
+    }
+    return
+  }
+
+  if (e.key === "ArrowRight") {
+    e.preventDefault()
+    moveHighlight(0, 1)
+  } else if (e.key === "ArrowLeft") {
+    e.preventDefault()
+    moveHighlight(0, -1)
+  } else if (e.key === "ArrowDown") {
+    e.preventDefault()
+    moveHighlight(1, 0)
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault()
+    moveHighlight(-1, 0)
+  } else if (e.key === "Enter") {
+    e.preventDefault()
+    confirmHighlighted()
+  }
+}
+
+onMounted(() => window.addEventListener("keydown", handleKeydown))
+onUnmounted(() => window.removeEventListener("keydown", handleKeydown))
+
+function optionClasses(option: QuizOption, index: number) {
   if (!isAnswered.value) {
-    return "border-paper-fg/15 bg-paper-bg hover:border-paper-primary/40 hover:-translate-y-0.5 cursor-pointer"
+    const base = "bg-paper-bg-alt hover:border-paper-primary/40 hover:-translate-y-0.5 cursor-pointer"
+    if (index === highlightedIndex.value) return `border-paper-primary/60 ring-2 ring-paper-primary/25 ${base}`
+    return `border-paper-fg/15 ${base}`
   }
   if (isCorrectOption(option)) {
     const base = "border-emerald-500/50 bg-emerald-500/8"
     return showSparkBurst.value ? `${base} overflow-visible` : base
   }
   if (option === selectedOption.value) return "border-rose-500/50 bg-rose-500/8"
-  return "border-paper-fg/10 bg-paper-bg opacity-40"
+  return "border-paper-fg/10 bg-paper-bg-alt opacity-40"
 }
 
-function letterClasses(option: QuizOption) {
+function letterClasses(option: QuizOption, index: number) {
   if (isAnswered.value && isCorrectOption(option)) return "border-emerald-500/60 text-emerald-600"
   if (isAnswered.value && option === selectedOption.value) return "border-rose-500/60 text-rose-600"
+  if (!isAnswered.value && index === highlightedIndex.value) return "border-paper-primary/60 bg-paper-primary/10 text-paper-primary"
   return "border-paper-fg/20 text-paper-muted"
 }
 
@@ -192,6 +247,7 @@ function nextQuestion() {
   selectedOption.value = null
   isAnswered.value = false
   showSparkBurst.value = false
+  highlightedIndex.value = 0
 }
 
 function restartQuiz() {
@@ -204,6 +260,7 @@ function restartQuiz() {
   answerLog.value = []
   isReviewOpen.value = false
   showSparkBurst.value = false
+  highlightedIndex.value = 0
 }
 </script>
 
@@ -230,7 +287,7 @@ function restartQuiz() {
 
         <div
           :key="currentIndex"
-          class="rounded-3xl px-8 py-16 text-center mb-8 bg-paper-bg border border-paper-fg/10 shadow-[0_24px_60px_-30px_rgba(43,42,37,0.35)] animate-fade-rise"
+          class="rounded-3xl px-8 py-16 text-center mb-8 bg-paper-bg-alt border-2 border-paper-fg/25 shadow-[0_18px_40px_-20px_rgba(43,42,37,0.3)] animate-fade-rise"
         >
           <h1 class="font-display font-normal text-4xl sm:text-5xl leading-snug m-0 text-paper-fg">
             {{ currentQuestion.prompt }}
@@ -242,13 +299,14 @@ function restartQuiz() {
             v-for="(option, i) in currentQuestion.options"
             :key="option.word.id"
             class="relative rounded-2xl border px-5 py-5 pl-14 text-left transition-all duration-200"
-            :class="optionClasses(option)"
+            :class="optionClasses(option, i)"
             :disabled="isAnswered"
             @click="selectOption(option)"
+            @mouseenter="highlightedIndex = i"
           >
             <span
               class="absolute top-1/2 left-5 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border text-[11px] font-medium transition-colors duration-200"
-              :class="letterClasses(option)"
+              :class="letterClasses(option, i)"
             >
               <svg
                 v-if="isAnswered && isCorrectOption(option)"
