@@ -2,6 +2,7 @@ export interface Category {
   id: number
   name: string
   description: string | null
+  color: string | null
   createdAt: string // C# 的 DateTime 序列化成 JSON 是 ISO 8601 格式的'字串'
   updatedAt: string
 }
@@ -10,6 +11,7 @@ export interface Word {
   id: number
   categoryId: number
   term: string
+  ipa: string | null
   definitionEN: string
   definitionCN: string
   partOfSpeech: string
