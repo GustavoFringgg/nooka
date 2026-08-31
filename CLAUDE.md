@@ -23,9 +23,9 @@
   - `app/pages/index.vue`:首頁,採**單頁式**方向 — 上方 100vh 影片 Hero(nav + 標題 + CTA),往下滾動接深藍色 Night Palette 內容區塊(分類/練習模式/學習紀錄卡片),不做「首頁只放 3D 圖、完整介紹另外開一頁」的方案(討論過兩個方向,選了這個,效果不理想可能會 roll back)
   - `app/components/AppNav.vue`:共用 nav 元件(首頁/練習/學習紀錄/登入),`active` 連結用 `useRoute()` 自動判斷,不用手動寫死;`index.vue`、`practice/` 系列頁面都已改用這個元件
   - 這個首頁是行銷 / 訪客用的 landing page,跟下方「首頁書架」使用者故事(登入後瀏覽分類的書架頁)是不同頁面,兩者尚未串接
-  - `app/pages/practice/index.vue`:選書頁,已串真的 `GET /api/categories`
-  - `app/pages/practice/[categoryId]/index.vue`:分類單字列表頁,串 `GET /api/categories/{id}` + `GET /api/words/category/{categoryId}`,列表上方三個模式按鈕(選擇題可點、消消樂/打字拼寫 disable),點「選擇題」開 `UModal` 選練習方向(不換路由,避免重打 API),按「開始測試」才 `router.push` 帶 `?direction=` query 跳到 `choice.vue`
-  - `app/pages/practice/[categoryId]/choice.vue`:選擇題測驗頁,目前只讀 URL query 的 `direction` 顯示佔位文字,實際測驗畫面(題目/選項/答錯彈窗)還沒做
+  - `app/pages/practice/index.vue`:書架頁,改版後**合併**了原本「分類單字列表頁」的角色 — 左側書架卡片選書,右側面板即時顯示該分類單字預覽,點「選擇題」開 `UModal` 選練習方向 + 題數(`USlider`),按「開始練習」才 `router.push` 帶 `?direction=&count=` query 跳到 `choice.vue`;目前書架清單、右側單字預覽都是**寫死的前端 mock 資料**(書封顏色、KK 音標後端還沒有對應欄位),`GET /api/categories`/`GET /api/words/category/{id}` 都還沒接回來(08/18-08/19 曾經接過,改版時被退回 mock,見下方「目前進度 2026/08/31」)
+  - `app/pages/practice/[categoryId]/index.vue`:**已刪除**(原本的「分類單字列表頁」),書架版面改版時整併進 `practice/index.vue`,不再有獨立的中間頁
+  - `app/pages/practice/[categoryId]/choice.vue`:選擇題測驗頁,完整測驗邏輯已完成(抓單字、`buildQuizQuestions` 出題、答對/答錯判斷、答錯詳解彈窗、答對特效、鍵盤方向鍵選答);目前有 `mockWords` fallback(API 沒資料時偷偷退回假資料),且 fetch 失敗時的錯誤處理被拿掉了,還沒真正只依賴後端資料
 
 ## 進行中:練習頁第一步 — 選擇題模式(串真實後端)
 
@@ -106,8 +106,9 @@
 
 - [ ] **首頁書架**:以「書架」概念呈現,每本書 = 一個單字分類(旅遊、工作、商務等)
   - 書封暫不顯示學習進度(32/120、進度條等),先簡單呈現就好,是否需要之後再看
-  - **定案(2026/08/19)**:「首頁書架」(登入後瀏覽分類)不另外做頁面,直接沿用 `/practice` 選書頁承擔這個角色,不做兩個平行的選書畫面。已先把 nav 上的「分類」項目拿掉(`AppNav.vue`),只留「練習」一個入口。流程統一,不分入口來源:`/practice`(選書)→ `/practice/[categoryId]`(分類單字列表頁)→ 選練習模式 → 各模式自己的路由(選擇題是 `/practice/[categoryId]/choice`)。現在先不加登入保護(middleware),等會員系統做出來再補
-- [x] **分類單字列表頁**:點進一本書先看到該分類**所有單字的內容列表**,列表上方放「選擇題/消消樂/打字拼寫」三個模式按鈕(消消樂、打字拼寫先 disable),點「選擇題」開方向選擇 `UModal`(見上方「進行中」章節定案),按「開始測試」才切換路由進 `/practice/[categoryId]/choice?direction=...`
+  - **定案(2026/08/19)**:「首頁書架」(登入後瀏覽分類)不另外做頁面,直接沿用 `/practice` 選書頁承擔這個角色,不做兩個平行的選書畫面。已先把 nav 上的「分類」項目拿掉(`AppNav.vue`),只留「練習」一個入口。現在先不加登入保護(middleware),等會員系統做出來再補
+  - **架構變更(2026/08/31 確認)**:原本規劃的三段式流程(`/practice` 選書 → `/practice/[categoryId]` 分類單字列表頁 → 選練習模式 → `/practice/[categoryId]/choice`)在書架版面改版時被簡化成兩段式 —— `[categoryId]/index.vue` 列表頁已刪除,`/practice` 書架頁直接在右側面板顯示單字預覽 + 開 `UModal` 選方向/題數,確認後直接跳 `/practice/[categoryId]/choice`。跟 Derek 討論後**維持這個合併式流程**,不救回獨立列表頁
+- [ ] **書架單字預覽**(取代原本的分類單字列表頁):書架頁右側面板即時顯示選中分類的單字預覽,點「選擇題」開方向選擇 `UModal`(見上方「進行中」章節定案),按「開始練習」才切換路由進 `/practice/[categoryId]/choice?direction=...&count=...`;目前預覽面板還是 mock 資料,見下方「目前進度 2026/08/31」
 
 ## 系統代辦事項(開發 / 基礎建設,非使用者故事)
 
@@ -137,24 +138,12 @@
 
 ---
 
-### 目前進度 2026/08/18
+### 目前進度 2026/08/31
 
-- [x] 後端:`Program.cs` 加 CORS(`NuxtDev` policy)
-- [x] 後端:`ICategoryRepository.cs` + `EfCategoryRepository.cs`(`GetAllAsync`、`GetByIdAsync`)
-- [x] 後端:`CategoriesController.cs`(暴露 `GET /api/categories`)
-- [x] 後端:`Program.cs` 註冊 `ICategoryRepository` → `EfCategoryRepository` 的 DI
-- [x] 前端:`nuxt.config.ts` 加 `runtimeConfig.public.apiBase`(`http://localhost:5016`)
-- [x] 前端:`app/composables/useApi.ts`(`useApiUrl` helper)
-- [x] 前端:`app/types/practice.ts`(`Category`、`Word` 型別,對齊後端 camelCase JSON)
-- [x] 前端:`app/utils/quiz.ts`(`buildQuizQuestions`,含 Fisher–Yates `shuffle`)
-- [x] 前端:`app/pages/practice/index.vue`(選書頁,Night 色票 + liquid-glass 卡片,做成書封/書架排版 — 直立比例卡片、左側書脊色條、堆疊陰影、底部書架層板線;目前資料是 mock,`GET /api/categories` 串接還沒換上,程式碼裡有 TODO 註解)
-- [x] 前端:`app/components/AppNav.vue`(共用 nav 元件,取代原本 `index.vue` 寫死的 nav 區塊,`active` 用路由自動判斷)—— 順便完成了原本「`練習` nav 連結接上 `/practice`」這個待辦
-- [x] 前端:`app/pages/practice/index.vue` 換成真的打 `GET /api/categories`;書卡連結目標從 `/practice/${category.id}/choice` 改成 `/practice/${category.id}`
-- [x] Derek 手動在 Supabase 補資料:`Categories` 1 筆(`多益(600)`)、`Words` categoryId 1 已有 6 筆(`vicarious`、`handout`、`hysterical`、`hub`、`haltingly`、`hectic`)
+書架版面改版(米白配色、書架排版)後回頭盤點,發現 08/18-08/19 完成的「接回真實 API」被退回 mock、「分類單字列表頁」被整頁刪除。跟 Derek 討論後決定:維持現在的兩段式合併流程(書架頁直接含單字預覽,不救回獨立列表頁),書封顏色/單字音標改成後端加欄位(不用前端演算法生色),詳細規劃存在 `C:\Users\USER\.claude\plans\todo-18-19-replicated-cascade.md`。今天訂出 5 個 todo,採分階段教學方式,Derek 自己動手、確認後再進下一步:
 
-### 目前進度 2026/08/19
-
-- [x] 前端:整專案 CSS 從 SCSS 全面轉成 Tailwind CSS v4 + Nuxt UI(`@nuxt/ui`)— 裝 `tailwindcss`、`@nuxt/ui`,`app/assets/css/main.css` 用 `@theme` 定義色票/字型、`@layer components` 定義 `liquid-glass` 系列 class;刪除 `app/assets/scss/`,移除 `sass` 依賴;`AppNav.vue`、`index.vue`、`practice/index.vue`、`practice/[categoryId]/index.vue` 全部改寫成 Tailwind class
-- [x] 前端:`app/pages/practice/[categoryId]/index.vue`(新增,分類單字列表頁)— 列表上方三個模式按鈕(選擇題可點、消消樂/打字拼寫 disable),點「選擇題」用 `UModal` + `URadioGroup` 選練習方向,按「開始測試」才 `router.push` 帶 `?direction=` query 跳轉,避免不必要的路由切換/重打 API
-- [x] 前端:`app/pages/practice/[categoryId]/choice.vue`(選擇題測驗頁完整邏輯)— 抓單字、用 `utils/quiz.ts` 的 `buildQuizQuestions` 產生題目、渲染題目/選項、答對/答錯判斷、答錯詳情彈窗、答對特效(`SparkBurst`)
-- [x] 前端:`[categoryId]/index.vue` 的 `UModal` 加上題數滑桿(`USlider`,1 ~ 該分類單字數上限),`?count=` query 帶進 `choice.vue`
+- [ ] 後端:`Category` 加 `Color` 欄位(存 hex),`dotnet ef migrations add AddCategoryColor` 套用到 Supabase,手動補現有分類的色票值
+- [ ] 後端:`Word` 加 `Ipa` 欄位(KK 音標),migration 套用到 Supabase,手動補現有 6 筆單字的音標
+- [ ] 前端:`practice/index.vue` 書架卡片改回串真的 `GET /api/categories`(顏色讀 `color` 欄位,書脊色前端對 `color` 加深處理即可,不用後端另存)
+- [ ] 前端:`practice/index.vue` 右側單字預覽改回串真的 `GET /api/words/category/{id}`(隨選書切換,音標讀 `ipa` 欄位)
+- [ ] 前端:`choice.vue` 移除 `mockWords`/`effectiveWords` fallback,恢復 fetch 失敗時的「載入失敗」錯誤處理
