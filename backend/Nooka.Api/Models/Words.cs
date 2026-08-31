@@ -9,4 +9,5 @@ public class Word
     public string DefinitionEN { get; set; } = string.Empty; // 英文意思
     public string PartOfSpeech { get; set; } = string.Empty; // 詞性,例:"形容詞"
     public List<string> Examples { get; set; } = new();     // 例句,可多筆
+    public string? Ipa { get; set; }
 }

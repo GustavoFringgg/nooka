@@ -1,72 +1,89 @@
 <script setup lang="ts">
 // TODO: 目前書架 / 單字預覽全部是 mock 資料(色票、KK 音標後端都還沒有欄位),
 // 之後補上 Category 顏色欄位 + Word 音標欄位後,換成真的 GET /api/categories、GET /api/words/category/{id}
+import type { Category } from "~/types/practice"
 import type { QuizDirection } from "~/utils/quiz"
+const { data: categories, pending } = await useFetch<Category[]>(useApiUrl("/api/categories"))
 
-interface MockBook {
-  id: string
-  categoryId?: number // 對應真實後端 categoryId,mock 書本沒有就先留空
-  name: string
-  color: string
-  spineColor: string
-  count: number
+const selectedId = ref<number | null>(null)
+const selectedBook = computed(() => categories.value?.find((c) => c.id === selectedId.value) ?? null)
+
+watch(
+  categories,
+  (val) => {
+    if (val?.length && selectedId.value === null) selectedId.value = val[0]!.id
+  },
+  { immediate: true } // immediate 設定 watch 當下先跑一次
+)
+
+function darken(hex: string, amount = 0.25) {
+  const num = parseInt(hex.replace("#", ""), 16)
+  const r = Math.round(((num >> 16) & 255) * (1 - amount))
+  const g = Math.round(((num >> 8) & 255) * (1 - amount))
+  const b = Math.round((num & 255) * (1 - amount))
+  return `rgb(${r}, ${g}, ${b})`
 }
+// interface MockBook {
+//   id: string
+//   categoryId?: number // 對應真實後端 categoryId,mock 書本沒有就先留空
+//   name: string
+//   color: string
+//   spineColor: string
+//   count: number
+// }
 
-interface MockWord {
-  en: string
-  zh: string
-  pos: "形容詞" | "副詞" | "動詞" | "名詞"
-  ipa: string
-}
+// interface MockWord {
+//   en: string
+//   zh: string
+//   pos: "形容詞" | "副詞" | "動詞" | "名詞"
+//   ipa: string
+// }
 
-const posColors: Record<MockWord["pos"], { bg: string; text: string }> = {
-  形容詞: { bg: "rgba(193,101,59,.16)", text: "#8f4128" },
-  副詞: { bg: "rgba(60,90,68,.16)", text: "#2c433a" },
-  動詞: { bg: "rgba(156,74,60,.16)", text: "#78392e" },
-  名詞: { bg: "rgba(62,110,142,.16)", text: "#2d5670" }
-}
+// const posColors: Record<MockWord["pos"], { bg: string; text: string }> = {
+//   形容詞: { bg: "rgba(193,101,59,.16)", text: "#8f4128" },
+//   副詞: { bg: "rgba(60,90,68,.16)", text: "#2c433a" },
+//   動詞: { bg: "rgba(156,74,60,.16)", text: "#78392e" },
+//   名詞: { bg: "rgba(62,110,142,.16)", text: "#2d5670" }
+// }
 
-const books: MockBook[] = [
-  { id: "toeic", categoryId: 1, name: "多益(600)", color: "#b08434", spineColor: "#8a6425", count: 6 },
-  { id: "security", name: "資安用", color: "#9c4a3c", spineColor: "#78392e", count: 40 },
-  { id: "aviation", name: "航空用", color: "#3e6e8e", spineColor: "#2d5670", count: 35 },
-  { id: "biz", name: "商務", color: "#6b4c6e", spineColor: "#503a52", count: 28 },
-  { id: "eng", name: "工程", color: "#6e7a3e", spineColor: "#535c2f", count: 32 },
-  { id: "travel", name: "旅遊", color: "#2f6e6b", spineColor: "#235350", count: 20 },
-  { id: "medical", name: "醫療用", color: "#a13f5e", spineColor: "#7a2f47", count: 30 },
-  { id: "finance", name: "金融", color: "#4a5a8a", spineColor: "#37436a", count: 26 },
-  { id: "daily", name: "生活會話", color: "#8a7a3e", spineColor: "#6a5e2f", count: 24 }
-]
+// const books: MockBook[] = [
+//   { id: "toeic", categoryId: 1, name: "多益(600)", color: "#b08434", spineColor: "#8a6425", count: 6 },
+//   { id: "security", name: "資安用", color: "#9c4a3c", spineColor: "#78392e", count: 40 },
+//   { id: "aviation", name: "航空用", color: "#3e6e8e", spineColor: "#2d5670", count: 35 },
+//   { id: "biz", name: "商務", color: "#6b4c6e", spineColor: "#503a52", count: 28 },
+//   { id: "eng", name: "工程", color: "#6e7a3e", spineColor: "#535c2f", count: 32 },
+//   { id: "travel", name: "旅遊", color: "#2f6e6b", spineColor: "#235350", count: 20 },
+//   { id: "medical", name: "醫療用", color: "#a13f5e", spineColor: "#7a2f47", count: 30 },
+//   { id: "finance", name: "金融", color: "#4a5a8a", spineColor: "#37436a", count: 26 },
+//   { id: "daily", name: "生活會話", color: "#8a7a3e", spineColor: "#6a5e2f", count: 24 }
+// ]
 
-const demoWords: MockWord[] = [
-  { en: "vicarious", zh: "替代的感受", pos: "形容詞", ipa: "vaɪˈkɛrɪəs" },
-  { en: "haltingly", zh: "吞吞吐吐地", pos: "副詞", ipa: "ˈhɔltɪŋli" },
-  { en: "hectic", zh: "忙亂的", pos: "形容詞", ipa: "ˈhɛktɪk" },
-  { en: "hub", zh: "中心樞紐", pos: "名詞", ipa: "hʌb" },
-  { en: "hysterical", zh: "歇斯底里的", pos: "形容詞", ipa: "hɪˈstɛrɪkl" },
-  { en: "handout", zh: "講義;施捨", pos: "名詞", ipa: "ˈhændaʊt" },
-  { en: "ambiguous", zh: "模稜兩可的", pos: "形容詞", ipa: "æmˈbɪgjuəs" },
-  { en: "candid", zh: "坦率的", pos: "形容詞", ipa: "ˈkændɪd" },
-  { en: "diligent", zh: "勤奮的", pos: "形容詞", ipa: "ˈdɪlədʒənt" },
-  { en: "eloquent", zh: "雄辯的", pos: "形容詞", ipa: "ˈɛləkwənt" },
-  { en: "frugal", zh: "節儉的", pos: "形容詞", ipa: "ˈfrugl̩" },
-  { en: "gregarious", zh: "善於社交的", pos: "形容詞", ipa: "grɪˈgɛriəs" },
-  { en: "hinder", zh: "阻礙", pos: "動詞", ipa: "ˈhɪndɚ" },
-  { en: "intricate", zh: "複雜精細的", pos: "形容詞", ipa: "ˈɪntrɪkɪt" },
-  { en: "jubilant", zh: "歡欣鼓舞的", pos: "形容詞", ipa: "ˈdʒublənt" },
-  { en: "keen", zh: "敏銳的;渴望的", pos: "形容詞", ipa: "kin" },
-  { en: "lucid", zh: "清晰易懂的", pos: "形容詞", ipa: "ˈlusɪd" },
-  { en: "meticulous", zh: "一絲不苟的", pos: "形容詞", ipa: "məˈtɪkjələs" },
-  { en: "novice", zh: "新手", pos: "名詞", ipa: "ˈnɑvɪs" },
-  { en: "obsolete", zh: "過時的", pos: "形容詞", ipa: "ˌɑbsəˈlit" }
-]
+// const demoWords: MockWord[] = [
+//   { en: "vicarious", zh: "替代的感受", pos: "形容詞", ipa: "vaɪˈkɛrɪəs" },
+//   { en: "haltingly", zh: "吞吞吐吐地", pos: "副詞", ipa: "ˈhɔltɪŋli" },
+//   { en: "hectic", zh: "忙亂的", pos: "形容詞", ipa: "ˈhɛktɪk" },
+//   { en: "hub", zh: "中心樞紐", pos: "名詞", ipa: "hʌb" },
+//   { en: "hysterical", zh: "歇斯底里的", pos: "形容詞", ipa: "hɪˈstɛrɪkl" },
+//   { en: "handout", zh: "講義;施捨", pos: "名詞", ipa: "ˈhændaʊt" },
+//   { en: "ambiguous", zh: "模稜兩可的", pos: "形容詞", ipa: "æmˈbɪgjuəs" },
+//   { en: "candid", zh: "坦率的", pos: "形容詞", ipa: "ˈkændɪd" },
+//   { en: "diligent", zh: "勤奮的", pos: "形容詞", ipa: "ˈdɪlədʒənt" },
+//   { en: "eloquent", zh: "雄辯的", pos: "形容詞", ipa: "ˈɛləkwənt" },
+//   { en: "frugal", zh: "節儉的", pos: "形容詞", ipa: "ˈfrugl̩" },
+//   { en: "gregarious", zh: "善於社交的", pos: "形容詞", ipa: "grɪˈgɛriəs" },
+//   { en: "hinder", zh: "阻礙", pos: "動詞", ipa: "ˈhɪndɚ" },
+//   { en: "intricate", zh: "複雜精細的", pos: "形容詞", ipa: "ˈɪntrɪkɪt" },
+//   { en: "jubilant", zh: "歡欣鼓舞的", pos: "形容詞", ipa: "ˈdʒublənt" },
+//   { en: "keen", zh: "敏銳的;渴望的", pos: "形容詞", ipa: "kin" },
+//   { en: "lucid", zh: "清晰易懂的", pos: "形容詞", ipa: "ˈlusɪd" },
+//   { en: "meticulous", zh: "一絲不苟的", pos: "形容詞", ipa: "məˈtɪkjələs" },
+//   { en: "novice", zh: "新手", pos: "名詞", ipa: "ˈnɑvɪs" },
+//   { en: "obsolete", zh: "過時的", pos: "形容詞", ipa: "ˌɑbsəˈlit" }
+// ]
 
 const router = useRouter()
 
-const selectedId = ref(books[0].id)
-const selectedBook = computed(() => books.find((b) => b.id === selectedId.value) ?? null)
-const previewWords = computed(() => demoWords.slice(0, Math.min(20, selectedBook.value?.count ?? 20)))
-
+const previewWords = computed(() => [])
 const isChoiceModalOpen = ref(false)
 const direction = ref<QuizDirection>("enToCn")
 const questionCount = ref(1)
@@ -76,12 +93,8 @@ const directionOptions: { label: string; value: QuizDirection }[] = [
   { label: "看中文,選英文答案", value: "cnToEn" }
 ]
 
-const minCount = computed(() => Math.min(5, selectedBook.value?.count ?? 5))
-const maxCount = computed(() => selectedBook.value?.count ?? 30)
-
-function selectBook(id: string) {
-  selectedId.value = id
-}
+const minCount = ref(1) //computed(() => Math.min(5, selectedBook.value?.count ?? 5))
+const maxCount = ref(20) //computed(() => selectedBook.value?.count ?? 30)
 
 function openChoiceModal() {
   if (!selectedBook.value) return
@@ -89,10 +102,14 @@ function openChoiceModal() {
   isChoiceModalOpen.value = true
 }
 
+function selectBook(id: number) {
+  selectedId.value = id
+}
+
 function startChoiceQuiz() {
   if (!selectedBook.value) return
   isChoiceModalOpen.value = false
-  const targetId = selectedBook.value.categoryId ?? selectedBook.value.id
+  const targetId = selectedBook.value.id
   router.push(`/practice/${targetId}/choice?direction=${direction.value}&count=${questionCount.value}`)
 }
 </script>
@@ -137,7 +154,7 @@ function startChoiceQuiz() {
           <div
             class="styled-scrollbar lg:flex-[1.15] h-full min-h-0 grid grid-cols-2 gap-6 box-border overflow-y-auto pt-7 pr-1"
           >
-            <div v-for="book in books" :key="book.id" class="cursor-pointer" @click="selectBook(book.id)">
+            <div v-for="book in categories" :key="book.id" class="cursor-pointer" @click="selectBook(book.id)">
               <div
                 class="flex rounded-l-[3px] rounded-r-[10px] transition-transform duration-250 ease-out hover:-translate-y-2.5 hover:-rotate-[1.5deg] hover:shadow-[0_26px_34px_-18px_rgba(43,42,37,0.4)]"
                 :class="
@@ -146,10 +163,10 @@ function startChoiceQuiz() {
                     : 'shadow-[0_10px_18px_-14px_rgba(43,42,37,0.3)]'
                 "
               >
-                <div class="w-3.5 rounded-l-[3px]" :style="{ background: book.spineColor }" />
+                <div class="w-3.5 rounded-l-[3px]" :style="{ background: darken(book.color ?? '#8a7a3e') }" />
                 <div
                   class="relative flex-1 flex flex-col justify-between px-5 py-5.5 min-h-[190px] shadow-[inset_-10px_0_14px_-12px_rgba(0,0,0,0.35)]"
-                  :style="{ background: book.color }"
+                  :style="{ background: book.color ?? '#8a7a3e' }"
                 >
                   <div
                     class="absolute right-0 top-0.5 bottom-0.5 w-1.5 rounded-r-md"
@@ -176,7 +193,8 @@ function startChoiceQuiz() {
                     >
                       {{ book.name }}
                     </div>
-                    <div class="text-white/85 text-[13px] mt-1.5">{{ book.count }} 個單字</div>
+                    <!-- <div class="text-white/85 text-[13px] mt-1.5">{{ book.count }} 個單字</div> -->
+                    <!-- TODO: 之後透過 api 獲取真正書量 -->
                   </div>
                 </div>
               </div>
@@ -190,8 +208,8 @@ function startChoiceQuiz() {
               <div class="w-3.5 h-3.5 rounded-[4px]" :style="{ background: selectedBook.color }" />
               <span class="font-display text-[26px] text-paper-fg">{{ selectedBook.name }}</span>
             </div>
-            <p v-if="selectedBook" class="mb-5 text-paper-muted text-[13.5px]">{{ selectedBook.count }} 個單字</p>
-
+            <!-- <p v-if="selectedBook" class="mb-5 text-paper-muted text-[13.5px]">{{ selectedBook.count }} 個單字</p> -->
+            <!-- TODO: 之後改用api  words.value.length 來補資料 -->
             <div
               class="styled-scrollbar grid grid-cols-2 gap-2 flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1.5 content-start"
             >

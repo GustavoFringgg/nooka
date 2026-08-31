@@ -34,6 +34,7 @@
 **採分階段教學方式進行**(不是自動一次做完),每一步由 Derek 自己動手改,確認後才進下一步。詳細計畫存在 `C:\Users\USER\.claude\plans\reflective-growing-eagle.md`。
 
 **選擇題規格(2026/08/18 定案)**:
+
 - 4 選 1(1 正解 + 3 隨機干擾項),分類底下單字數保證 > 4,不做不足提示
 - 練習方向可選:「看英文選中文」或「看中文選英文」(`QuizDirection = 'enToCn' | 'cnToEn'`)
   - **定案(2026/08/19)**:方向選擇的 `UModal` 放在 `[categoryId]/index.vue`(單字列表頁),不是 `choice.vue` 本身 —— 點「選擇題」只開 dialog、不換路由,避免取消時要重新導航導致重打 API(有延遲/閃爍);按「開始測試」才把選好的方向用 `?direction=` query 帶進 `choice.vue` 的網址
@@ -142,8 +143,9 @@
 
 書架版面改版(米白配色、書架排版)後回頭盤點,發現 08/18-08/19 完成的「接回真實 API」被退回 mock、「分類單字列表頁」被整頁刪除。跟 Derek 討論後決定:維持現在的兩段式合併流程(書架頁直接含單字預覽,不救回獨立列表頁),書封顏色/單字音標改成後端加欄位(不用前端演算法生色),詳細規劃存在 `C:\Users\USER\.claude\plans\todo-18-19-replicated-cascade.md`。今天訂出 5 個 todo,採分階段教學方式,Derek 自己動手、確認後再進下一步:
 
-- [ ] 後端:`Category` 加 `Color` 欄位(存 hex),`dotnet ef migrations add AddCategoryColor` 套用到 Supabase,手動補現有分類的色票值
-- [ ] 後端:`Word` 加 `Ipa` 欄位(KK 音標),migration 套用到 Supabase,手動補現有 6 筆單字的音標
+- [x] 後端:`Category` 加 `Color` 欄位(存 hex),`dotnet ef migrations add AddCategoryColor` 套用到 Supabase,手動補現有分類的色票值
+- [x] 後端:`Word` 加 `Ipa` 欄位(KK 音標),migration 套用到 Supabase,手動補現有 6 筆單字的音標
 - [ ] 前端:`practice/index.vue` 書架卡片改回串真的 `GET /api/categories`(顏色讀 `color` 欄位,書脊色前端對 `color` 加深處理即可,不用後端另存)
 - [ ] 前端:`practice/index.vue` 右側單字預覽改回串真的 `GET /api/words/category/{id}`(隨選書切換,音標讀 `ipa` 欄位)
+- [ ] 前端:`practice/index.vue` 設計 `pending`(`GET /api/categories` 載入中)畫面 — Todo 3 先把 `pending` 解構出來但沒用,先欠著,之後想好 loading UI 長相再補
 - [ ] 前端:`choice.vue` 移除 `mockWords`/`effectiveWords` fallback,恢復 fetch 失敗時的「載入失敗」錯誤處理
