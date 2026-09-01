@@ -23,28 +23,35 @@
   - `app/pages/index.vue`:首頁,採**單頁式**方向 — 上方 100vh 影片 Hero(nav + 標題 + CTA),往下滾動接深藍色 Night Palette 內容區塊(分類/練習模式/學習紀錄卡片),不做「首頁只放 3D 圖、完整介紹另外開一頁」的方案(討論過兩個方向,選了這個,效果不理想可能會 roll back)
   - `app/components/AppNav.vue`:共用 nav 元件(首頁/練習/學習紀錄/登入),`active` 連結用 `useRoute()` 自動判斷,不用手動寫死;`index.vue`、`practice/` 系列頁面都已改用這個元件
   - 這個首頁是行銷 / 訪客用的 landing page,跟下方「首頁書架」使用者故事(登入後瀏覽分類的書架頁)是不同頁面,兩者尚未串接
-  - `app/pages/practice/index.vue`:書架頁,改版後**合併**了原本「分類單字列表頁」的角色 — 左側書架卡片選書,右側面板即時顯示該分類單字預覽,點「選擇題」開 `UModal` 選練習方向 + 題數(`USlider`),按「開始練習」才 `router.push` 帶 `?direction=&count=` query 跳到 `choice.vue`;目前書架清單、右側單字預覽都是**寫死的前端 mock 資料**(書封顏色、KK 音標後端還沒有對應欄位),`GET /api/categories`/`GET /api/words/category/{id}` 都還沒接回來(08/18-08/19 曾經接過,改版時被退回 mock,見下方「目前進度 2026/08/31」)
+  - `app/pages/practice/index.vue`:書架頁,改版後**合併**了原本「分類單字列表頁」的角色 — 左側書架卡片選書,右側面板即時顯示該分類單字預覽,點「選擇題」開 `UModal` 選練習方向 + 題數(`USlider`),按「開始練習」才 `router.push` 帶 `?direction=&count=` query 跳到 `choice.vue`;書架清單、右側單字預覽已改回串真的 `GET /api/categories`、`GET /api/words/category/{id}`(書封顏色讀 `Category.Color`,音標讀 `Word.Ipa`),不再是 mock 資料;`posColors` 補齊 8 種詞性(形容詞/副詞/動詞/名詞/代名詞/介系詞/連接詞/感嘆詞),`GET /api/categories` 載入中的畫面還沒做(見下方「UIUX 待辦」);新增 `selectedMode` 三態互斥切換(單字卡/選擇題/打字拼寫),點「打字拼寫」開 `UModal` 選題數(沒有方向選項),按「開始練習」`router.push` 帶 `?count=` query 跳到 `typing.vue`
   - `app/pages/practice/[categoryId]/index.vue`:**已刪除**(原本的「分類單字列表頁」),書架版面改版時整併進 `practice/index.vue`,不再有獨立的中間頁
-  - `app/pages/practice/[categoryId]/choice.vue`:選擇題測驗頁,完整測驗邏輯已完成(抓單字、`buildQuizQuestions` 出題、答對/答錯判斷、答錯詳解彈窗、答對特效、鍵盤方向鍵選答);目前有 `mockWords` fallback(API 沒資料時偷偷退回假資料),且 fetch 失敗時的錯誤處理被拿掉了,還沒真正只依賴後端資料
+  - `app/pages/practice/[categoryId]/choice.vue`:選擇題測驗頁,完整測驗邏輯已完成(抓單字、`buildQuizQuestions` 出題、答對/答錯判斷、答錯詳解彈窗、答對特效、鍵盤方向鍵選答);`mockWords` fallback 已移除,只依賴後端資料,fetch 失敗時顯示「載入失敗」
+  - `app/pages/practice/[categoryId]/typing.vue`:打字拼寫測驗頁,第一版實作已完成(抓單字、`buildTypingQuestions` 出題、逐字母方格輸入、答對/答錯/跳過三種結果流程、Web Speech API 發音、結束畫面);規格細節見下方「進行中:練習頁第二步」
 
-## 進行中:練習頁第一步 — 選擇題模式(串真實後端)
+## 已完成: 選擇題模式
 
-練習功能的第一個垂直切片。流程:進入 `/practice` 練習頁 → 選擇要練習的書(分類)→ 進入該分類的選擇題測驗。分類清單直接串真的後端 API(不寫死在前端),因為 Derek 決定手動在 Supabase 補 `Categories`/`Words` 測試資料。
+## 進行中:練習頁第二步 — 打字拼寫模式
 
-**採分階段教學方式進行**(不是自動一次做完),每一步由 Derek 自己動手改,確認後才進下一步。詳細計畫存在 `C:\Users\USER\.claude\plans\reflective-growing-eagle.md`。
+練習頁第二個垂直切片,跟選擇題平行存在。流程:書架頁選書 → 點「打字拼寫」→ 開 `UModal` 選題數(沒有方向選擇)→ 進入 `/practice/[categoryId]/typing`。
 
-**選擇題規格(2026/08/18 定案)**:
+**採分階段教學方式進行**,每一步由 Derek 自己動手改,確認後才進下一步。詳細計畫存在 `C:\Users\USER\.claude\plans\proud-imagining-cherny.md`。Derek 提供設計稿(`frontend/claude-design/typing/`)後跟原始規劃討論出入,已對齊成下方最終版規格,`typing.vue` 已依此完成第一版實作。
 
-- 4 選 1(1 正解 + 3 隨機干擾項),分類底下單字數保證 > 4,不做不足提示
-- 練習方向可選:「看英文選中文」或「看中文選英文」(`QuizDirection = 'enToCn' | 'cnToEn'`)
-  - **定案(2026/08/19)**:方向選擇的 `UModal` 放在 `[categoryId]/index.vue`(單字列表頁),不是 `choice.vue` 本身 —— 點「選擇題」只開 dialog、不換路由,避免取消時要重新導航導致重打 API(有延遲/閃爍);按「開始測試」才把選好的方向用 `?direction=` query 帶進 `choice.vue` 的網址
-- 答錯要跳出視窗:上半顯示使用者選到的(錯誤)選項完整內容,下半顯示正確答案完整內容(含例句、詞性)—— 所以 `QuizOption`/`QuizQuestion`(`types/practice.ts`)都各自帶完整 `Word` 物件,不是只存字串,答錯/答對都能直接拿到完整資料不用重新查找
+**打字拼寫規格(依設計稿對齊後的定案)**:
 
-### 這個切片刻意不做的事
-
-- 不新增狀態管理套件(Pinia 等),測驗狀態用 `ref` 就夠
-- 不做作答結果的後端持久化(還沒有 SM-2 / 會員系統,這階段是純前端 session 狀態)
-- `app/components/` 原則上不建(單一使用位置的東西不抽元件),但 `AppNav.vue` 是例外 —— 因為 nav 已經有 2 個頁面在用(`index.vue`、`practice/index.vue`),符合「重複出現才抽元件」的原則
+- 出題方向固定「看中文提示,拼出英文單字」,不像選擇題有 `enToCn`/`cnToEn` 兩種方向可選
+- 答案判定:完全比對,不分大小寫、去頭尾空白(`trim().toLowerCase()`),跟選擇題一樣是簡單二元對錯,不做模糊比對/容錯拼字
+- 輸入方式:**逐字母方格**(依單字長度動態產生,自動跳下一格、Backspace 跳回上一格),不是原本規劃的單一輸入框 + 底線遮罩;填滿最後一格自動送出判定,不用另外按送出鈕
+- 答題結果:
+  - 打對:方格變綠 + 顯示「太棒了」訊息 + `SparkBurst` 煙火特效(重用 `choice.vue` 同款元件),3 秒自動跳下一題(倒數期間可提前手動點「下一題」,重用 choice.vue 的 auto-advance pattern)
+  - 打錯:方格變紅 + 撥放一次發音 + 顯示正確答案 1 秒 → 自動清空重新輸入,直到打對為止,沒有煙火效果
+  - 跳過:視同「不熟悉」,直接顯示正解 + 撥放一次發音,無煙火效果,手動按「下一題」才前進(不會自動倒數)
+- 算分:只要最後打對就算對,用過提示/跳過不扣分,但答錯過或跳過的單字會列入結束畫面的複習清單(`reviewWordIds`)
+- 發音:瀏覽器內建 Web Speech API(`SpeechSynthesisUtterance`),純前端;題目出現時自動撥放一次,題目旁邊有喇叭 icon 可手動重播,答錯/跳過時再撥一次
+- 新型別 `TypingQuestion`(`types/practice.ts`),不硬塞進 `QuizQuestion`(它的 `options` 是必填,拼寫題沒有選項概念)
+- 出題邏輯 `buildTypingQuestions` 放在既有 `utils/quiz.ts`,重用裡面的 `shuffle`
+- `practice/index.vue` 的 `minCount`/`maxCount`/`questionCount` 兩個 Modal(選擇題、拼寫)共用,不用各自宣告一份
+- 結束畫面比照 `choice.vue` 的「測驗結束」畫面(分數 + 複習列表 + 再練習一次/返回選擇分類),設計稿本身還沒設計這塊
+- 設計稿裡的頂部書本色塊/書名標籤(`{{ bookName }}`/`{{ bookColor }}`)先不做 —— `typing.vue` 目前只靠路由拿 `categoryId`,沒有額外傳書名/顏色,要顯示得多一支 API 呼叫或多帶 query,先跟 `choice.vue` 保持一致(只顯示題號/分數),之後有需要再補
 
 ## 技術棧
 
@@ -137,6 +144,11 @@
 
 - [ ] 導入 Redis 做快取 / refresh token 撤銷名單 — 非 MVP 必要項,先跳過;等 Cloud Run 開多 instance 或需要 token 撤銷機制時再評估,現階段如需快取可用內建 `IMemoryCache`
 
+### UIUX 待辦
+
+- [ ] `practice/index.vue` 書架 loading 畫面:`GET /api/categories` 載入中的畫面長相 — `pending` 已解構出來(`categoriesPending`)但還沒用在 template 上,先欠著,想好 UI 長相再補
+- [ ] 再選題時，選對跟選錯希望有聲音
+
 ---
 
 ### 目前進度 2026/08/31
@@ -145,7 +157,8 @@
 
 - [x] 後端:`Category` 加 `Color` 欄位(存 hex),`dotnet ef migrations add AddCategoryColor` 套用到 Supabase,手動補現有分類的色票值
 - [x] 後端:`Word` 加 `Ipa` 欄位(KK 音標),migration 套用到 Supabase,手動補現有 6 筆單字的音標
-- [ ] 前端:`practice/index.vue` 書架卡片改回串真的 `GET /api/categories`(顏色讀 `color` 欄位,書脊色前端對 `color` 加深處理即可,不用後端另存)
-- [ ] 前端:`practice/index.vue` 右側單字預覽改回串真的 `GET /api/words/category/{id}`(隨選書切換,音標讀 `ipa` 欄位)
-- [ ] 前端:`practice/index.vue` 設計 `pending`(`GET /api/categories` 載入中)畫面 — Todo 3 先把 `pending` 解構出來但沒用,先欠著,之後想好 loading UI 長相再補
-- [ ] 前端:`choice.vue` 移除 `mockWords`/`effectiveWords` fallback,恢復 fetch 失敗時的「載入失敗」錯誤處理
+- [x] 前端:`practice/index.vue` 書架卡片改回串真的 `GET /api/categories`(顏色讀 `color` 欄位,書脊色前端對 `color` 加深處理即可,不用後端另存)
+- [x] 前端:`practice/index.vue` 右側單字預覽改回串真的 `GET /api/words/category/{id}`(隨選書切換,音標讀 `ipa` 欄位);抓回來的 `Word[]` 直接在 template 用(`w.term`/`w.definitionCN`/`w.partOfSpeech`/`w.ipa`),沒有另外包一層 `previewWords` computed 轉欄位名 —— 討論後覺得多一層沒必要
+- [x] 前端:`choice.vue` 移除 `mockWords`/`effectiveWords` fallback,恢復 fetch 失敗時的「載入失敗」錯誤處理
+
+5 個 todo 全數完成(loading 畫面移到「UIUX 待辦」小節單獨追蹤)。練習頁選擇題模式垂直切片(書架選書 → 選方向/題數 → 選擇題測驗)已全部串接真實後端。

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+//TODO: 開發完要再回來整理
 import type { Word, QuizOption, QuizQuestion } from "~/types/practice"
 import type { QuizDirection } from "~/utils/quiz"
 
@@ -8,95 +9,15 @@ interface AnswerLogEntry {
   correct: boolean
 }
 
-// TODO: 接上真的後端(mock 書本 categoryId 有真實資料)後,整段 mockWords + effectiveWords fallback 都要刪掉,
-// 改回直接用 words.value(目前是因為前端還沒接後端,先讓沒 API 也能測選擇題畫面)
-const mockWords: Word[] = [
-  {
-    id: -1,
-    categoryId: -1,
-    term: "vicarious",
-    definitionCN: "替代的感受",
-    definitionEN: "experienced through someone else's actions or feelings",
-    partOfSpeech: "形容詞",
-    examples: ["She felt a vicarious thrill watching her daughter perform."]
-  },
-  {
-    id: -2,
-    categoryId: -1,
-    term: "haltingly",
-    definitionCN: "吞吞吐吐地",
-    definitionEN: "in a hesitant or uncertain manner",
-    partOfSpeech: "副詞",
-    examples: ["He spoke haltingly, unsure of the right words."]
-  },
-  {
-    id: -3,
-    categoryId: -1,
-    term: "hectic",
-    definitionCN: "忙亂的",
-    definitionEN: "full of frantic activity",
-    partOfSpeech: "形容詞",
-    examples: ["It was a hectic day at the office."]
-  },
-  {
-    id: -4,
-    categoryId: -1,
-    term: "hub",
-    definitionCN: "中心樞紐",
-    definitionEN: "the effective center of an activity or region",
-    partOfSpeech: "名詞",
-    examples: ["The airport is a major hub for international flights."]
-  },
-  {
-    id: -5,
-    categoryId: -1,
-    term: "hysterical",
-    definitionCN: "歇斯底里的",
-    definitionEN: "affected by wildly uncontrolled emotion",
-    partOfSpeech: "形容詞",
-    examples: ["The crowd became hysterical when the band appeared."]
-  },
-  {
-    id: -6,
-    categoryId: -1,
-    term: "handout",
-    definitionCN: "講義;施捨",
-    definitionEN: "a document given free to people at a meeting or class",
-    partOfSpeech: "名詞",
-    examples: ["The teacher gave each student a handout."]
-  },
-  {
-    id: -7,
-    categoryId: -1,
-    term: "ambiguous",
-    definitionCN: "模稜兩可的",
-    definitionEN: "open to more than one interpretation",
-    partOfSpeech: "形容詞",
-    examples: ["The instructions were ambiguous and confused everyone."]
-  },
-  {
-    id: -8,
-    categoryId: -1,
-    term: "candid",
-    definitionCN: "坦率的",
-    definitionEN: "truthful and straightforward",
-    partOfSpeech: "形容詞",
-    examples: ["She gave a candid answer to the reporter's question."]
-  }
-]
-
 const route = useRoute()
 const currentIndex = ref(0)
 const questions = ref<QuizQuestion[]>([])
 const direction = (route.query.direction as QuizDirection) || "enToCn"
 const questionCount = Number(route.query.count) || undefined
 const categoryId = route.params.categoryId
-// TODO: mock fallback 刪除後,要把 error 加回來,失敗時顯示「載入失敗」而不是靜默 fallback
-const { data: words, pending } = await useFetch<Word[]>(useApiUrl(`/api/words/category/${categoryId}`))
+const { data: words, pending, error } = await useFetch<Word[]>(useApiUrl(`/api/words/category/${categoryId}`))
 
-const effectiveWords = computed(() => (words.value && words.value.length > 0 ? words.value : mockWords))
-
-if (effectiveWords.value.length) questions.value = buildQuizQuestions(effectiveWords.value, direction, questionCount)
+if (words.value?.length) questions.value = buildQuizQuestions(words.value, direction, questionCount)
 
 const currentQuestion = computed(() => questions.value[currentIndex.value])
 const progressPercent = computed(() =>
@@ -236,7 +157,8 @@ function optionClasses(option: QuizOption, index: number) {
 function letterClasses(option: QuizOption, index: number) {
   if (isAnswered.value && isCorrectOption(option)) return "border-emerald-500/60 text-emerald-600"
   if (isAnswered.value && option === selectedOption.value) return "border-rose-500/60 text-rose-600"
-  if (!isAnswered.value && index === highlightedIndex.value) return "border-paper-primary/60 bg-paper-primary/10 text-paper-primary"
+  if (!isAnswered.value && index === highlightedIndex.value)
+    return "border-paper-primary/60 bg-paper-primary/10 text-paper-primary"
   return "border-paper-fg/20 text-paper-muted"
 }
 
@@ -252,7 +174,7 @@ function nextQuestion() {
 
 function restartQuiz() {
   clearAutoAdvance()
-  questions.value = buildQuizQuestions(effectiveWords.value, direction, questionCount)
+  questions.value = buildQuizQuestions(words.value!, direction, questionCount)
   currentIndex.value = 0
   score.value = 0
   selectedOption.value = null
@@ -269,6 +191,7 @@ function restartQuiz() {
     <AppNav />
 
     <p v-if="pending" class="text-center text-paper-muted py-24">載入中...</p>
+    <p v-else-if="error" class="text-center text-paper-muted py-24">載入失敗...</p>
 
     <template v-else>
       <div v-if="currentQuestion" class="max-w-2xl mx-auto px-6 pt-8">
@@ -389,7 +312,11 @@ function restartQuiz() {
         </div>
 
         <div class="flex justify-center gap-4">
-          <UButton label="再練習一次" class="bg-paper-primary text-paper-bg hover:bg-paper-accent" @click="restartQuiz" />
+          <UButton
+            label="再練習一次"
+            class="bg-paper-primary text-paper-bg hover:bg-paper-accent"
+            @click="restartQuiz"
+          />
           <UButton
             label="返回選擇分類"
             color="neutral"
@@ -428,9 +355,7 @@ function restartQuiz() {
             <div
               class="inline-flex items-center gap-1.5 mb-3 rounded-full px-2.5 py-1 text-xs"
               :class="
-                card.tone === 'correct'
-                  ? 'bg-paper-primary/15 text-paper-primary'
-                  : 'bg-rose-500/15 text-rose-600'
+                card.tone === 'correct' ? 'bg-paper-primary/15 text-paper-primary' : 'bg-rose-500/15 text-rose-600'
               "
             >
               <svg

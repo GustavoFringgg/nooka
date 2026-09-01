@@ -1,12 +1,30 @@
 <script setup lang="ts">
-// TODO: 目前書架 / 單字預覽全部是 mock 資料(色票、KK 音標後端都還沒有欄位),
-// 之後補上 Category 顏色欄位 + Word 音標欄位後,換成真的 GET /api/categories、GET /api/words/category/{id}
-import type { Category } from "~/types/practice"
+import type { Category, Word } from "~/types/practice"
 import type { QuizDirection } from "~/utils/quiz"
-const { data: categories, pending } = await useFetch<Category[]>(useApiUrl("/api/categories"))
+const router = useRouter()
+
+type PartOfSpeech = "形容詞" | "副詞" | "動詞" | "名詞" | "代名詞" | "介系詞" | "連接詞" | "感嘆詞"
+
+const posColors: Record<PartOfSpeech, { bg: string; text: string }> = {
+  形容詞: { bg: "rgba(193,101,59,.16)", text: "#8f4128" },
+  副詞: { bg: "rgba(60,90,68,.16)", text: "#2c433a" },
+  動詞: { bg: "rgba(156,74,60,.16)", text: "#78392e" },
+  名詞: { bg: "rgba(62,110,142,.16)", text: "#2d5670" },
+  代名詞: { bg: "rgba(107,76,110,.16)", text: "#503a52" },
+  介系詞: { bg: "rgba(138,122,62,.16)", text: "#6a5e2f" },
+  連接詞: { bg: "rgba(47,110,107,.16)", text: "#235350" },
+  感嘆詞: { bg: "rgba(161,63,94,.16)", text: "#7a2f47" }
+}
+
+//TODO: 這裡要再理解
+function posColor(pos: string) {
+  return posColors[pos as PartOfSpeech]
+}
 
 const selectedId = ref<number | null>(null)
 const selectedBook = computed(() => categories.value?.find((c) => c.id === selectedId.value) ?? null)
+
+const { data: categories, pending: categoriesPending } = await useFetch<Category[]>(useApiUrl("/api/categories"))
 
 watch(
   categories,
@@ -14,6 +32,10 @@ watch(
     if (val?.length && selectedId.value === null) selectedId.value = val[0]!.id
   },
   { immediate: true } // immediate 設定 watch 當下先跑一次
+)
+const { data: words, pending: wordsPending } = await useFetch<Word[]>(
+  () => useApiUrl(`/api/words/category/${selectedId.value}`),
+  { watch: [selectedId] }
 )
 
 function darken(hex: string, amount = 0.25) {
@@ -23,68 +45,9 @@ function darken(hex: string, amount = 0.25) {
   const b = Math.round((num & 255) * (1 - amount))
   return `rgb(${r}, ${g}, ${b})`
 }
-// interface MockBook {
-//   id: string
-//   categoryId?: number // 對應真實後端 categoryId,mock 書本沒有就先留空
-//   name: string
-//   color: string
-//   spineColor: string
-//   count: number
-// }
 
-// interface MockWord {
-//   en: string
-//   zh: string
-//   pos: "形容詞" | "副詞" | "動詞" | "名詞"
-//   ipa: string
-// }
-
-// const posColors: Record<MockWord["pos"], { bg: string; text: string }> = {
-//   形容詞: { bg: "rgba(193,101,59,.16)", text: "#8f4128" },
-//   副詞: { bg: "rgba(60,90,68,.16)", text: "#2c433a" },
-//   動詞: { bg: "rgba(156,74,60,.16)", text: "#78392e" },
-//   名詞: { bg: "rgba(62,110,142,.16)", text: "#2d5670" }
-// }
-
-// const books: MockBook[] = [
-//   { id: "toeic", categoryId: 1, name: "多益(600)", color: "#b08434", spineColor: "#8a6425", count: 6 },
-//   { id: "security", name: "資安用", color: "#9c4a3c", spineColor: "#78392e", count: 40 },
-//   { id: "aviation", name: "航空用", color: "#3e6e8e", spineColor: "#2d5670", count: 35 },
-//   { id: "biz", name: "商務", color: "#6b4c6e", spineColor: "#503a52", count: 28 },
-//   { id: "eng", name: "工程", color: "#6e7a3e", spineColor: "#535c2f", count: 32 },
-//   { id: "travel", name: "旅遊", color: "#2f6e6b", spineColor: "#235350", count: 20 },
-//   { id: "medical", name: "醫療用", color: "#a13f5e", spineColor: "#7a2f47", count: 30 },
-//   { id: "finance", name: "金融", color: "#4a5a8a", spineColor: "#37436a", count: 26 },
-//   { id: "daily", name: "生活會話", color: "#8a7a3e", spineColor: "#6a5e2f", count: 24 }
-// ]
-
-// const demoWords: MockWord[] = [
-//   { en: "vicarious", zh: "替代的感受", pos: "形容詞", ipa: "vaɪˈkɛrɪəs" },
-//   { en: "haltingly", zh: "吞吞吐吐地", pos: "副詞", ipa: "ˈhɔltɪŋli" },
-//   { en: "hectic", zh: "忙亂的", pos: "形容詞", ipa: "ˈhɛktɪk" },
-//   { en: "hub", zh: "中心樞紐", pos: "名詞", ipa: "hʌb" },
-//   { en: "hysterical", zh: "歇斯底里的", pos: "形容詞", ipa: "hɪˈstɛrɪkl" },
-//   { en: "handout", zh: "講義;施捨", pos: "名詞", ipa: "ˈhændaʊt" },
-//   { en: "ambiguous", zh: "模稜兩可的", pos: "形容詞", ipa: "æmˈbɪgjuəs" },
-//   { en: "candid", zh: "坦率的", pos: "形容詞", ipa: "ˈkændɪd" },
-//   { en: "diligent", zh: "勤奮的", pos: "形容詞", ipa: "ˈdɪlədʒənt" },
-//   { en: "eloquent", zh: "雄辯的", pos: "形容詞", ipa: "ˈɛləkwənt" },
-//   { en: "frugal", zh: "節儉的", pos: "形容詞", ipa: "ˈfrugl̩" },
-//   { en: "gregarious", zh: "善於社交的", pos: "形容詞", ipa: "grɪˈgɛriəs" },
-//   { en: "hinder", zh: "阻礙", pos: "動詞", ipa: "ˈhɪndɚ" },
-//   { en: "intricate", zh: "複雜精細的", pos: "形容詞", ipa: "ˈɪntrɪkɪt" },
-//   { en: "jubilant", zh: "歡欣鼓舞的", pos: "形容詞", ipa: "ˈdʒublənt" },
-//   { en: "keen", zh: "敏銳的;渴望的", pos: "形容詞", ipa: "kin" },
-//   { en: "lucid", zh: "清晰易懂的", pos: "形容詞", ipa: "ˈlusɪd" },
-//   { en: "meticulous", zh: "一絲不苟的", pos: "形容詞", ipa: "məˈtɪkjələs" },
-//   { en: "novice", zh: "新手", pos: "名詞", ipa: "ˈnɑvɪs" },
-//   { en: "obsolete", zh: "過時的", pos: "形容詞", ipa: "ˌɑbsəˈlit" }
-// ]
-
-const router = useRouter()
-
-const previewWords = computed(() => [])
 const isChoiceModalOpen = ref(false)
+const isTypingModalOpen = ref(false)
 const direction = ref<QuizDirection>("enToCn")
 const questionCount = ref(1)
 
@@ -93,8 +56,17 @@ const directionOptions: { label: string; value: QuizDirection }[] = [
   { label: "看中文,選英文答案", value: "cnToEn" }
 ]
 
-const minCount = ref(1) //computed(() => Math.min(5, selectedBook.value?.count ?? 5))
-const maxCount = ref(20) //computed(() => selectedBook.value?.count ?? 30)
+const minCount = ref(5) //computed(() => Math.min(5, selectedBook.value?.count ?? 5))
+const maxCount = computed(() => words.value?.length ?? 5)
+
+type PracticeMode = "flashcard" | "choice" | "typing"
+const selectedMode = ref<PracticeMode | null>(null)
+
+function selectMode(mode: PracticeMode) {
+  selectedMode.value = mode
+  if (mode === "choice") openChoiceModal()
+  if (mode === "typing") openTypingModal()
+}
 
 function openChoiceModal() {
   if (!selectedBook.value) return
@@ -102,6 +74,11 @@ function openChoiceModal() {
   isChoiceModalOpen.value = true
 }
 
+function openTypingModal() {
+  if (!selectedBook.value) return
+  questionCount.value = maxCount.value
+  isTypingModalOpen.value = true
+}
 function selectBook(id: number) {
   selectedId.value = id
 }
@@ -111,6 +88,13 @@ function startChoiceQuiz() {
   isChoiceModalOpen.value = false
   const targetId = selectedBook.value.id
   router.push(`/practice/${targetId}/choice?direction=${direction.value}&count=${questionCount.value}`)
+}
+
+function startTypingQuiz() {
+  if (!selectedBook.value) return
+  isTypingModalOpen.value = false
+  const targetId = selectedBook.value.id
+  router.push(`/practice/${targetId}/typing?count=${questionCount.value}`)
 }
 </script>
 
@@ -122,31 +106,43 @@ function startChoiceQuiz() {
       <div class="max-w-[1440px] mx-auto px-12 w-full flex-1 min-h-0 flex flex-col">
         <div class="max-w-[1040px] mx-auto pt-8 w-full shrink-0">
           <div class="mb-6 flex flex-wrap gap-4">
-            <div
-              class="flex-1 min-w-40 rounded-full bg-paper-fg/8 px-6 py-5 text-center text-base font-semibold text-paper-muted/70 cursor-not-allowed"
+            <button
+              type="button"
+              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5"
+              :class="
+                selectedMode === 'flashcard'
+                  ? 'bg-paper-primary text-paper-bg'
+                  : 'bg-paper-fg/8 text-paper-muted/70 hover:bg-paper-primary hover:text-paper-bg'
+              "
+              @click="selectMode('flashcard')"
             >
               單字卡
-              <span class="text-xs">· 即將推出</span>
-            </div>
+            </button>
             <button
               type="button"
               class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out"
               :class="
-                selectedBook
+                selectedMode === 'choice'
                   ? 'bg-paper-primary text-paper-bg cursor-pointer hover:-translate-y-0.5'
-                  : 'bg-paper-fg/15 text-paper-muted/70 cursor-not-allowed'
+                  : 'bg-paper-fg/8 text-paper-muted/70 cursor-pointer hover:-translate-y-0.5 hover:bg-paper-primary hover:text-paper-bg'
               "
               :disabled="!selectedBook"
-              @click="openChoiceModal"
+              @click="selectMode('choice')"
             >
               選擇題
             </button>
-            <div
-              class="flex-1 min-w-40 rounded-full bg-paper-fg/8 px-6 py-5 text-center text-base font-semibold text-paper-muted/70 cursor-not-allowed"
+            <button
+              type="button"
+              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5"
+              :class="
+                selectedMode === 'typing'
+                  ? 'bg-paper-primary text-paper-bg'
+                  : 'bg-paper-fg/8 text-paper-muted/70 hover:bg-paper-primary hover:text-paper-bg'
+              "
+              @click="selectMode('typing')"
             >
               打字拼寫
-              <span class="text-xs">· 即將推出</span>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -205,7 +201,7 @@ function startChoiceQuiz() {
             class="lg:flex-[0.85] h-full min-h-0 bg-paper-bg rounded-[20px] p-7 shadow-[0_20px_40px_-26px_rgba(43,42,37,0.3)] box-border flex flex-col"
           >
             <div v-if="selectedBook" class="flex items-center gap-3 mb-1.5">
-              <div class="w-3.5 h-3.5 rounded-[4px]" :style="{ background: selectedBook.color }" />
+              <div class="w-3.5 h-3.5 rounded-[4px]" :style="{ background: selectedBook.color ?? '#8a7a3e' }" />
               <span class="font-display text-[26px] text-paper-fg">{{ selectedBook.name }}</span>
             </div>
             <!-- <p v-if="selectedBook" class="mb-5 text-paper-muted text-[13.5px]">{{ selectedBook.count }} 個單字</p> -->
@@ -213,10 +209,10 @@ function startChoiceQuiz() {
             <div
               class="styled-scrollbar grid grid-cols-2 gap-2 flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1.5 content-start"
             >
-              <div v-for="w in previewWords" :key="w.en" class="py-3 px-1 border-b border-paper-fg/12 box-border">
+              <div v-for="w in words" :key="w.id" class="py-3 px-1 border-b border-paper-fg/12 box-border">
                 <div class="flex items-baseline justify-between gap-2">
-                  <span class="font-display text-[17px] text-paper-fg">{{ w.en }}</span>
-                  <span class="text-paper-muted text-[12.5px] text-right">{{ w.zh }}</span>
+                  <span class="font-display text-[17px] text-paper-fg">{{ w.term }}</span>
+                  <span class="text-paper-muted text-[12.5px] text-right">{{ w.definitionCN }}</span>
                 </div>
                 <div class="flex items-center justify-between gap-2 mt-1">
                   <div class="flex items-center gap-1.5">
@@ -224,7 +220,7 @@ function startChoiceQuiz() {
                       class="text-[#9c9384] text-[11.5px]"
                       style="font-family: ui-monospace, &quot;SF Mono&quot;, monospace"
                     >
-                      /{{ w.ipa }}/
+                      /{{ w.ipa ?? "" }}/
                     </span>
                     <span
                       class="w-6.5 h-6.5 rounded-full flex items-center justify-center text-[#9c9384] cursor-pointer transition-colors duration-150 hover:bg-paper-fg/8 hover:text-paper-primary"
@@ -237,9 +233,9 @@ function startChoiceQuiz() {
                   </div>
                   <span
                     class="text-[11px] px-1.5 py-0.5 rounded-full shrink-0"
-                    :style="{ color: posColors[w.pos].text, background: posColors[w.pos].bg }"
+                    :style="{ color: posColor(w.partOfSpeech).text, background: posColor(w.partOfSpeech).bg }"
                   >
-                    {{ w.pos }}
+                    {{ w.partOfSpeech }}
                   </span>
                 </div>
               </div>
@@ -341,6 +337,63 @@ function startChoiceQuiz() {
             label="開始練習"
             class="flex-[2] justify-center bg-paper-primary text-paper-bg hover:bg-paper-accent"
             @click="startChoiceQuiz"
+          />
+        </div>
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="isTypingModalOpen"
+      title="練習題數"
+      description="選擇題數,設定好就可以開始測驗"
+      :ui="{
+        content: 'bg-paper-bg text-paper-fg ring-paper-fg/10 divide-paper-fg/10',
+        header: 'border-paper-fg/10',
+        footer: 'border-paper-fg/10',
+        title: 'text-paper-fg font-display text-2xl font-normal',
+        description: 'text-paper-muted',
+        close: 'text-paper-muted hover:bg-paper-fg/10 hover:text-paper-fg',
+        overlay: 'bg-paper-fg/40'
+      }"
+    >
+      <template #body>
+        <div class="mt-7 pt-6">
+          <div class="flex items-center justify-between">
+            <span class="text-paper-fg text-[15px] font-medium">題目數量</span>
+            <span class="text-paper-accent font-display text-[22px]">{{ questionCount }}</span>
+          </div>
+          <USlider
+            v-model="questionCount"
+            :min="minCount"
+            :max="maxCount"
+            :step="1"
+            class="mt-3.5"
+            :ui="{
+              track: 'bg-paper-fg/12',
+              range: 'bg-paper-primary',
+              thumb: 'bg-white border-2 border-paper-primary ring-0 focus-visible:outline-paper-primary'
+            }"
+          />
+          <div class="flex justify-between text-[#9c9384] text-xs mt-1">
+            <span>{{ minCount }}</span>
+            <span>{{ maxCount }}</span>
+          </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex gap-3 w-full">
+          <UButton
+            label="取消"
+            color="neutral"
+            variant="outline"
+            class="flex-1 justify-center bg-transparent border-paper-fg/25 text-paper-fg hover:bg-paper-fg/5"
+            @click="isTypingModalOpen = false"
+          />
+          <UButton
+            label="開始練習"
+            class="flex-[2] justify-center bg-paper-primary text-paper-bg hover:bg-paper-accent"
+            @click="startTypingQuiz"
           />
         </div>
       </template>
