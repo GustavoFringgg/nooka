@@ -55,8 +55,16 @@ const directionOptions: { label: string; value: QuizDirection }[] = [
   { label: "看中文,選英文答案", value: "cnToEn" }
 ]
 
-const minCount = ref(1) //computed(() => Math.min(5, selectedBook.value?.count ?? 5))
-const maxCount = ref(20) //computed(() => selectedBook.value?.count ?? 30)
+const minCount = ref(5) //computed(() => Math.min(5, selectedBook.value?.count ?? 5))
+const maxCount = computed(() => words.value?.length ?? 5)
+
+type PracticeMode = "flashcard" | "choice" | "typing"
+const selectedMode = ref<PracticeMode | null>(null)
+
+function selectMode(mode: PracticeMode) {
+  selectedMode.value = mode
+  if (mode === "choice") openChoiceModal()
+}
 
 function openChoiceModal() {
   if (!selectedBook.value) return
@@ -84,31 +92,43 @@ function startChoiceQuiz() {
       <div class="max-w-[1440px] mx-auto px-12 w-full flex-1 min-h-0 flex flex-col">
         <div class="max-w-[1040px] mx-auto pt-8 w-full shrink-0">
           <div class="mb-6 flex flex-wrap gap-4">
-            <div
-              class="flex-1 min-w-40 rounded-full bg-paper-fg/8 px-6 py-5 text-center text-base font-semibold text-paper-muted/70 cursor-not-allowed"
+            <button
+              type="button"
+              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5"
+              :class="
+                selectedMode === 'flashcard'
+                  ? 'bg-paper-primary text-paper-bg'
+                  : 'bg-paper-fg/8 text-paper-muted/70 hover:bg-paper-primary hover:text-paper-bg'
+              "
+              @click="selectMode('flashcard')"
             >
               單字卡
-              <span class="text-xs">· 即將推出</span>
-            </div>
+            </button>
             <button
               type="button"
               class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out"
               :class="
-                selectedBook
+                selectedMode === 'choice'
                   ? 'bg-paper-primary text-paper-bg cursor-pointer hover:-translate-y-0.5'
-                  : 'bg-paper-fg/15 text-paper-muted/70 cursor-not-allowed'
+                  : 'bg-paper-fg/8 text-paper-muted/70 cursor-pointer hover:-translate-y-0.5 hover:bg-paper-primary hover:text-paper-bg'
               "
               :disabled="!selectedBook"
-              @click="openChoiceModal"
+              @click="selectMode('choice')"
             >
               選擇題
             </button>
-            <div
-              class="flex-1 min-w-40 rounded-full bg-paper-fg/8 px-6 py-5 text-center text-base font-semibold text-paper-muted/70 cursor-not-allowed"
+            <button
+              type="button"
+              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5"
+              :class="
+                selectedMode === 'typing'
+                  ? 'bg-paper-primary text-paper-bg'
+                  : 'bg-paper-fg/8 text-paper-muted/70 hover:bg-paper-primary hover:text-paper-bg'
+              "
+              @click="selectMode('typing')"
             >
               打字拼寫
-              <span class="text-xs">· 即將推出</span>
-            </div>
+            </button>
           </div>
         </div>
 

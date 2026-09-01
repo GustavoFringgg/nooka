@@ -140,6 +140,7 @@
 ### UIUX 待辦
 
 - [ ] `practice/index.vue` 書架 loading 畫面:`GET /api/categories` 載入中的畫面長相 — `pending` 已解構出來(`categoriesPending`)但還沒用在 template 上,先欠著,想好 UI 長相再補
+- [ ] 再選題時，選對跟選錯希望有聲音
 
 ---
 

@@ -129,7 +129,6 @@ const goPractice = () => navigateTo("/practice")
     <section class="bg-paper-bg-alt overflow-hidden py-20">
       <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-0 items-center px-6 md:pl-12">
         <div class="md:pr-16">
-          <div class="w-13 h-13 rounded-2xl bg-paper-primary mb-6" />
           <h2 class="m-0 font-display font-normal text-[clamp(32px,4.5vw,52px)] text-paper-fg">
             先選書,不用先想從哪開始
           </h2>
@@ -222,13 +221,8 @@ const goPractice = () => navigateTo("/practice")
           </div>
 
           <div
-            class="relative p-7 rounded-[22px] border border-dashed border-paper-fg/20 bg-white/28 opacity-75 cursor-not-allowed transition-[transform,opacity] duration-250 ease-out hover:-translate-y-1 hover:opacity-95"
+            class="p-7 rounded-[22px] border border-paper-fg/15 bg-white/50 backdrop-blur-[4px] transition-[transform,background-color] duration-250 ease-out hover:-translate-y-1.5 hover:bg-white/85"
           >
-            <span
-              class="absolute top-4.5 right-4.5 px-3 py-1 rounded-full bg-paper-fg/10 text-paper-muted text-[11.5px]"
-            >
-              即將推出
-            </span>
             <div class="w-[220px] h-[120px] mx-auto mb-6 flex items-center justify-center gap-2">
               <div
                 class="w-14 h-[70px] rounded-lg border-[1.5px] border-dashed border-paper-fg/25 flex items-center justify-center text-paper-muted text-[13px] font-mono"
@@ -291,7 +285,6 @@ const goPractice = () => navigateTo("/practice")
         </div>
 
         <div>
-          <div class="w-13 h-13 rounded-2xl bg-paper-primary mb-6" />
           <h2 class="m-0 font-display font-normal text-[clamp(32px,4.5vw,52px)] text-paper-fg">答錯的時候,才是重點</h2>
           <p class="mt-5 max-w-[460px] text-paper-muted text-base leading-[1.8]">
             選錯不會只給你一個叉。我們會把你選的那個字和正確答案並排攤開 — 詞性、英文定義、例句都在 —
@@ -314,7 +307,6 @@ const goPractice = () => navigateTo("/practice")
     <section class="bg-paper-bg py-20 px-6 md:px-12">
       <div class="max-w-7xl mx-auto grid md:grid-cols-[.95fr_1.05fr] gap-16 items-center">
         <div>
-          <div class="w-13 h-13 rounded-2xl bg-paper-primary mb-6" />
           <h2 class="m-0 font-display font-normal text-[clamp(32px,4.5vw,52px)] text-paper-fg">為什麼會記得住?</h2>
           <p class="mt-5 max-w-[460px] text-paper-muted text-base leading-[1.8]">
             人腦本來就會忘記 — 這條線是沒有複習的話,記憶會怎麼往下掉。Nooka 用
