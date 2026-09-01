@@ -137,6 +137,10 @@
 
 - [ ] 導入 Redis 做快取 / refresh token 撤銷名單 — 非 MVP 必要項,先跳過;等 Cloud Run 開多 instance 或需要 token 撤銷機制時再評估,現階段如需快取可用內建 `IMemoryCache`
 
+### UIUX 待辦
+
+- [ ] `practice/index.vue` 書架 loading 畫面:`GET /api/categories` 載入中的畫面長相 — `pending` 已解構出來(`categoriesPending`)但還沒用在 template 上,先欠著,想好 UI 長相再補
+
 ---
 
 ### 目前進度 2026/08/31
@@ -145,7 +149,6 @@
 
 - [x] 後端:`Category` 加 `Color` 欄位(存 hex),`dotnet ef migrations add AddCategoryColor` 套用到 Supabase,手動補現有分類的色票值
 - [x] 後端:`Word` 加 `Ipa` 欄位(KK 音標),migration 套用到 Supabase,手動補現有 6 筆單字的音標
-- [ ] 前端:`practice/index.vue` 書架卡片改回串真的 `GET /api/categories`(顏色讀 `color` 欄位,書脊色前端對 `color` 加深處理即可,不用後端另存)
-- [ ] 前端:`practice/index.vue` 右側單字預覽改回串真的 `GET /api/words/category/{id}`(隨選書切換,音標讀 `ipa` 欄位)
-- [ ] 前端:`practice/index.vue` 設計 `pending`(`GET /api/categories` 載入中)畫面 — Todo 3 先把 `pending` 解構出來但沒用,先欠著,之後想好 loading UI 長相再補
+- [x] 前端:`practice/index.vue` 書架卡片改回串真的 `GET /api/categories`(顏色讀 `color` 欄位,書脊色前端對 `color` 加深處理即可,不用後端另存)
+- [x] 前端:`practice/index.vue` 右側單字預覽改回串真的 `GET /api/words/category/{id}`(隨選書切換,音標讀 `ipa` 欄位);抓回來的 `Word[]` 直接在 template 用(`w.term`/`w.definitionCN`/`w.partOfSpeech`/`w.ipa`),沒有另外包一層 `previewWords` computed 轉欄位名 —— 討論後覺得多一層沒必要
 - [ ] 前端:`choice.vue` 移除 `mockWords`/`effectiveWords` fallback,恢復 fetch 失敗時的「載入失敗」錯誤處理
