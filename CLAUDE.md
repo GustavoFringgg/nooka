@@ -23,9 +23,9 @@
   - `app/pages/index.vue`:首頁,採**單頁式**方向 — 上方 100vh 影片 Hero(nav + 標題 + CTA),往下滾動接深藍色 Night Palette 內容區塊(分類/練習模式/學習紀錄卡片),不做「首頁只放 3D 圖、完整介紹另外開一頁」的方案(討論過兩個方向,選了這個,效果不理想可能會 roll back)
   - `app/components/AppNav.vue`:共用 nav 元件(首頁/練習/學習紀錄/登入),`active` 連結用 `useRoute()` 自動判斷,不用手動寫死;`index.vue`、`practice/` 系列頁面都已改用這個元件
   - 這個首頁是行銷 / 訪客用的 landing page,跟下方「首頁書架」使用者故事(登入後瀏覽分類的書架頁)是不同頁面,兩者尚未串接
-  - `app/pages/practice/index.vue`:書架頁,改版後**合併**了原本「分類單字列表頁」的角色 — 左側書架卡片選書,右側面板即時顯示該分類單字預覽,點「選擇題」開 `UModal` 選練習方向 + 題數(`USlider`),按「開始練習」才 `router.push` 帶 `?direction=&count=` query 跳到 `choice.vue`;目前書架清單、右側單字預覽都是**寫死的前端 mock 資料**(書封顏色、KK 音標後端還沒有對應欄位),`GET /api/categories`/`GET /api/words/category/{id}` 都還沒接回來(08/18-08/19 曾經接過,改版時被退回 mock,見下方「目前進度 2026/08/31」)
+  - `app/pages/practice/index.vue`:書架頁,改版後**合併**了原本「分類單字列表頁」的角色 — 左側書架卡片選書,右側面板即時顯示該分類單字預覽,點「選擇題」開 `UModal` 選練習方向 + 題數(`USlider`),按「開始練習」才 `router.push` 帶 `?direction=&count=` query 跳到 `choice.vue`;書架清單、右側單字預覽已改回串真的 `GET /api/categories`、`GET /api/words/category/{id}`(書封顏色讀 `Category.Color`,音標讀 `Word.Ipa`),不再是 mock 資料;`posColors` 補齊 8 種詞性(形容詞/副詞/動詞/名詞/代名詞/介系詞/連接詞/感嘆詞),`GET /api/categories` 載入中的畫面還沒做(見下方「UIUX 待辦」)
   - `app/pages/practice/[categoryId]/index.vue`:**已刪除**(原本的「分類單字列表頁」),書架版面改版時整併進 `practice/index.vue`,不再有獨立的中間頁
-  - `app/pages/practice/[categoryId]/choice.vue`:選擇題測驗頁,完整測驗邏輯已完成(抓單字、`buildQuizQuestions` 出題、答對/答錯判斷、答錯詳解彈窗、答對特效、鍵盤方向鍵選答);目前有 `mockWords` fallback(API 沒資料時偷偷退回假資料),且 fetch 失敗時的錯誤處理被拿掉了,還沒真正只依賴後端資料
+  - `app/pages/practice/[categoryId]/choice.vue`:選擇題測驗頁,完整測驗邏輯已完成(抓單字、`buildQuizQuestions` 出題、答對/答錯判斷、答錯詳解彈窗、答對特效、鍵盤方向鍵選答);`mockWords` fallback 已移除,只依賴後端資料,fetch 失敗時顯示「載入失敗」
 
 ## 進行中:練習頁第一步 — 選擇題模式(串真實後端)
 
@@ -151,4 +151,6 @@
 - [x] 後端:`Word` 加 `Ipa` 欄位(KK 音標),migration 套用到 Supabase,手動補現有 6 筆單字的音標
 - [x] 前端:`practice/index.vue` 書架卡片改回串真的 `GET /api/categories`(顏色讀 `color` 欄位,書脊色前端對 `color` 加深處理即可,不用後端另存)
 - [x] 前端:`practice/index.vue` 右側單字預覽改回串真的 `GET /api/words/category/{id}`(隨選書切換,音標讀 `ipa` 欄位);抓回來的 `Word[]` 直接在 template 用(`w.term`/`w.definitionCN`/`w.partOfSpeech`/`w.ipa`),沒有另外包一層 `previewWords` computed 轉欄位名 —— 討論後覺得多一層沒必要
-- [ ] 前端:`choice.vue` 移除 `mockWords`/`effectiveWords` fallback,恢復 fetch 失敗時的「載入失敗」錯誤處理
+- [x] 前端:`choice.vue` 移除 `mockWords`/`effectiveWords` fallback,恢復 fetch 失敗時的「載入失敗」錯誤處理
+
+5 個 todo 全數完成(loading 畫面移到「UIUX 待辦」小節單獨追蹤)。練習頁選擇題模式垂直切片(書架選書 → 選方向/題數 → 選擇題測驗)已全部串接真實後端。
