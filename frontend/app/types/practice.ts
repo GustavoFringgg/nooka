@@ -28,3 +28,8 @@ export interface QuizQuestion {
   prompt: string // 題目顯示內容
   options: QuizOption[] // 4 個選項(已洗牌),每個選項都帶著自己的 word
 }
+
+export interface TypingQuestion {
+  word: Word // 正解單字(完整物件)
+  prompt: string // 題目顯示內容,= word.definitionCN
+}

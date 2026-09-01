@@ -47,6 +47,7 @@ function darken(hex: string, amount = 0.25) {
 }
 
 const isChoiceModalOpen = ref(false)
+const isTypingModalOpen = ref(false)
 const direction = ref<QuizDirection>("enToCn")
 const questionCount = ref(1)
 
@@ -64,6 +65,7 @@ const selectedMode = ref<PracticeMode | null>(null)
 function selectMode(mode: PracticeMode) {
   selectedMode.value = mode
   if (mode === "choice") openChoiceModal()
+  if (mode === "typing") openTypingModal()
 }
 
 function openChoiceModal() {
@@ -72,6 +74,11 @@ function openChoiceModal() {
   isChoiceModalOpen.value = true
 }
 
+function openTypingModal() {
+  if (!selectedBook.value) return
+  questionCount.value = maxCount.value
+  isTypingModalOpen.value = true
+}
 function selectBook(id: number) {
   selectedId.value = id
 }
@@ -81,6 +88,13 @@ function startChoiceQuiz() {
   isChoiceModalOpen.value = false
   const targetId = selectedBook.value.id
   router.push(`/practice/${targetId}/choice?direction=${direction.value}&count=${questionCount.value}`)
+}
+
+function startTypingQuiz() {
+  if (!selectedBook.value) return
+  isTypingModalOpen.value = false
+  const targetId = selectedBook.value.id
+  router.push(`/practice/${targetId}/typing?count=${questionCount.value}`)
 }
 </script>
 
@@ -323,6 +337,63 @@ function startChoiceQuiz() {
             label="開始練習"
             class="flex-[2] justify-center bg-paper-primary text-paper-bg hover:bg-paper-accent"
             @click="startChoiceQuiz"
+          />
+        </div>
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="isTypingModalOpen"
+      title="練習題數"
+      description="選擇題數,設定好就可以開始測驗"
+      :ui="{
+        content: 'bg-paper-bg text-paper-fg ring-paper-fg/10 divide-paper-fg/10',
+        header: 'border-paper-fg/10',
+        footer: 'border-paper-fg/10',
+        title: 'text-paper-fg font-display text-2xl font-normal',
+        description: 'text-paper-muted',
+        close: 'text-paper-muted hover:bg-paper-fg/10 hover:text-paper-fg',
+        overlay: 'bg-paper-fg/40'
+      }"
+    >
+      <template #body>
+        <div class="mt-7 pt-6">
+          <div class="flex items-center justify-between">
+            <span class="text-paper-fg text-[15px] font-medium">題目數量</span>
+            <span class="text-paper-accent font-display text-[22px]">{{ questionCount }}</span>
+          </div>
+          <USlider
+            v-model="questionCount"
+            :min="minCount"
+            :max="maxCount"
+            :step="1"
+            class="mt-3.5"
+            :ui="{
+              track: 'bg-paper-fg/12',
+              range: 'bg-paper-primary',
+              thumb: 'bg-white border-2 border-paper-primary ring-0 focus-visible:outline-paper-primary'
+            }"
+          />
+          <div class="flex justify-between text-[#9c9384] text-xs mt-1">
+            <span>{{ minCount }}</span>
+            <span>{{ maxCount }}</span>
+          </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex gap-3 w-full">
+          <UButton
+            label="取消"
+            color="neutral"
+            variant="outline"
+            class="flex-1 justify-center bg-transparent border-paper-fg/25 text-paper-fg hover:bg-paper-fg/5"
+            @click="isTypingModalOpen = false"
+          />
+          <UButton
+            label="開始練習"
+            class="flex-[2] justify-center bg-paper-primary text-paper-bg hover:bg-paper-accent"
+            @click="startTypingQuiz"
           />
         </div>
       </template>

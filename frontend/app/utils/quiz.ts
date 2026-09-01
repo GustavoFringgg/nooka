@@ -1,6 +1,12 @@
-import type { Word, QuizOption, QuizQuestion } from "~/types/practice"
+import type { Word, QuizOption, QuizQuestion, TypingQuestion } from "~/types/practice"
 
 export type QuizDirection = "enToCn" | "cnToEn"
+
+export function buildTypingQuestions(words: Word[], count?: number): TypingQuestion[] {
+  const questions = words.map((word) => ({ word, prompt: word.definitionCN }))
+  const shuffled = shuffle(questions)
+  return count ? shuffled.slice(0, count) : shuffled
+}
 
 export function buildQuizQuestions(words: Word[], direction: QuizDirection, count?: number): QuizQuestion[] {
   const answerOption = (word: Word) => (direction === "enToCn" ? word.definitionCN : word.term)
