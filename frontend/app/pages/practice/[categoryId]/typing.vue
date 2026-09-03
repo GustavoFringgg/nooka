@@ -136,7 +136,7 @@ function checkAnswer() {
   revealTimer = setTimeout(() => {
     resetLetters()
     focusLetter(0)
-  }, 1000)
+  }, 2500)
 }
 
 function skipQuestion() {
@@ -201,18 +201,16 @@ const letterBoxClasses = computed(() => {
           :key="currentIndex"
           class="rounded-3xl px-8 py-12 text-center mb-8 bg-paper-bg-alt border-2 border-paper-fg/25 shadow-[0_18px_40px_-20px_rgba(43,42,37,0.3)] animate-fade-rise"
         >
-          <div class="text-[11px] tracking-[0.1em] text-paper-muted uppercase mb-3.5">看中文,拼出正確單字</div>
-
           <div class="flex items-center justify-center gap-2 mb-1.5">
             <h1 class="font-display font-normal text-4xl m-0 text-paper-fg">
               {{ currentQuestion.prompt }}
             </h1>
             <button
               type="button"
-              class="w-8 h-8 rounded-full flex items-center justify-center text-paper-muted cursor-pointer transition-colors duration-150 hover:bg-paper-fg/8 hover:text-paper-primary"
+              class="w-10 h-10 rounded-full flex items-center justify-center text-paper-muted cursor-pointer transition-colors duration-150 hover:bg-paper-fg/8 hover:text-paper-primary"
               @click="speak(currentQuestion.word.term)"
             >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M3 9v6h4l5 5V4L7 9H3z" />
                 <path d="M16.5 12c0-1.77-.77-3.29-2-4.24v8.48c1.23-.95 2-2.47 2-4.24z" opacity=".7" />
               </svg>
@@ -222,7 +220,10 @@ const letterBoxClasses = computed(() => {
           <div class="flex items-center justify-center gap-2 mb-9">
             <span
               class="text-[11px] px-1.5 py-0.5 rounded-full shrink-0"
-              :style="{ color: posColor(currentQuestion.word.partOfSpeech).text, background: posColor(currentQuestion.word.partOfSpeech).bg }"
+              :style="{
+                color: posColor(currentQuestion.word.partOfSpeech).text,
+                background: posColor(currentQuestion.word.partOfSpeech).bg
+              }"
             >
               {{ currentQuestion.word.partOfSpeech }}
             </span>
@@ -235,7 +236,10 @@ const letterBoxClasses = computed(() => {
           </div>
 
           <div class="relative flex justify-center">
-            <SparkBurst v-if="resultMode === 'correct'" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+            <SparkBurst
+              v-if="resultMode === 'correct'"
+              class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+            />
             <div class="flex justify-center gap-2 flex-wrap">
               <input
                 v-for="(letter, idx) in letters"
@@ -254,8 +258,12 @@ const letterBoxClasses = computed(() => {
             </div>
           </div>
 
-          <div v-if="resultMode" class="mt-7 rounded-2xl px-6 py-4 animate-fade-rise" :class="resultMode === 'correct' ? 'bg-paper-primary/8' : 'bg-rose-500/8'">
-            <p v-if="resultMode === 'correct'" class="text-paper-primary text-lg m-0">✓ 太棒了,拼對了!🎉</p>
+          <div
+            v-if="resultMode"
+            class="mt-7 rounded-2xl px-6 py-4 animate-fade-rise"
+            :class="resultMode === 'correct' ? 'bg-paper-primary/8' : 'bg-rose-500/8'"
+          >
+            <p v-if="resultMode === 'correct'" class="text-paper-primary text-lg m-0">太棒了，拼對了🎉</p>
             <p v-else class="text-rose-600 text-sm m-0">
               正確答案是
               <span class="font-display text-xl text-paper-fg">{{ currentQuestion.word.term }}</span>

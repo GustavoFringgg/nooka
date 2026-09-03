@@ -48,8 +48,47 @@ function darken(hex: string, amount = 0.25) {
 
 const isChoiceModalOpen = ref(false)
 const isTypingModalOpen = ref(false)
+const isFlashcardModalOpen = ref(false)
 const direction = ref<QuizDirection>("enToCn")
 const questionCount = ref(1)
+
+const flashcardStep = ref<"choose" | "intro">("choose")
+const flashcardModeChoice = ref<"new" | "review" | null>(null)
+const flashcardCounts = computed(() => {
+  if (!selectedBook.value || !words.value) return { newCount: 0, dueCount: 0 }
+  return useFlashcardProgress(selectedBook.value.id).getCounts(words.value)
+})
+
+const FLASHCARD_INTRO_SECONDS = 3
+const introCountdown = ref(FLASHCARD_INTRO_SECONDS)
+let introTimer: ReturnType<typeof setInterval> | null = null
+
+function clearIntroTimer() {
+  if (introTimer === null) return
+  clearInterval(introTimer)
+  introTimer = null
+}
+
+function startIntroCountdown() {
+  clearIntroTimer()
+  introCountdown.value = FLASHCARD_INTRO_SECONDS
+  introTimer = setInterval(() => {
+    introCountdown.value--
+    if (introCountdown.value <= 0) {
+      clearIntroTimer()
+      goToFlashcard()
+    }
+  }, 1000)
+}
+
+watch(isFlashcardModalOpen, (open) => {
+  if (!open) {
+    clearIntroTimer()
+    flashcardStep.value = "choose"
+  }
+})
+
+onUnmounted(() => clearIntroTimer())
 
 const directionOptions: { label: string; value: QuizDirection }[] = [
   { label: "看英文,選中文答案", value: "enToCn" },
@@ -66,6 +105,7 @@ function selectMode(mode: PracticeMode) {
   selectedMode.value = mode
   if (mode === "choice") openChoiceModal()
   if (mode === "typing") openTypingModal()
+  if (mode === "flashcard") openFlashcardModal()
 }
 
 function openChoiceModal() {
@@ -79,6 +119,38 @@ function openTypingModal() {
   questionCount.value = maxCount.value
   isTypingModalOpen.value = true
 }
+
+function openFlashcardModal() {
+  if (!selectedBook.value) return
+  flashcardStep.value = "choose"
+  isFlashcardModalOpen.value = true
+}
+
+function chooseFlashcardMode(mode: "new" | "review") {
+  if (!selectedBook.value) return
+  flashcardModeChoice.value = mode
+
+  if (useFlashcardProgress(selectedBook.value.id).isFirstTimeForBook()) {
+    flashcardStep.value = "intro"
+    startIntroCountdown()
+  } else {
+    goToFlashcard()
+  }
+}
+
+function backToFlashcardChoose() {
+  clearIntroTimer()
+  flashcardStep.value = "choose"
+}
+
+function goToFlashcard() {
+  if (!selectedBook.value || !flashcardModeChoice.value) return
+  clearIntroTimer()
+  isFlashcardModalOpen.value = false
+  const targetId = selectedBook.value.id
+  router.push(`/practice/${targetId}/flashcard?mode=${flashcardModeChoice.value}`)
+}
+
 function selectBook(id: number) {
   selectedId.value = id
 }
@@ -394,6 +466,95 @@ function startTypingQuiz() {
             label="開始練習"
             class="flex-[2] justify-center bg-paper-primary text-paper-bg hover:bg-paper-accent"
             @click="startTypingQuiz"
+          />
+        </div>
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="isFlashcardModalOpen"
+      :title="flashcardStep === 'choose' ? '今天想怎麼練？' : '開始之前'"
+      :description="
+        flashcardStep === 'choose' ? '選學新字,或複習已經標記過的單字' : '第一次玩這本書的單字卡,先看一下規則'
+      "
+      :ui="{
+        content: 'bg-paper-bg text-paper-fg ring-paper-fg/10 divide-paper-fg/10',
+        header: 'border-paper-fg/10',
+        footer: 'border-paper-fg/10',
+        title: 'text-paper-fg font-display text-2xl font-normal',
+        description: 'text-paper-muted',
+        close: 'text-paper-muted hover:bg-paper-fg/10 hover:text-paper-fg',
+        overlay: 'bg-paper-fg/40'
+      }"
+    >
+      <template #body>
+        <div v-if="flashcardStep === 'choose'" class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <button
+            type="button"
+            class="text-left rounded-2xl border-2 p-5 transition-colors"
+            :class="
+              flashcardCounts.newCount > 0
+                ? 'border-paper-primary/40 hover:bg-paper-primary/8 cursor-pointer'
+                : 'border-paper-fg/10 opacity-60 cursor-not-allowed'
+            "
+            :disabled="flashcardCounts.newCount === 0"
+            @click="chooseFlashcardMode('new')"
+          >
+            <div class="font-display text-xl text-paper-fg mb-1">學習新單字</div>
+            <p class="text-paper-muted text-sm m-0">
+              {{ flashcardCounts.newCount > 0 ? `還有 ${flashcardCounts.newCount} 個字沒學過` : "這本書都學過了" }}
+            </p>
+          </button>
+
+          <button
+            v-if="flashcardCounts.dueCount > 0"
+            type="button"
+            class="text-left rounded-2xl border-2 border-paper-fg/15 p-5 cursor-pointer transition-colors hover:bg-paper-fg/5"
+            @click="chooseFlashcardMode('review')"
+          >
+            <div class="font-display text-xl text-paper-fg mb-1">複習已學過的單字</div>
+            <p class="text-paper-muted text-sm m-0">
+              今天有 <span class="text-paper-accent font-medium">{{ flashcardCounts.dueCount }}</span> 張待複習
+            </p>
+          </button>
+          <div v-else class="text-left rounded-2xl border-2 border-paper-fg/10 p-5 opacity-70">
+            <div class="font-display text-xl text-paper-muted mb-1">複習已學過的單字</div>
+            <p class="text-paper-muted text-sm m-0">今天的複習都完成了 🎉</p>
+            <p class="text-paper-muted text-xs mt-2 mb-0">明天會有新的複習排程,現在可以先點左邊「學習新單字」。</p>
+          </div>
+        </div>
+
+        <div v-else class="text-center py-2">
+          <p class="text-paper-fg text-[15px] leading-relaxed mb-6">
+            每張卡片點一下會翻面看意思,看完誠實選:不認識、知道但不熟,或非常熟悉。之後複習只要點「今天已練習」,系統會自動安排下次什麼時候再看到這張卡。
+          </p>
+          <div class="font-display text-5xl text-paper-accent">{{ introCountdown }}</div>
+          <p class="text-paper-muted text-xs mt-2">幾秒後自動開始</p>
+        </div>
+      </template>
+
+      <template #footer>
+        <div v-if="flashcardStep === 'choose'" class="flex gap-3 w-full">
+          <UButton
+            label="取消"
+            color="neutral"
+            variant="outline"
+            class="flex-1 justify-center bg-transparent border-paper-fg/25 text-paper-fg hover:bg-paper-fg/5"
+            @click="isFlashcardModalOpen = false"
+          />
+        </div>
+        <div v-else class="flex gap-3 w-full">
+          <UButton
+            label="返回"
+            color="neutral"
+            variant="outline"
+            class="flex-1 justify-center bg-transparent border-paper-fg/25 text-paper-fg hover:bg-paper-fg/5"
+            @click="backToFlashcardChoose"
+          />
+          <UButton
+            label="立即開始"
+            class="flex-[2] justify-center bg-paper-primary text-paper-bg hover:bg-paper-accent"
+            @click="goToFlashcard"
           />
         </div>
       </template>
