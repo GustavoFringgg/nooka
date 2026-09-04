@@ -33,3 +33,12 @@ export interface TypingQuestion {
   word: Word // 正解單字(完整物件)
   prompt: string // 題目顯示內容,= word.definitionCN
 }
+
+export type FlashcardLevel = 1 | 2 | 3 | 4 | 5
+
+export interface FlashcardProgress {
+  wordId: number
+  level: FlashcardLevel | null // null = 還沒標記過(新字)
+  isArchived: boolean // true = 已畢業/封存,不再出現在複習清單
+  nextReviewAt: string | null // ISO 日期字串(yyyy-MM-dd),null = 不用複習(封存或還沒標記)
+}
