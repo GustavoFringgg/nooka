@@ -17,11 +17,12 @@
 
 ## 架構決策
 
-- **會員登入**:自建,使用 ASP.NET Identity(不用第三方 Auth 服務)
+- **會員登入**:自建 session 機制(JWT + ASP.NET Identity 存帳號),但登入方式**只走 Google 登入**(不做 Email+密碼註冊/登入/忘記密碼)
+  - 後端用 `GoogleJsonWebSignature.ValidateAsync` 驗證前端傳來的 Google ID Token,驗證過後查/建 `AppUser`(無密碼)
   - 需要 Role 機制(至少 `Admin` / `User`),供後台卡片管理權限判斷
 - **資料庫**:PostgreSQL,託管在 Supabase(只用它的 Postgres,不用 Supabase Auth)
   - 需要 `Npgsql.EntityFrameworkCore.PostgreSQL` 作為 EF Core provider
-  - 會員資料(帳號、Email、密碼 hash)存在這個 DB 裡的 Identity 相關資料表
+  - 會員資料(帳號、Email、Google subject id)存在這個 DB 裡的 Identity 相關資料表,不存密碼
 - **Session 機制**:JWT,搭配 httpOnly cookie 存放(前端 JS 讀不到,防 XSS),並有 refresh token 機制
 - **部署**:前端 Vercel、後端 Google Cloud Run(不同網域)
   - Cookie 需設 `SameSite=None; Secure`
@@ -75,10 +76,8 @@
 狀態:未開始
 架構:已在上方「架構決策」定案
 
-1. 註冊(Email + 密碼)+ Email 驗證
-2. 登入 / 登出
-3. 忘記密碼(寄送重設連結,token 帶在網址上)
-4. Google 登入 — 視為 Email 已驗證,免走驗證流程
+1. Google 登入(唯一登入方式)/ 登出
+2. **不做**:Email + 密碼註冊、Email 驗證、忘記密碼(密碼流程整組不需要,因為沒有密碼)
 
 ## C. 內容管理(Admin 後台)
 

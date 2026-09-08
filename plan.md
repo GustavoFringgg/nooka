@@ -50,39 +50,40 @@ dotnet ef database update
 
 驗證:重跑一次 app,`AspNetRoles` 剛好兩筆,不會重複新增。
 
-### Stage 5 — 第一個測試帳號
+### Stage 5 — Google 登入串接準備 (0908進度到這)
 
-做一個最小的 `POST /api/auth/register`(不是直接塞假資料進 DB)——反正 B 大項本來就要做註冊,而且用的是跟 login 同一組 `UserManager`。
+- 到 Google Cloud Console 建立 OAuth Client ID(Web application 類型),先設定授權的 JavaScript 來源 `http://localhost:3000`(給前端之後用),取得 Client ID
+- 後端安裝 `Google.Apis.Auth` 套件(提供 `GoogleJsonWebSignature.ValidateAsync`,驗證前端傳來的 Google ID Token 用)
+- `appsettings.Development.json` 新增 `Google:ClientId`
+- `Models/AuthDtos.cs`:不需要 `RegisterRequest`/`LoginRequest`,改成 `record GoogleLoginRequest(string IdToken)`
 
-- `Models/AuthDtos.cs`:`record RegisterRequest(string Email, string Password)`、`record LoginRequest(string Email, string Password)`
-- `Controllers/AuthController.cs`(比照 `WordsController`/`CategoriesController` 風格,不寫 namespace):`POST register` 用 `UserManager.CreateAsync` 建帳號 + `AddToRoleAsync(user, "User")`
+驗證:`dotnet build` 過。
 
-驗證:`.http` 檔測 register,Supabase 確認 `AspNetUsers` 多一筆、`AspNetUserRoles` 有對應關聯。
+### Stage 6 — 登入/登出(Google)
 
-### Stage 6 — 登入/登出
-
-`SignInManager.CheckPasswordSignInAsync`(不是 `PasswordSignInAsync`——後者會順便設 Identity 自己的 auth cookie,跟自己要發的 JWT cookie 打架)。
-
-- `POST /api/auth/login`:驗證帳密 → 撈 roles → 產 JWT(claims 帶 `NameIdentifier`/`Email`/`Role`)→ `Response.Cookies.Append("access_token", token, new CookieOptions { HttpOnly = true, Secure = false, SameSite = Lax, Expires = ... })`(本地先 `Secure=false`,上線再依 CLAUDE.md 定案改 `SameSite=None;Secure`)
+- `POST /api/auth/google-login`:用 `GoogleJsonWebSignature.ValidateAsync(request.IdToken, validationSettings)` 驗證 token(`validationSettings.Audience` 要設成自己的 `Google:ClientId`,不然任何人拿自己的 Google token 都能登進來)→ 驗證通過後從回傳的 payload 拿 `Email` → `UserManager.FindByEmailAsync` 查帳號,查不到就 `UserManager.CreateAsync(user)`(不帶密碼參數)新建一個 `AppUser` + `AddToRoleAsync(user, "User")` → 撈 roles → 產 JWT(claims 帶 `NameIdentifier`/`Email`/`Role`)→ `Response.Cookies.Append("access_token", token, new CookieOptions { HttpOnly = true, Secure = false, SameSite = Lax, Expires = ... })`(本地先 `Secure=false`,上線再依 CLAUDE.md 定案改 `SameSite=None;Secure`)
 - `GenerateJwtToken` 先寫成 `AuthController` 裡的 private method,不用另外拆 service
 - `POST /api/auth/logout`:`Response.Cookies.Delete("access_token")`
 
-**明確不做**:refresh token 輪替。cookie 命名先用 `access_token`,以後加 `refresh_token` 不用改名。
+**明確不做**:refresh token 輪替、帳號綁定多個第三方登入方式。cookie 命名先用 `access_token`,以後加 `refresh_token` 不用改名。
 
 ### Stage 7 — 驗證
 
-`Nooka.Api.http` 補上 register → login → 呼叫既有 API(如 `GET /api/categories`,確認沒壞掉)→ logout。確認 login 回應有 `Set-Cookie: access_token=...; httponly`,logout 回應的 `Set-Cookie` 是過期值。**明天不用加任何 `[Authorize]`**,那是下一步。
+因為沒有帳密可以直接寫死在 `.http` 檔測試,測 `POST /api/auth/google-login` 前要先拿到一個真的 Google ID Token——用 Google 官方的 [OAuth Playground](https://developers.google.com/oauthplayground)或寫一個最小的測試頁(用 Google Identity Services JS)登入拿 token,貼進 `.http` 檔的 request body。
+
+`Nooka.Api.http` 補上 google-login(帶真的 ID Token)→ 呼叫既有 API(如 `GET /api/categories`,確認沒壞掉)→ logout。確認 google-login 回應有 `Set-Cookie: access_token=...; httponly`,logout 回應的 `Set-Cookie` 是過期值。**明天不用加任何 `[Authorize]`**,那是下一步。
 
 ## 決策點總表
 
-| 決策                                                | 選擇                                         | 理由                                                     |
-| --------------------------------------------------- | -------------------------------------------- | -------------------------------------------------------- |
-| Guid vs int 主鍵                                    | 自訂 `IdentityUser<int>`/`IdentityRole<int>` | 對齊現有表的 int 主鍵慣例                                |
-| `AddIdentity` vs `AddIdentityCore`                  | `AddIdentityCore` + `.AddSignInManager()`    | 避免多註冊一個跟 JWT 衝突的 cookie scheme                |
-| JWT 放 header vs cookie                             | httpOnly cookie(`OnMessageReceived` 讀)      | 架構定案 httpOnly cookie,前端 JS 本來就讀不到            |
-| `PasswordSignInAsync` vs `CheckPasswordSignInAsync` | `CheckPasswordSignInAsync`                   | 避免產生第二個 Identity 自己的 auth cookie               |
-| 測試帳號:register endpoint vs seed                  | 做最小 `POST /api/auth/register`             | 反正是 B 大項本來要做的,順便練到會重複用的 `UserManager` |
-| Token 產生邏輯放哪                                  | `AuthController` 裡的 private method         | MVP 先別過度抽象,等加 refresh token 才抽出來             |
+| 決策                               | 選擇                                                         | 理由                                          |
+| ---------------------------------- | ------------------------------------------------------------ | --------------------------------------------- |
+| Guid vs int 主鍵                   | 自訂 `IdentityUser<int>`/`IdentityRole<int>`                 | 對齊現有表的 int 主鍵慣例                     |
+| `AddIdentity` vs `AddIdentityCore` | `AddIdentityCore` + `.AddSignInManager()`                    | 避免多註冊一個跟 JWT 衝突的 cookie scheme     |
+| JWT 放 header vs cookie            | httpOnly cookie(`OnMessageReceived` 讀)                      | 架構定案 httpOnly cookie,前端 JS 本來就讀不到 |
+| 登入方式                           | 只做 Google 登入,不做 Email+密碼                             | 統一登入方式,省掉密碼儲存/忘記密碼整組流程    |
+| Google token 驗證                  | `Google.Apis.Auth` 的 `GoogleJsonWebSignature.ValidateAsync` | 官方套件,內建拿 Google 公鑰驗簽章,不用自己刻  |
+| 新帳號建立時機                     | 登入 API 裡查無帳號就順便建(無密碼)                          | 沒有獨立註冊流程,Google 登入即註冊            |
+| Token 產生邏輯放哪                 | `AuthController` 裡的 private method                         | MVP 先別過度抽象,等加 refresh token 才抽出來  |
 
 ## 涉及檔案
 
@@ -91,9 +92,9 @@ dotnet ef database update
 - `backend/Nooka.Api/Models/AppUser.cs`、`AppRole.cs`、`AuthDtos.cs`(新增)
 - `backend/Nooka.Api/Controllers/AuthController.cs`(新增)
 - `backend/Nooka.Api/Nooka.Api.csproj`(套件)
-- `backend/Nooka.Api/appsettings.Development.json`(新增 `Jwt:*` 設定)
+- `backend/Nooka.Api/appsettings.Development.json`(新增 `Jwt:*`、`Google:ClientId` 設定)
 - `backend/Nooka.Api/Nooka.Api.http`(新增測試請求)
 
 ## 驗證方式
 
-`dotnet build` 每個 stage 都要過;Stage 3 migration 套用後去 Supabase table editor 肉眼確認新表結構跟既有表沒被動到;Stage 7 用 `.http` 檔或 curl 跑過 register → login(確認 `Set-Cookie` header)→ 呼叫既有 API 沒壞 → logout(確認 cookie 被清空)。全程不用動前端。
+`dotnet build` 每個 stage 都要過;Stage 3 migration 套用後去 Supabase table editor 肉眼確認新表結構跟既有表沒被動到;Stage 7 用 `.http` 檔或 curl(帶一個從 OAuth Playground 拿到的真 Google ID Token)跑過 google-login(確認 `Set-Cookie` header)→ 呼叫既有 API 沒壞 → logout(確認 cookie 被清空)。全程不用動前端。
