@@ -98,3 +98,13 @@ dotnet ef database update
 ## 驗證方式
 
 `dotnet build` 每個 stage 都要過;Stage 3 migration 套用後去 Supabase table editor 肉眼確認新表結構跟既有表沒被動到;Stage 7 用 `.http` 檔或 curl(帶一個從 OAuth Playground 拿到的真 Google ID Token)跑過 google-login(確認 `Set-Cookie` header)→ 呼叫既有 API 沒壞 → logout(確認 cookie 被清空)。全程不用動前端。
+
+// TODO QUESTION
+
+1. REST Client 是什麼東西 跟POSTMAN 一樣嗎
+2. 我用 OAuth 2.0 Playground 測試的 那是什麼意思 我們可以分別解釋一下流程是什麼 什麼情境下需要用這個測試
+   //
+3. 為什麼是在 Nooka.Api.http 測試 為什麼是在這裡測試 Nooka.Api.http 在這個專案扮演什麼樣的角色
+4. http第二個 應該只是測試api 還沒有帶token進去 去驗證
+5. 登出 要怎麼判斷這個 token 過期
+6. 那這樣我 httpOnly 我實際是把 token 存在哪裡? 機制是什麼 檢查token的機制是怎麼看得
