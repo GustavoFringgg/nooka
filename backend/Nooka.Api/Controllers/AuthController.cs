@@ -17,6 +17,7 @@ using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authorization;
 
 using Nooka.Api.Models;
 
@@ -72,8 +73,11 @@ public class AuthController : ControllerBase
         var token = GenerateJwtToken(user, roles);
 
         Response.Cookies.Append("access_token", token, new CookieOptions
+        // 後端把 token 寫進一個 cookie,叫 access_token
         {
             HttpOnly = true,
+            // 這個 cookie 瀏覽器會保管,但前端 JavaScript(比如 document.cookie)讀不到它
+            // 只有瀏覽器本身在發送 HTTP 請求時會自動把它夾帶上去
             Secure = false,
             SameSite = SameSiteMode.Lax,
             Expires = DateTimeOffset.UtcNow.AddHours(1)
@@ -90,6 +94,14 @@ public class AuthController : ControllerBase
         return Ok();
     }
 
+    [Authorize]
+    [HttpGet("me")]
+    public IActionResult Me()
+    {
+        var email = User.FindFirstValue(ClaimTypes.Email);
+        var roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value);
+        return Ok(new { email, roles });
+    }
 
 
 

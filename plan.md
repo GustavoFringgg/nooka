@@ -1,6 +1,8 @@
-# 明天 TODO — ASP.NET Identity + JWT 登入/登出
+# ASP.NET Identity + JWT 登入/登出(後端)— 已完成
 
 > 目標:做出可以透過伺服器登入/登出帳號的第一個垂直切片。**不含** Google 登入、Email 驗證、忘記密碼、前端串接。
+>
+> **狀態(2026/09/14):Stage 0～7 全部完成並驗證過(`.http` 測試拿到 `Set-Cookie`)。** 下一步是前端串接,見本檔最下方「前端 Google 登入/登出串接」章節。
 
 ## 為什麼
 
@@ -99,12 +101,99 @@ dotnet ef database update
 
 `dotnet build` 每個 stage 都要過;Stage 3 migration 套用後去 Supabase table editor 肉眼確認新表結構跟既有表沒被動到;Stage 7 用 `.http` 檔或 curl(帶一個從 OAuth Playground 拿到的真 Google ID Token)跑過 google-login(確認 `Set-Cookie` header)→ 呼叫既有 API 沒壞 → logout(確認 cookie 被清空)。全程不用動前端。
 
-// TODO QUESTION
+---
 
-1. REST Client 是什麼東西 跟POSTMAN 一樣嗎
-2. 我用 OAuth 2.0 Playground 測試的 那是什麼意思 我們可以分別解釋一下流程是什麼 什麼情境下需要用這個測試
-   //
-3. 為什麼是在 Nooka.Api.http 測試 為什麼是在這裡測試 Nooka.Api.http 在這個專案扮演什麼樣的角色
-4. http第二個 應該只是測試api 還沒有帶token進去 去驗證
-5. 登出 要怎麼判斷這個 token 過期
-6. 那這樣我 httpOnly 我實際是把 token 存在哪裡? 機制是什麼 檢查token的機制是怎麼看得
+# 前端 Google 登入/登出串接
+
+> 目標:使用者可以在前端畫面上,透過 Google 帳號真的登入/登出,`AppNav.vue` 反映真實登入狀態,且重新整理頁面後登入狀態不會消失。
+
+## 為什麼
+
+後端 Google 登入/登出已經完成並測試過(見上方章節)。前端目前是 `useDemoAuth.ts` 這個假的 `useState<boolean>` 在 `AppNav.vue` 切換登入/登出文字,沒有真的呼叫後端、沒有 Google 登入 SDK、也沒有處理 httpOnly cookie 需要的 `credentials: 'include'`。
+
+登入畫面的視覺設計稿使用者會另外整理一個資料夾丟進來,目前還沒到位——Stage 4(套用設計稿的登入按鈕)要等設計稿到位才能真的動工,但其他 Stage 不受影響,可以先做。
+
+## 已確認的決策
+
+- **登入狀態持久化**:新增 `GET /api/auth/me`(後端,`[Authorize]`),前端啟動時呼叫一次來判斷是否已登入——因為 token 在 httpOnly cookie 裡,前端 JS 本來就讀不到,不加這支 API 的話 reload 頁面就會忘記登入狀態。
+- **Google 互動方式**:官方 Google Identity Services 的 `renderButton`(不裝第三方 npm 包裝套件,如 `vue3-google-login`)。
+- **前端狀態管理**:沿用現有 `useState` pattern(`useDemoAuth.ts` 已經是這樣寫),**不新增 Pinia**——專案目前沒裝 Pinia,MVP 階段不需要為了一個 auth state 多引入一個狀態管理套件。
+- **套用設計稿(Stage 4)由 Claude 直接實作**,其餘 Stage 維持一步一步來、使用者動手為主的節奏(跟上方後端 Stage 拆法一致)。
+
+## 分階段步驟(照順序,一步做完驗證完再下一步)
+
+### Stage 0 — 環境變數
+
+- `frontend/.env`、`.env.example` 新增 `NUXT_PUBLIC_GOOGLE_CLIENT_ID`(值是後端 `appsettings.Development.json` 裡同一個 `Google:ClientId`)
+- `frontend/nuxt.config.ts` 的 `runtimeConfig.public` 加 `googleClientId`,比照現有 `apiBase` 的寫法
+- 確認 Google Cloud Console 該 OAuth Client 的「已授權的 JavaScript 來源」已經有 `http://localhost:3000`(後端 Stage 5 應該已經設過)
+
+### Stage 1 — 載入 Google Identity Services script
+
+- `frontend/app/app.vue`(或 `nuxt.config.ts` 的 `app.head`)用 `useHead` 加 `<script src="https://accounts.google.com/gsi/client" async defer>`
+
+驗證:瀏覽器 devtools console 打 `window.google.accounts.id`,有東西不是 `undefined`。
+
+### Stage 2 — 後端補強:CORS + `/api/auth/me`
+
+- `backend/Nooka.Api/Program.cs`:CORS policy `NuxtDev` 加 `.AllowCredentials()`(目前只有 `WithOrigins().AllowAnyHeader().AllowAnyMethod()`,缺這個的話瀏覽器不會讓帶 cookie 的跨網域請求過)
+- `backend/Nooka.Api/Controllers/AuthController.cs` 新增 `[Authorize] [HttpGet("me")]`,從 `User`(`ClaimsPrincipal`)讀 `NameIdentifier`/`Email`/`Role` claims 組一個回傳物件——不用查 DB,JWT claims 裡已經有這些資訊
+
+驗證:登入後帶著瀏覽器 cookie 呼叫 `GET /api/auth/me` 回 200 + 使用者資訊;沒帶 cookie(或 cookie 過期)呼叫回 401。
+
+### Stage 3 — 前端 `useAuth` composable
+
+- 比照 `app/composables/useApi.ts` 的 `useApiUrl`,新增一個小 helper 讓需要帶 cookie 的請求統一加上 `credentials: 'include'`(`google-login`、`logout`、`me` 三支都要用到)
+- 新增 `frontend/app/composables/useAuth.ts`,取代 `useDemoAuth.ts`:
+  - `useAuthUser()` → `useState<AuthUser | null>("authUser", () => null)`
+  - `fetchMe()` → 呼叫 `/api/auth/me`,更新 state(app 啟動時呼叫一次,例如 `app.vue` 的 `onMounted` 或一個 plugin)
+  - `loginWithGoogle(idToken)` → 呼叫 `/api/auth/google-login`,成功後呼叫 `fetchMe()` 拿使用者資訊
+  - `logout()` → 呼叫 `/api/auth/logout`,清空 state
+- 新增 `AuthUser` 型別(放 `app/types/practice.ts` 旁邊新開一個 `app/types/auth.ts`)
+
+驗證:先不接 UI,在頁面上放一顆測試按鈕呼叫這幾個 function,console.log 確認狀態有正確變化。
+
+### Stage 4 — Google 登入按鈕(套用設計稿)—— 等設計稿資料夾準備好後由 Claude 來刻
+
+- 依設計稿寫登入按鈕/登入區塊的樣式
+- 用 `google.accounts.id.initialize({ client_id, callback })` + `google.accounts.id.renderButton(el, options)` 掛上官方按鈕
+- callback 拿到 `response.credential`(就是 Google ID Token)→ 呼叫 `useAuth().loginWithGoogle(idToken)`
+
+驗證:點按鈕 → 跳出 Google 帳號選擇畫面 → 選完後畫面反應登入成功(可以先看 Stage 3 留的測試輸出,UI 串接留到 Stage 5)。
+
+### Stage 5 — `AppNav.vue` 串接真實登入狀態
+
+- 把 `useDemoLoggedIn()` 換成 `useAuthUser()`
+- 未登入:顯示登入按鈕(或連到登入頁);已登入:顯示使用者資訊 + 登出按鈕(呼叫 `useAuth().logout()`)
+- `useDemoAuth.ts` 確認沒有其他地方(目前已知 `overview.vue` 有讀)還在用,清掉或一併換成 `useAuthUser()`
+
+驗證(整條流程跑一次):首次進站 → nav 顯示未登入 → 點登入 → Google 選帳號 → 導回後 nav 顯示已登入 → reload 頁面登入狀態還在 → 點登出 → nav 變回未登入。
+
+## 涉及檔案
+
+**前端**
+
+- `frontend/.env`、`.env.example`(新增)
+- `frontend/nuxt.config.ts`
+- `frontend/app/app.vue`
+- `frontend/app/composables/useAuth.ts`(新增,取代 `useDemoAuth.ts`)
+- `frontend/app/composables/useApi.ts`(擴充 credentials helper)
+- `frontend/app/components/AppNav.vue`
+- `frontend/app/types/auth.ts`(新增)
+- 登入按鈕元件(Stage 4 才會確定檔名,依設計稿結構而定)
+
+**後端**
+
+- `backend/Nooka.Api/Program.cs`(CORS 加 `AllowCredentials`)
+- `backend/Nooka.Api/Controllers/AuthController.cs`(新增 `me` action)
+
+--
+
+TODO: 待學習資訊
+
+ASP.NET Identity + JWT 登入/登出
+
+1. 為什麼是在 Nooka.Api.http 測試 為什麼是在這裡測試 Nooka.Api.http 在這個專案扮演什麼樣的角色
+2. http第二個 應該只是測試api 還沒有帶token進去 去驗證
+3. 登出 要怎麼判斷這個 token 過期
+4. 那這樣我 httpOnly 我實際是把 token 存在哪裡? 機制是什麼 檢查token的機制是怎麼看得
