@@ -1,1 +1,15 @@
 @Nooka.Api_HostAddress = http://localhost:5016
+
+### 1. Google 登入 — 把 idToken 換成 OAuth Playground 拿到的真的 id_token
+POST {{Nooka.Api_HostAddress}}/api/auth/google-login
+Content-Type: application/json
+
+{
+  "idToken": "PASTE_REAL_ID_TOKEN_HERE"
+}
+
+### 2. 確認既有 API 沒壞掉(這個 request 不會自動帶上第 1 步的 cookie，要在瀏覽器/REST Client 手動確認 cookie 有沒有正確設定)
+GET {{Nooka.Api_HostAddress}}/api/categories
+
+### 3. 登出
+POST {{Nooka.Api_HostAddress}}/api/auth/logout
