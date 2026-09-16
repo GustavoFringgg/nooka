@@ -11,8 +11,9 @@ const config = useRuntimeConfig()
 
 let googlePoll: ReturnType<typeof setInterval> | null = null
 
-const handleCredentialResponse = (response: { credential: string }) => {
-  console.log("Google credential:", response.credential)
+const handleCredentialResponse = async (response: { credential: string }) => {
+  await loginWithGoogle(response.credential)
+  await navigateTo("/practice")
 }
 
 const renderGoogleButton = () => {
@@ -25,7 +26,7 @@ const renderGoogleButton = () => {
   window.google.accounts.id.renderButton(googleBtnContainer.value, {
     theme: "outline",
     size: "large",
-    shape: "pill",
+    shape: "circle",
     width: 320
   })
 }
