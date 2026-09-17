@@ -36,5 +36,8 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
             .HasOne<Category>()
             .WithMany()
             .HasForeignKey(wc => wc.CategoryId);
+        modelBuilder.Entity<Word>()
+            .HasIndex(w => w.Term)
+            .IsUnique(); 
     }
 }
