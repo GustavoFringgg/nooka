@@ -80,7 +80,7 @@ public class AuthController : ControllerBase
             // 只有瀏覽器本身在發送 HTTP 請求時會自動把它夾帶上去
             Secure = false,
             SameSite = SameSiteMode.Lax,
-            Expires = DateTimeOffset.UtcNow.AddHours(1)
+            Expires = DateTimeOffset.UtcNow.AddHours(7)
         });
 
         return Ok();
@@ -123,7 +123,7 @@ public class AuthController : ControllerBase
         issuer: _configuration["Jwt:Issuer"],
         audience: _configuration["Jwt:Audience"],
         claims: claims,
-        expires: DateTime.UtcNow.AddHours(1),
+        expires: DateTime.UtcNow.AddHours(7),
         signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
