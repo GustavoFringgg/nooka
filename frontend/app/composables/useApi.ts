@@ -5,3 +5,7 @@ export const useApiUrl = (path: string) => {
 }
 
 // 呼叫 useApiUrl("/api/categories"),會回傳 "http://localhost:5016/api/categories"
+
+export const useApiFetch = <T>(path: string, options: Record<string, unknown> = {}) => {
+  return $fetch<T>(useApiUrl(path), { credentials: "include", ...options })
+}
