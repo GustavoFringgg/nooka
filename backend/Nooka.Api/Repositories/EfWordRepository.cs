@@ -19,7 +19,8 @@ public class EfWordRepository : IWordRepository
 
     public async Task<IEnumerable<Word>> GetByCategoryIdAsync(int categoryId)
     {
-        return await _context.Words.Where(w => w.CategoryId == categoryId).ToListAsync();
+        var wordIds = _context.WordCategories.Where(wc=>wc.CategoryId == categoryId).Select(wc => wc.WordId);
+        return await _context.Words.Where(w => wordIds.Contains(w.Id)).ToListAsync();
     }
 
     public async Task<Word?> GetByIdAsync(int id)
