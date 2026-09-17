@@ -13,6 +13,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
 
     public DbSet<Word> Words { get; set; }
     public DbSet<Category> Categories { get; set; }
+    public DbSet<WordCategory> WordCategories{get;set;}
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     // 微調欄位
@@ -25,5 +26,15 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
         modelBuilder.Entity<Category>()
             .Property(c => c.UpdatedAt)
             .HasDefaultValueSql("now()");
+        modelBuilder.Entity<WordCategory>()
+            .HasKey(wc => new { wc.WordId, wc.CategoryId });
+        modelBuilder.Entity<WordCategory>()
+            .HasOne<Word>()
+            .WithMany()
+            .HasForeignKey(wc => wc.WordId);
+        modelBuilder.Entity<WordCategory>()
+            .HasOne<Category>()
+            .WithMany()
+            .HasForeignKey(wc => wc.CategoryId);
     }
 }
