@@ -37,7 +37,7 @@
     1. **AI 輔助產生卡片內容**:AI 讀 DB 現有分類/單字(避免重複、抓上下文)生成新單字的中英釋義、例句、詞性,存 DB 標記「待審核」,審核管道兩個都要保留:(a)內容管理 Admin 後台 UI(見下方 C 大項),(b)LINE Messaging API 推播通知 + 按鈕核准(用 postback 夾帶單字 ID,不 parse 純文字回覆,避免多筆待審時對不上),核准後才正式發布
     2. **語意向量(embedding)挑選干擾項**:每個單字的釋義預先算好 embedding 存 DB,出題時用 cosine similarity 挑語意相近的單字當選擇題干擾項,取代目前隨機挑同分類單字的做法;這步是一次性預計算 + 純數學比對,不用每次出題都即時呼叫 AI API
     - **刻意不做**:AI 造句批改(使用者直接跟 AI 互動的功能)— 這種會被大量呼叫、目前沒有收費計畫,先不考慮
-- **Word ↔ Category 關聯**:MVP 採方案 A(一個 Word 只屬於一個 Category,用單一 `CategoryId` 外鍵),未來視需求改為方案 B(多對多,加 `WordCategories` 中介表)
+- **Word ↔ Category 關聯**:已改為方案 B(多對多,`WordCategories` 中介表,複合主鍵 `WordId`+`CategoryId`,2026/09/17 完成遷移),`Word` 不再有 `CategoryId` 外鍵
 - **首頁書架**(2026/08/19 定案):「首頁書架」(登入後瀏覽分類)不另外做頁面,直接沿用 `/practice` 選書頁承擔這個角色,不做兩個平行的選書畫面,nav 只留「練習」一個入口;暫不加登入保護 middleware,等會員系統做出來再補
   - **流程簡化(2026/08/31 確認)**:原規劃的三段式流程(選書 → 分類單字列表頁 → 選練習模式 → 測驗頁)簡化成兩段式,獨立的分類單字列表頁已刪除,書架頁右側面板直接顯示單字預覽 + 開 `UModal` 選方向/題數,確認後直接跳測驗頁 — 維持這個合併式流程,不救回獨立列表頁
 
@@ -49,23 +49,27 @@
 ## 已完成的基礎建設
 
 - Word / Category 資料模型 + Supabase 串接(EF Core + Npgsql),初版 migration 已套用
-- `EfWordRepository`、`EfCategoryRepository`(已取代 InMemory 版本)
+- Word ↔ Category 多對多關聯(`WordCategories` 中介表),`EfWordRepository`、`EfCategoryRepository`(已取代 InMemory 版本)
 - 唯讀 API:`GET /api/words`、`GET /api/words/{id}`、`GET /api/words/category/{categoryId}`、`GET /api/categories`
 - `AppNav.vue` 共用 nav 元件
+- ASP.NET Identity(`AppUser`/`AppRole`,int 主鍵)+ JWT(httpOnly `access_token` cookie)基礎建設,`Admin`/`User` 角色種子資料
+- Google 登入/登出:`POST /api/auth/google-login`(`GoogleJsonWebSignature.ValidateAsync` 驗證 + 查/建 `AppUser`)、`POST /api/auth/logout`、`GET /api/auth/me`(前端 `useAuth.ts` 已串接,`AppNav.vue` 反映真實登入狀態);詳細分階段記錄見 git 歷史上的 `plan.md`(該檔案內容會隨新任務覆寫,舊紀錄留在 commit 裡)
+- 單字卡 Lv1~5 分級邏輯(初學三選一 / 複習升級 / Lv5 滿級彈窗)前端已完成,見下方「A-1 單字卡練習模式」
 
 ---
 
 ## A. Nooka 學習核心(練習模式)
 
-狀態:單字卡書架、選擇題已完成串真實後端;打字拼寫前端第一版完成
+狀態:書架、選擇題已完成串真實後端;打字拼寫前端第一版完成;單字卡分級(Lv1~5)前端邏輯+ UI 已完成,進度串 DB 正在進行(見 `plan.md`)
 
 1. 單字卡 — 書架瀏覽 + 單字卡資訊(`practice/index.vue`,已完成)
 2. 選擇題 — 出題/作答/計分/答錯詳解(`choice.vue`,已完成)
 3. 打字拼寫 — 逐字母輸入/發音/複習清單(`typing.vue`,前端邏輯完成)
+4. 單字卡分級練習 — 翻牌 + 熟悉度三選一 + Leitner Lv1~5 複習(`flashcard.vue`+`useFlashcardProgress.ts`,前端邏輯完成,規則見下方「A-1」)
 
 0903 mvp 完成 尚缺
 
-1. 單字卡目前存在 local storage
+1. 單字卡進度目前存在 local storage,DB 化 + 未登入純瀏覽模式 + 會員進度總覽頁面進行中,見 `plan.md`
 2. 單字卡沒有發音功能
 3. 單字卡顯示內容優化
 4. RWD
@@ -73,10 +77,10 @@
 
 ## B. 會員系統(Membership)
 
-狀態:未開始
+狀態:Google 登入/登出(前後端)已完成,詳見「已完成的基礎建設」;尚缺 refresh token(見下方「MVP 之後可優化方向」)
 架構:已在上方「架構決策」定案
 
-1. Google 登入(唯一登入方式)/ 登出
+1. Google 登入(唯一登入方式)/ 登出 — 已完成
 2. **不做**:Email + 密碼註冊、Email 驗證、忘記密碼(密碼流程整組不需要,因為沒有密碼)
 
 ## C. 內容管理(Admin 後台)
@@ -125,34 +129,24 @@ CI/CD 把關方式:GitHub Actions 在 PR 階段跑上述測試,擋合併進 main
 
 ---
 
-### A-1 單字卡練習模式(討論中,未定案)
+### A-1 單字卡練習模式(前端已完成,進度 DB 化進行中)
 
-**現況確認**(已用 Explore agent 查過 codebase):`practice/index.vue` 選「單字卡」目前是死按鈕,沒有 Modal/導頁/型別/出題邏輯;`choice.vue`/`typing.vue` 有現成 pattern 可參考(index.vue 開 Modal 選題數 → query 帶 categoryId/count → 抓 `GET /api/words/category/{id}` → 前端組題 → 結束畫面);`types/practice.ts` 沒有 Flashcard 型別;`utils/quiz.ts` 沒有對應 builder;沒有現成 flip 元件,但有一個沒掛路由的原型頁 `cardTest.vue`,驗證過 GSAP 跟 motion-v 兩種翻牌動畫技術都可行;後端 `GET /api/words/category/{categoryId}` 已存在,不用新增後端 API。
-
-**已確認的操作流程**:
+**核心設計**(已定案並實作):
 
 - 核心互動:翻牌 + 自評,不是單純瀏覽
-- 進入方式:比照選擇題/打字拼寫,點「單字卡」跳 UModal 選今天要練幾張(不是直接開始)
-- 切換下一張:按鈕 + 鍵盤方向鍵(跟 choice.vue 一致)
-- 翻牌動畫技術:GSAP(cardTest.vue 已驗證可行)
+- 進入方式:比照選擇題/打字拼寫,點「單字卡」跳 UModal;跟選擇題/打字拼寫不同的是**沒有題數 slider**,改成「學習新單字」/「複習已學過的單字」二選一(依 `useFlashcardProgress` 算出的 new/due 數量顯示)
+- 切換下一張:按鈕 + 鍵盤方向鍵(跟 `choice.vue` 一致)
+- 翻牌動畫:GSAP(`rotateY` + `backface-visibility: hidden`,驗證於 `cardTest.vue` 原型頁,正式實作在 `flashcard.vue`)
 - 複習演算法:**不用 SM-2**——SM-2 留給 D 大項(學習紀錄)給選擇題/打字拼寫用,單字卡另外用一套自訂等級(Leitner 分級)系統,兩者並存、互不取代
 
-**已確認的分級/首次練習流程**:
+**實作現況**:
 
-- 首次進某本書單字卡:先出現使用說明(說明怎麼判斷熟悉度)+ 選今天要練幾張(例如一本書 200 字,先選 20 張)
-- 每張卡選熟悉度三選一:①沒看過 → 排進 level 1 複習清單;②知道但不熟 → 排進 level 2;③非常熟悉 → 不排進複習清單(視為已掌握)
-- 之後再次練習,卡片問「熟悉了嗎」,選項:①已不用再顯示(移出輪替,等同掌握)②今天已練習(升一級)
-- 一本書可以分批學:今天標記過的 20 張是「舊卡」,之後再進單字卡模式會問「練習之前看過的 card」還是「學新的 card」(從還沒標記過的 180 張裡再抽)
+- 前端邏輯 + UI 已完成:`frontend/app/composables/useFlashcardProgress.ts`(分級狀態機)+ `frontend/app/pages/practice/[categoryId]/flashcard.vue`(翻牌互動、三選一/複習按鈕、Lv5 滿級彈窗)+ `frontend/app/types/practice.ts` 的 `FlashcardLevel`/`FlashcardProgress` 型別
+- 進度目前存在瀏覽器 `localStorage`(key: `nooka:flashcard-progress:${categoryId}`),尚未跟會員帳號綁定
+- **進行中**:把進度換成存後端 DB(新增 `WordProgress` 表)、未登入使用者改為純瀏覽單字卡(不能標記熟悉度、不記錄進度)、新增「學習紀錄」頁面顯示會員進度總覽(不曝露內部 Lv1~5 數字,只顯示已精熟/學習中/尚未開始 + 待複習張數)— 詳細分階段步驟見專案根目錄 `plan.md`
 
-**還在討論、尚未定案的部分**:
+**分級規則**(已定案,`useFlashcardProgress.ts` 的實際邏輯):
 
-- 星期排程規則:一開始想法是「累加式」(週一只出 lv1、週二出 lv1+2、週三出 lv1+2+3...疊加到週日全部等級),但發現設計缺陷——因為疊加會讓一個字一旦升到某個等級,之後幾乎每天的集合都包含它,沒有真正拉開複習間隔(使用者自己抓到這個問題)。修正方向討論到一半:改成「每個等級各自有專屬、不疊加的星期集合」,例如 lv1 每天、lv2 週一三五日、lv3 週一四日、lv4 週一日、lv5 只有週日——等級越高出現頻率越低,才是真的間隔拉長。這個修正方向使用者還沒拍板,也還沒決定實際要分幾級、每級對應哪幾天
-- 等級上限:討論到「一張星期表最多只能撐到『一週一次』(卡在 lv5 左右)」,如果要更稀疏的間隔(兩週一次、一個月一次)需要多週循環,這塊複雜度要不要做還沒決定
-- 卡片衝到最高等級後,選「今天已練習」要「自動畢業移出輪替」還是「回圈到 lv1 繼續循環」,也還沒決定(取決於上面等級上限怎麼定)
-
-**下次繼續**:使用者要先自己想一下等級/星期排程怎麼設計比較合理,明天接續討論,討論收斂後才進入實際拆 TODO(型別設計、`buildFlashcardQuestions` util、`flashcard.vue` 頁面、後端是否需要新的 `WordProgress`/等級欄位資料表等)。
-
-以下是新觀點
 二、 系統三大操作流程
 
 1. 初學模式（學新卡）
