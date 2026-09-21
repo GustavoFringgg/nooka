@@ -25,6 +25,7 @@ builder.Services.AddIdentityCore<AppUser>()
 builder.Services.AddControllers();
 builder.Services.AddScoped<IWordRepository, EfWordRepository>();
 builder.Services.AddScoped<ICategoryRepository, EfCategoryRepository>();
+builder.Services.AddScoped<IWordProgressRepository, EfWordProgressRepository>();
 // 已 DI 處理，:「註冊以後有人要求 IWordRepository,就給他 EfWordRepository 的實例」
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();

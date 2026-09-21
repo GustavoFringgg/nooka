@@ -1,193 +1,155 @@
-# ASP.NET Identity + JWT 登入/登出(後端)— 已完成
+# 單字卡分級系統(A-1)接後端資料庫 + 會員進度總覽
 
-> 目標:做出可以透過伺服器登入/登出帳號的第一個垂直切片。**不含** Google 登入、Email 驗證、忘記密碼、前端串接。
+> 目標:把 `useFlashcardProgress.ts` 現有的 Lv1~5 分級邏輯(初學三選一、複習升級、Lv5 滿級彈窗)從 localStorage 換成存 DB,跟會員帳號綁定;未登入使用者改成純瀏覽單字卡(不能標記熟悉度);新增「學習紀錄」頁面給會員看自己的進度總覽。
 >
-> **狀態(2026/09/14):Stage 0～7 全部完成並驗證過(`.http` 測試拿到 `Set-Cookie`)。** 下一步是前端串接,見本檔最下方「前端 Google 登入/登出串接」章節。
+> **狀態(2026/09/19):規劃完成,尚未開始實作。**
 
 ## 為什麼
 
-單字卡練習模式的 mock 進度(存 localStorage)已經做完,要變成真的存進 DB 需要 `UserId`,SM-2 學習紀錄也一樣依賴會員系統——這是往下走的硬性依賴。
+A-1 的 Lv1~5 分級規則(不認識→Lv1、認識但不熟→Lv2、非常熟悉→封存;複習「今天已練習」逐級升,Lv4→Lv5 強制冷卻一天,Lv5 滿級彈窗選畢業/重來)其實已經**做完了**,實作在 `useFlashcardProgress.ts` + `flashcard.vue`,但進度存在瀏覽器 `localStorage`(key: `nooka:flashcard-progress:${categoryId}`)——`useFlashcardProgress.ts` 檔頭註解本來就寫明「之後接後端 API,呼叫端不用改介面」。
+
+現在 Google 登入 + JWT + Identity 的會員系統已經做完(見上一輪 git 歷史),`UserId` 這個硬依賴已經有了,可以把進度真的存進 DB。同時使用者確認:未登入的人只能純瀏覽單字卡(翻牌看意思),不能標記熟悉度、不記錄進度;會員要能在「學習紀錄」看到自己的進度總覽,但不曝露內部 Lv1~5 數字,只顯示分類後的統計(未學過/學習中/已精熟、待複習張數)。
 
 ## 分階段步驟(照順序,一步做完驗證完再下一步)
 
-### Stage 0 — 安裝套件 -- done
+### Stage 0 — `WordProgress` model + `AppDbContext` 設定
 
-```
-dotnet add package Microsoft.AspNetCore.Identity.EntityFrameworkCore --version 10.0.9
-dotnet add package Microsoft.AspNetCore.Authentication.JwtBearer --version 10.0.9
-```
-
-不用裝 `Identity.UI`(那是 Razor Pages 用的)。驗證:`dotnet build` 過。
-
-### Stage 1 — Identity 模型形狀
-
-自訂 `AppUser : IdentityUser<int>`、`AppRole : IdentityRole<int>`(不用預設 Guid 主鍵,對齊現有 `Words`/`Categories` 的 int 主鍵慣例)。
-
-- 新增 `Models/AppUser.cs`、`Models/AppRole.cs`(空殼繼承,先不加欄位)
-- `Data/AppDbContext.cs` 改繼承 `IdentityDbContext<AppUser, AppRole, int>`,`OnModelCreating` 第一行要呼叫 `base.OnModelCreating(modelBuilder)`(容易漏掉)
+- 新增 `backend/Nooka.Api/Models/WordProgress.cs`,比照 `WordCategory.cs` 的複合鍵 pattern:
+  ```csharp
+  public class WordProgress
+  {
+      public int UserId { get; set; }
+      public int WordId { get; set; }
+      public int? Level { get; set; }        // null = 還沒標記過(新字),1~5
+      public bool IsArchived { get; set; }
+      public DateOnly? NextReviewAt { get; set; }
+      public DateTime CreatedAt { get; set; }
+      public DateTime UpdatedAt { get; set; }
+  }
+  ```
+- `AppDbContext.cs`:新增 `DbSet<WordProgress> WordProgresses`,`OnModelCreating` 補上複合主鍵 `(UserId, WordId)`、FK → `AppUser`(cascade)、FK → `Word`(cascade)、索引 `(UserId, NextReviewAt)` 和 `(UserId, IsArchived)`,`CreatedAt`/`UpdatedAt` 比照 `Category` 用 `HasDefaultValueSql("now()")`(手動 SQL insert 不用帶這兩欄,沿用既有慣例)。
 
 驗證:`dotnet build` 過,先不跑 migration。
 
-### Stage 2 — `Program.cs` 接線
-
-- `AddIdentityCore<AppUser>()`(不是 `AddIdentity<>`,避免多註冊一個跟 JWT 衝突的 cookie scheme)+ `.AddRoles<AppRole>()` + `.AddEntityFrameworkStores<AppDbContext>()` + `.AddSignInManager()` + `.AddDefaultTokenProviders()`
-- `AddAuthentication().AddJwtBearer(...)`:驗證 issuer/audience/signing key(存在 `appsettings.Development.json` 新增的 `Jwt:Issuer`/`Jwt:Audience`/`Jwt:Key`),用 `JwtBearerEvents.OnMessageReceived` 從 `access_token` cookie 讀 token(不是預設 Authorization header——前端 JS 讀不到 httpOnly cookie,本來就沒辦法自己塞 header)
-- `AddAuthorization()`
-- middleware pipeline 補 `app.UseAuthentication()`,位置在 `UseCors` 之後、`UseAuthorization` 之前(目前完全沒有這行)
-
-驗證:`dotnet build` + `dotnet run` 正常啟動,行為跟現在一樣。
-
-### Stage 3 — Migration
+### Stage 1 — Migration
 
 ```
-dotnet ef migrations add AddIdentity
+dotnet ef migrations add AddWordProgress
 dotnet ef database update
 ```
 
-套用前先看一眼產生的 migration 檔,確認只有 `CREATE TABLE`,沒動到 `Words`/`Categories`。套用後去 Supabase table editor 確認 7 張新表都在、`AspNetUsers.Id`/`AspNetRoles.Id` 是 `integer`。
+套用前先看一眼產生的 migration,確認有複合鍵、兩個 FK、對應索引,沒動到 `Words`/`Categories`/`WordCategories`。套用後去 Supabase table editor 肉眼確認新表結構。
 
-### Stage 4 — Role 種子資料
+### Stage 2 — Repository
 
-`Program.cs` 裡 `app.Run()` 之前,用 scope 拿 `RoleManager<AppRole>`,跑一段 `foreach` 建 `Admin`/`User` 兩個角色(`RoleExistsAsync` 檔重複建立)。不用另外包 seeding service class。
+`Repositories/IWordProgressRepository.cs` + `EfWordProgressRepository.cs`,比照 `IWordRepository`/`EfWordRepository` pattern:
 
-驗證:重跑一次 app,`AspNetRoles` 剛好兩筆,不會重複新增。
+```csharp
+Task<List<WordProgress>> GetByCategoryAsync(int userId, int categoryId);
+// join WordProgresses -> WordCategories(WordId) where CategoryId = X and UserId = userId
 
-### Stage 5 — Google 登入串接準備 (0908進度到這)
+Task BatchUpsertAsync(int userId, List<WordProgressUpdate> updates);
+// updates = 前端這一輪算好的最終狀態(每張卡的 Level/IsArchived/NextReviewAt),逐筆 upsert(存在就 update,不存在就 insert),包在同一個 transaction
+```
 
-- 到 Google Cloud Console 建立 OAuth Client ID(Web application 類型),先設定授權的 JavaScript 來源 `http://localhost:3000`(給前端之後用),取得 Client ID
-- 後端安裝 `Google.Apis.Auth` 套件(提供 `GoogleJsonWebSignature.ValidateAsync`,驗證前端傳來的 Google ID Token 用)
-- `appsettings.Development.json` 新增 `Google:ClientId`
-- `Models/AuthDtos.cs`:不需要 `RegisterRequest`/`LoginRequest`,改成 `record GoogleLoginRequest(string IdToken)`
+狀態轉換規則(不認識→Lv1+明天複習、認識但不熟→Lv2+明天複習、非常熟悉→封存;Lv1~3 複習後升一級+明天複習;Lv4 複習後→Lv5+後天複習;Lv5 畢業/重來)**不在後端算**,改成前端沿用 `useFlashcardProgress.ts` 現有的純函式在瀏覽器記憶體裡算完一整輪,後端只負責把算好的最終結果寫進去,不重新驗證這輪的中間過程。
 
-驗證:`dotnet build` 過。
+在 `Program.cs` 註冊 `AddScoped<IWordProgressRepository, EfWordProgressRepository>()`。
 
-### Stage 6 — 登入/登出(Google)
+驗證:先寫一個最小的單元測試或直接在 controller 完成後用 `.http` 測。
 
-- `POST /api/auth/google-login`:用 `GoogleJsonWebSignature.ValidateAsync(request.IdToken, validationSettings)` 驗證 token(`validationSettings.Audience` 要設成自己的 `Google:ClientId`,不然任何人拿自己的 Google token 都能登進來)→ 驗證通過後從回傳的 payload 拿 `Email` → `UserManager.FindByEmailAsync` 查帳號,查不到就 `UserManager.CreateAsync(user)`(不帶密碼參數)新建一個 `AppUser` + `AddToRoleAsync(user, "User")` → 撈 roles → 產 JWT(claims 帶 `NameIdentifier`/`Email`/`Role`)→ `Response.Cookies.Append("access_token", token, new CookieOptions { HttpOnly = true, Secure = false, SameSite = Lax, Expires = ... })`(本地先 `Secure=false`,上線再依 CLAUDE.md 定案改 `SameSite=None;Secure`)
-- `GenerateJwtToken` 先寫成 `AuthController` 裡的 private method,不用另外拆 service
-- `POST /api/auth/logout`:`Response.Cookies.Delete("access_token")`
+### Stage 3 — Controller(mutate 三支 + 查詢一支)
 
-**明確不做**:refresh token 輪替、帳號綁定多個第三方登入方式。cookie 命名先用 `access_token`,以後加 `refresh_token` 不用改名。
+新增 `Controllers/WordProgressController.cs`,`[Authorize]`(全部要登入),`[Route("api/progress")]`,User Id 從 `User.FindFirstValue(ClaimTypes.NameIdentifier)` 取得(比照 `AuthController.Me()`,不從前端傳 userId)。
 
-### Stage 7 — 驗證
+| Method | Route                                 | 用途                                                                                                                                   |
+| ------ | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/progress/category/{categoryId}` | 回傳該使用者在這本書的完整進度清單,前端載入這一輪要練習的卡片時用,也給現有的 `getNewWords`/`getDueWords`/`getCounts` 純函式篩選 |
+| POST   | `/api/progress/batch`                 | body 是純陣列 `[{ wordId, level, isArchived, nextReviewAt }]`(不包 `{ updates: [...] }`),一輪練習結束(或翻到最後一張)才打一次,把整輪算好的最終狀態一次寫進去 |
 
-因為沒有帳密可以直接寫死在 `.http` 檔測試,測 `POST /api/auth/google-login` 前要先拿到一個真的 Google ID Token——用 Google 官方的 [OAuth Playground](https://developers.google.com/oauthplayground)或寫一個最小的測試頁(用 Google Identity Services JS)登入拿 token,貼進 `.http` 檔的 request body。
+中途關頁籤/離開頁面不送出 batch 就當這輪沒發生,不用額外處理「部分送出」或恢復機制。
 
-`Nooka.Api.http` 補上 google-login(帶真的 ID Token)→ 呼叫既有 API(如 `GET /api/categories`,確認沒壞掉)→ logout。確認 google-login 回應有 `Set-Cookie: access_token=...; httponly`,logout 回應的 `Set-Cookie` 是過期值。**明天不用加任何 `[Authorize]`**,那是下一步。
+驗證:用 `Nooka.Api.http` 或 Swagger,帶登入後拿到的 `access_token` cookie 測兩支;不帶 cookie 應該回 401。
+
+### Stage 4 — 彙總查詢 `/api/progress/summary`
+
+在 `IWordProgressRepository`/`EfWordProgressRepository` 加 `GetSummaryAsync(int userId)`,跨所有 category 彙總每本書「已精熟(`IsArchived`)/學習中(`Level != null && !IsArchived`)/尚未開始」的數量 + 今天到期(`NextReviewAt <= today`)張數。Controller 加 `GET /api/progress/summary`——**回傳時只回分類後的計數,不回傳原始 `Level` 數字**(前端「學習紀錄」頁不顯示 Lv1~5 這種內部分級)。
+
+驗證:標記幾張卡後打這支 API,人工核對計數對不對。
+
+### Stage 5 — `useFlashcardProgress.ts` 換成打 API
+
+保留現有四個純函式(`getNewWords`/`getDueWords`/`getCounts`/`getProgress`)的篩選邏輯不變,`markInitialLearning`/`markReviewed`/`resolveLevel5` 這三個狀態轉換函式的計算邏輯也**不變**,但:
+
+- `loadProgressList` 的 localStorage I/O 換成 `GET /api/progress/category/${categoryId}`(用 `useApiFetch`,`credentials: "include"`),讀進來的資料只存在這個 composable 的記憶體狀態(reactive ref)裡。
+- `markInitialLearning`/`markReviewed`/`resolveLevel5` 改成只更新記憶體裡的狀態(邏輯跟原本 localStorage 版本一樣,只是不寫 storage),同時把這筆變動記進一個「待送出」清單(dirty list)。
+- 新增 `submitBatch()`,把 dirty list 整理成純陣列,一輪練習的最後一張卡完成時(或使用者主動結束這輪)呼叫一次 `POST /api/progress/batch`;沒呼叫到就等同這輪沒發生。
+- 讀取(`loadProgressList`)變非同步要 `await`;三個標記函式本身維持同步(純算記憶體狀態),只有 `submitBatch()` 是非同步。
+
+驗證:先不改 UI,console.log 確認一輪結束時才打出一支帶完整 `updates` 陣列的 batch API,中途點擊三選一/今天已練習不會觸發任何網路請求。
+
+### Stage 6 — 呼叫端調整(`practice/index.vue`、`flashcard.vue`)
+
+- `practice/index.vue`:`flashcardCounts` 從同步 `computed` 改用 `useAsyncData`;`chooseFlashcardMode` 裡的 `isFirstTimeForBook()` 改成 await。
+- `flashcard.vue`:`sessionWords` 改用 `useAsyncData` 直接抓,原本為了 localStorage/SSR 不一致包的 `<ClientOnly>` 可以拿掉;在最後一張卡完成、或使用者主動結束這輪(例如按返回書架)時呼叫 `submitBatch()`。
+
+驗證:登入後走一次完整流程(學新字三選一 → 複習「今天已練習」→ Lv5 滿級彈窗),重新整理頁面或換瀏覽器登入同帳號,進度應該還在(證明真的存 DB)。
+
+### Stage 7 — 未登入 = 純瀏覽模式
+
+- `flashcard.vue` 用 `useAuthUser()` 判斷:未登入時不呼叫任何 `/api/progress/*`,單字照表列順序全部顯示,只能翻牌 + 上一張/下一張,不出現三選一按鈕、不出現「今天已練習」按鈕與 Lv 圓點。
+- `practice/index.vue` 的單字卡 UModal:未登入時不顯示「學習新單字/複習已學過的單字」這組,改顯示「先看看這本書的單字」瀏覽入口,導去 `flashcard.vue` 的瀏覽模式(例如 `?mode=browse`)。
+- 不新增登入保護 middleware(維持書架頁本身不擋登入的既有決定),只在單字卡子功能內用 `useAuthUser()` 做 UI 分支。
+
+驗證:登出後開單字卡,應該只能翻牌瀏覽,看不到任何標記按鈕。
+
+### Stage 8 — 「學習紀錄」頁面
+
+- 新增 `frontend/app/pages/progress.vue`,抓 `GET /api/progress/summary`,顯示每本書「已精熟 X 字 / 學習中 Y 字 / 尚未開始 Z 字」+ 今天待複習張數,不出現 Lv1~5 字眼。
+- `AppNav.vue` 把「學習紀錄」的 `to: "#"` 改成 `to: "/progress"`。
+- 未登入訪問這頁:比照 `overview.vue` 現有處理登入態的方式,顯示「登入後查看你的學習進度」。
+
+驗證:標記過的書要出現在頁面上且計數正確,未登入訪問要看到登入提示而不是空白/報錯。
 
 ## 決策點總表
 
-| 決策                               | 選擇                                                         | 理由                                          |
-| ---------------------------------- | ------------------------------------------------------------ | --------------------------------------------- |
-| Guid vs int 主鍵                   | 自訂 `IdentityUser<int>`/`IdentityRole<int>`                 | 對齊現有表的 int 主鍵慣例                     |
-| `AddIdentity` vs `AddIdentityCore` | `AddIdentityCore` + `.AddSignInManager()`                    | 避免多註冊一個跟 JWT 衝突的 cookie scheme     |
-| JWT 放 header vs cookie            | httpOnly cookie(`OnMessageReceived` 讀)                      | 架構定案 httpOnly cookie,前端 JS 本來就讀不到 |
-| 登入方式                           | 只做 Google 登入,不做 Email+密碼                             | 統一登入方式,省掉密碼儲存/忘記密碼整組流程    |
-| Google token 驗證                  | `Google.Apis.Auth` 的 `GoogleJsonWebSignature.ValidateAsync` | 官方套件,內建拿 Google 公鑰驗簽章,不用自己刻  |
-| 新帳號建立時機                     | 登入 API 裡查無帳號就順便建(無密碼)                          | 沒有獨立註冊流程,Google 登入即註冊            |
-| Token 產生邏輯放哪                 | `AuthController` 裡的 private method                         | MVP 先別過度抽象,等加 refresh token 才抽出來  |
+| 決策                                | 選擇                                                                | 理由                                                                          |
+| ----------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 未登入使用者能不能玩單字卡          | 能,但純瀏覽(翻牌看意思),不能標記熟悉度、不記錄進度                  | 進度本來就要綁會員,沒有帳號就沒有東西可以存;選擇題/打字拼寫維持不用登入       |
+| 進度總覽放哪                        | 新頁面 `/progress`,掛在 AppNav 既有的「學習紀錄」佔位連結           | 比 `overview.vue` 的 mock dashboard 更明確對應「學習紀錄」這個既有 nav 入口   |
+| 學習紀錄要不要顯示 Lv1~5            | 不顯示,只顯示「已精熟/學習中/尚未開始」+ 待複習張數                 | Lv1~5 是內部演算法分級,對使用者沒有意義,只會增加認知負荷                      |
+| LIMIT/排序邏輯放前端還是後端        | 維持在前端(`getNewWords`/`getDueWords` 純函式不變),後端只回完整清單 | 單一使用者單本書的進度筆數不大,MVP 先不做這層效能優化,之後有需要再搬進 SQL    |
+| 要不要做 localStorage → DB 資料搬遷 | 不用                                                                | MVP 尚未上線,現有 localStorage 資料是開發測試產生的,直接讓新版本改吃 API 即可 |
+| 進度 API 呼叫時機                   | 一輪練習結束才打一次 batch API,不是每次點擊三選一/今天已練習都打    | 頻繁單次呼叫對前後端流量都是不必要負擔;使用者確認不在意「中途關頁籤導致這輪進度遺失」,所以不需要逐步存檔換取容錯 |
 
 ## 涉及檔案
-
-- `backend/Nooka.Api/Program.cs`(修改:DI 註冊 + middleware pipeline)
-- `backend/Nooka.Api/Data/AppDbContext.cs`(修改:改繼承 `IdentityDbContext`)
-- `backend/Nooka.Api/Models/AppUser.cs`、`AppRole.cs`、`AuthDtos.cs`(新增)
-- `backend/Nooka.Api/Controllers/AuthController.cs`(新增)
-- `backend/Nooka.Api/Nooka.Api.csproj`(套件)
-- `backend/Nooka.Api/appsettings.Development.json`(新增 `Jwt:*`、`Google:ClientId` 設定)
-- `backend/Nooka.Api/Nooka.Api.http`(新增測試請求)
-
-## 驗證方式
-
-`dotnet build` 每個 stage 都要過;Stage 3 migration 套用後去 Supabase table editor 肉眼確認新表結構跟既有表沒被動到;Stage 7 用 `.http` 檔或 curl(帶一個從 OAuth Playground 拿到的真 Google ID Token)跑過 google-login(確認 `Set-Cookie` header)→ 呼叫既有 API 沒壞 → logout(確認 cookie 被清空)。全程不用動前端。
-
----
-
-# 前端 Google 登入/登出串接
-
-> 目標:使用者可以在前端畫面上,透過 Google 帳號真的登入/登出,`AppNav.vue` 反映真實登入狀態,且重新整理頁面後登入狀態不會消失。
-
-## 為什麼
-
-後端 Google 登入/登出已經完成並測試過(見上方章節)。前端目前是 `useDemoAuth.ts` 這個假的 `useState<boolean>` 在 `AppNav.vue` 切換登入/登出文字,沒有真的呼叫後端、沒有 Google 登入 SDK、也沒有處理 httpOnly cookie 需要的 `credentials: 'include'`。
-
-登入畫面的視覺設計稿使用者會另外整理一個資料夾丟進來,目前還沒到位——Stage 4(套用設計稿的登入按鈕)要等設計稿到位才能真的動工,但其他 Stage 不受影響,可以先做。
-
-## 已確認的決策
-
-- **登入狀態持久化**:新增 `GET /api/auth/me`(後端,`[Authorize]`),前端啟動時呼叫一次來判斷是否已登入——因為 token 在 httpOnly cookie 裡,前端 JS 本來就讀不到,不加這支 API 的話 reload 頁面就會忘記登入狀態。
-- **Google 互動方式**:官方 Google Identity Services 的 `renderButton`(不裝第三方 npm 包裝套件,如 `vue3-google-login`)。
-- **前端狀態管理**:沿用現有 `useState` pattern(`useDemoAuth.ts` 已經是這樣寫),**不新增 Pinia**——專案目前沒裝 Pinia,MVP 階段不需要為了一個 auth state 多引入一個狀態管理套件。
-- **套用設計稿(Stage 4)由 Claude 直接實作**,其餘 Stage 維持一步一步來、使用者動手為主的節奏(跟上方後端 Stage 拆法一致)。
-
-## 分階段步驟(照順序,一步做完驗證完再下一步)
-
-### Stage 0 — 環境變數
-
-- `frontend/.env`、`.env.example` 新增 `NUXT_PUBLIC_GOOGLE_CLIENT_ID`(值是後端 `appsettings.Development.json` 裡同一個 `Google:ClientId`)
-- `frontend/nuxt.config.ts` 的 `runtimeConfig.public` 加 `googleClientId`,比照現有 `apiBase` 的寫法
-- 確認 Google Cloud Console 該 OAuth Client 的「已授權的 JavaScript 來源」已經有 `http://localhost:3000`(後端 Stage 5 應該已經設過)
-
-### Stage 1 — 載入 Google Identity Services script
-
-- `frontend/app/app.vue`(或 `nuxt.config.ts` 的 `app.head`)用 `useHead` 加 `<script src="https://accounts.google.com/gsi/client" async defer>`
-
-驗證:瀏覽器 devtools console 打 `window.google.accounts.id`,有東西不是 `undefined`。
-
-### Stage 2 — 後端補強:CORS + `/api/auth/me`
-
-- `backend/Nooka.Api/Program.cs`:CORS policy `NuxtDev` 加 `.AllowCredentials()`(目前只有 `WithOrigins().AllowAnyHeader().AllowAnyMethod()`,缺這個的話瀏覽器不會讓帶 cookie 的跨網域請求過)
-- `backend/Nooka.Api/Controllers/AuthController.cs` 新增 `[Authorize] [HttpGet("me")]`,從 `User`(`ClaimsPrincipal`)讀 `NameIdentifier`/`Email`/`Role` claims 組一個回傳物件——不用查 DB,JWT claims 裡已經有這些資訊
-
-驗證:登入後帶著瀏覽器 cookie 呼叫 `GET /api/auth/me` 回 200 + 使用者資訊;沒帶 cookie(或 cookie 過期)呼叫回 401。
-
-### Stage 3 — 前端 `useAuth` composable
-
-- 比照 `app/composables/useApi.ts` 的 `useApiUrl`,新增一個小 helper 讓需要帶 cookie 的請求統一加上 `credentials: 'include'`(`google-login`、`logout`、`me` 三支都要用到)
-- 新增 `frontend/app/composables/useAuth.ts`,取代 `useDemoAuth.ts`:
-  - `useAuthUser()` → `useState<AuthUser | null>("authUser", () => null)`
-  - `fetchMe()` → 呼叫 `/api/auth/me`,更新 state(app 啟動時呼叫一次,例如 `app.vue` 的 `onMounted` 或一個 plugin)
-  - `loginWithGoogle(idToken)` → 呼叫 `/api/auth/google-login`,成功後呼叫 `fetchMe()` 拿使用者資訊
-  - `logout()` → 呼叫 `/api/auth/logout`,清空 state
-- 新增 `AuthUser` 型別(放 `app/types/practice.ts` 旁邊新開一個 `app/types/auth.ts`)
-
-驗證:先不接 UI,在頁面上放一顆測試按鈕呼叫這幾個 function,console.log 確認狀態有正確變化。
-
-### Stage 4 — Google 登入按鈕(套用設計稿)—— 等設計稿資料夾準備好後由 Claude 來刻
-
-- 依設計稿寫登入按鈕/登入區塊的樣式
-- 用 `google.accounts.id.initialize({ client_id, callback })` + `google.accounts.id.renderButton(el, options)` 掛上官方按鈕
-- callback 拿到 `response.credential`(就是 Google ID Token)→ 呼叫 `useAuth().loginWithGoogle(idToken)`
-
-驗證:點按鈕 → 跳出 Google 帳號選擇畫面 → 選完後畫面反應登入成功(可以先看 Stage 3 留的測試輸出,UI 串接留到 Stage 5)。
-
-### Stage 5 — `AppNav.vue` 串接真實登入狀態
-
-- 把 `useDemoLoggedIn()` 換成 `useAuthUser()`
-- 未登入:顯示登入按鈕(或連到登入頁);已登入:顯示使用者資訊 + 登出按鈕(呼叫 `useAuth().logout()`)
-- `useDemoAuth.ts` 確認沒有其他地方(目前已知 `overview.vue` 有讀)還在用,清掉或一併換成 `useAuthUser()`
-
-驗證(整條流程跑一次):首次進站 → nav 顯示未登入 → 點登入 → Google 選帳號 → 導回後 nav 顯示已登入 → reload 頁面登入狀態還在 → 點登出 → nav 變回未登入。
-
-## 涉及檔案
-
-**前端**
-
-- `frontend/.env`、`.env.example`(新增)
-- `frontend/nuxt.config.ts`
-- `frontend/app/app.vue`
-- `frontend/app/composables/useAuth.ts`(新增,取代 `useDemoAuth.ts`)
-- `frontend/app/composables/useApi.ts`(擴充 credentials helper)
-- `frontend/app/components/AppNav.vue`
-- `frontend/app/types/auth.ts`(新增)
-- 登入按鈕元件(Stage 4 才會確定檔名,依設計稿結構而定)
 
 **後端**
 
-- `backend/Nooka.Api/Program.cs`(CORS 加 `AllowCredentials`)
-- `backend/Nooka.Api/Controllers/AuthController.cs`(新增 `me` action)
+- `backend/Nooka.Api/Models/WordProgress.cs`(新增)
+- `backend/Nooka.Api/Data/AppDbContext.cs`(修改)
+- `backend/Nooka.Api/Migrations/`(新增 `AddWordProgress`)
+- `backend/Nooka.Api/Repositories/IWordProgressRepository.cs`、`EfWordProgressRepository.cs`(新增)
+- `backend/Nooka.Api/Controllers/WordProgressController.cs`(新增)
+- `backend/Nooka.Api/Program.cs`(DI 註冊)
+- `backend/Nooka.Api/Nooka.Api.http`(新增測試請求)
 
----
+**前端**
+
+- `frontend/app/composables/useFlashcardProgress.ts`(改寫成打 API)
+- `frontend/app/pages/practice/index.vue`(async 化 + 未登入分支)
+- `frontend/app/pages/practice/[categoryId]/flashcard.vue`(async 化 + 未登入純瀏覽模式)
+- `frontend/app/pages/progress.vue`(新增)
+- `frontend/app/components/AppNav.vue`(「學習紀錄」連結)
+
+## 驗證方式
+
+- 登入後標記幾張 Lv1/Lv2,重新整理頁面、或換瀏覽器再登入同一帳號,進度應該還在(證明真的存 DB 而不是 localStorage)。
+- 登出後開同一本書單字卡,應該只能翻牌瀏覽,看不到三選一/今天已練習按鈕。
+- 「學習紀錄」頁面能看到剛剛標記過的書出現對應的計數,且畫面上不出現 Lv1~Lv5 這種字眼。
+- 後端可用 `.http`/Swagger 直接呼叫 `/api/progress/*` 系列 API,確認 `[Authorize]` 生效(未帶 cookie 應該 401)。
+
+完成後回頭更新 `CLAUDE.md`:A-1 狀態改成完成,補上 `WordProgress` 表 + 相關 API 到「已完成的基礎建設」,記錄「未登入 = 純瀏覽,登入才記錄進度」這條規則。
 
 TODO: 待學習資訊
 
