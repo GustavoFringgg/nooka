@@ -65,7 +65,7 @@ Task BatchUpsertAsync(int userId, List<WordProgressUpdate> updates);
 | Method | Route                                 | 用途                                                                                                                                   |
 | ------ | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | GET    | `/api/progress/category/{categoryId}` | 回傳該使用者在這本書的完整進度清單,前端載入這一輪要練習的卡片時用,也給現有的 `getNewWords`/`getDueWords`/`getCounts` 純函式篩選 |
-| POST   | `/api/progress/batch`                 | body `{ updates: [{ wordId, level, isArchived, nextReviewAt }] }`,一輪練習結束(或翻到最後一張)才打一次,把整輪算好的最終狀態一次寫進去 |
+| POST   | `/api/progress/batch`                 | body 是純陣列 `[{ wordId, level, isArchived, nextReviewAt }]`(不包 `{ updates: [...] }`),一輪練習結束(或翻到最後一張)才打一次,把整輪算好的最終狀態一次寫進去 |
 
 中途關頁籤/離開頁面不送出 batch 就當這輪沒發生,不用額外處理「部分送出」或恢復機制。
 
@@ -83,7 +83,7 @@ Task BatchUpsertAsync(int userId, List<WordProgressUpdate> updates);
 
 - `loadProgressList` 的 localStorage I/O 換成 `GET /api/progress/category/${categoryId}`(用 `useApiFetch`,`credentials: "include"`),讀進來的資料只存在這個 composable 的記憶體狀態(reactive ref)裡。
 - `markInitialLearning`/`markReviewed`/`resolveLevel5` 改成只更新記憶體裡的狀態(邏輯跟原本 localStorage 版本一樣,只是不寫 storage),同時把這筆變動記進一個「待送出」清單(dirty list)。
-- 新增 `submitBatch()`,把 dirty list 整理成 `{ updates: [...] }`,一輪練習的最後一張卡完成時(或使用者主動結束這輪)呼叫一次 `POST /api/progress/batch`;沒呼叫到就等同這輪沒發生。
+- 新增 `submitBatch()`,把 dirty list 整理成純陣列,一輪練習的最後一張卡完成時(或使用者主動結束這輪)呼叫一次 `POST /api/progress/batch`;沒呼叫到就等同這輪沒發生。
 - 讀取(`loadProgressList`)變非同步要 `await`;三個標記函式本身維持同步(純算記憶體狀態),只有 `submitBatch()` 是非同步。
 
 驗證:先不改 UI,console.log 確認一輪結束時才打出一支帶完整 `updates` 陣列的 batch API,中途點擊三選一/今天已練習不會觸發任何網路請求。

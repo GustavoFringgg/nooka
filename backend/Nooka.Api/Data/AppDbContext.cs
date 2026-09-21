@@ -30,6 +30,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
             .Property(c => c.UpdatedAt)
             .HasDefaultValueSql("now()");
 
+
         modelBuilder.Entity<Word>()
             .HasIndex(w => w.Term)
             .IsUnique();
