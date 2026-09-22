@@ -17,7 +17,7 @@ const posColors: Record<PartOfSpeech, { bg: string; text: string }> = {
 }
 
 //TODO: 這裡要再理解
-function posColor(pos: string) {
+const posColor = (pos: string) => {
   return posColors[pos as PartOfSpeech]
 }
 
@@ -38,7 +38,7 @@ const { data: words, pending: wordsPending } = await useFetch<Word[]>(
   { watch: [selectedId] }
 )
 
-function darken(hex: string, amount = 0.25) {
+const darken = (hex: string, amount = 0.25) => {
   const num = parseInt(hex.replace("#", ""), 16)
   const r = Math.round(((num >> 16) & 255) * (1 - amount))
   const g = Math.round(((num >> 8) & 255) * (1 - amount))
@@ -63,13 +63,13 @@ const FLASHCARD_INTRO_SECONDS = 3
 const introCountdown = ref(FLASHCARD_INTRO_SECONDS)
 let introTimer: ReturnType<typeof setInterval> | null = null
 
-function clearIntroTimer() {
+const clearIntroTimer = () => {
   if (introTimer === null) return
   clearInterval(introTimer)
   introTimer = null
 }
 
-function startIntroCountdown() {
+const startIntroCountdown = () => {
   clearIntroTimer()
   introCountdown.value = FLASHCARD_INTRO_SECONDS
   introTimer = setInterval(() => {
@@ -101,32 +101,32 @@ const maxCount = computed(() => words.value?.length ?? 5)
 type PracticeMode = "flashcard" | "choice" | "typing"
 const selectedMode = ref<PracticeMode | null>(null)
 
-function selectMode(mode: PracticeMode) {
+const selectMode = (mode: PracticeMode) => {
   selectedMode.value = mode
   if (mode === "choice") openChoiceModal()
   if (mode === "typing") openTypingModal()
   if (mode === "flashcard") openFlashcardModal()
 }
 
-function openChoiceModal() {
+const openChoiceModal = () => {
   if (!selectedBook.value) return
   questionCount.value = maxCount.value
   isChoiceModalOpen.value = true
 }
 
-function openTypingModal() {
+const openTypingModal = () => {
   if (!selectedBook.value) return
   questionCount.value = maxCount.value
   isTypingModalOpen.value = true
 }
 
-function openFlashcardModal() {
+const openFlashcardModal = () => {
   if (!selectedBook.value) return
   flashcardStep.value = "choose"
   isFlashcardModalOpen.value = true
 }
 
-function chooseFlashcardMode(mode: "new" | "review") {
+const chooseFlashcardMode = (mode: "new" | "review") => {
   if (!selectedBook.value) return
   flashcardModeChoice.value = mode
 
@@ -138,12 +138,12 @@ function chooseFlashcardMode(mode: "new" | "review") {
   }
 }
 
-function backToFlashcardChoose() {
+const backToFlashcardChoose = () => {
   clearIntroTimer()
   flashcardStep.value = "choose"
 }
 
-function goToFlashcard() {
+const goToFlashcard = () => {
   if (!selectedBook.value || !flashcardModeChoice.value) return
   clearIntroTimer()
   isFlashcardModalOpen.value = false
@@ -151,18 +151,18 @@ function goToFlashcard() {
   router.push(`/practice/${targetId}/flashcard?mode=${flashcardModeChoice.value}`)
 }
 
-function selectBook(id: number) {
+const selectBook = (id: number) => {
   selectedId.value = id
 }
 
-function startChoiceQuiz() {
+const startChoiceQuiz = () => {
   if (!selectedBook.value) return
   isChoiceModalOpen.value = false
   const targetId = selectedBook.value.id
   router.push(`/practice/${targetId}/choice?direction=${direction.value}&count=${questionCount.value}`)
 }
 
-function startTypingQuiz() {
+const startTypingQuiz = () => {
   if (!selectedBook.value) return
   isTypingModalOpen.value = false
   const targetId = selectedBook.value.id
