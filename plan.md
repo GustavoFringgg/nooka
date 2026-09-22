@@ -2,7 +2,7 @@
 
 > 目標:把 `useFlashcardProgress.ts` 現有的 Lv1~5 分級邏輯(初學三選一、複習升級、Lv5 滿級彈窗)從 localStorage 換成存 DB,跟會員帳號綁定;未登入使用者改成純瀏覽單字卡(不能標記熟悉度);新增「學習紀錄」頁面給會員看自己的進度總覽。
 >
-> **狀態(2026/09/19):規劃完成,尚未開始實作。**
+> **狀態(2026/09/21):Stage 0~3 完成並 commit(WordProgress model/migration/repository/controller)。Stage 4(彙總查詢)進行中,`CategoryProgressSummary` DTO 已定義,repository/controller 尚未寫。明天(9/22)接續。**
 
 ## 為什麼
 
@@ -71,9 +71,23 @@ Task BatchUpsertAsync(int userId, List<WordProgressUpdate> updates);
 
 驗證:用 `Nooka.Api.http` 或 Swagger,帶登入後拿到的 `access_token` cookie 測兩支;不帶 cookie 應該回 401。
 
-### Stage 4 — 彙總查詢 `/api/progress/summary`
+**實作備註(跟原規劃的小差異)**:
+
+- 兩支 DTO(`GoogleLoginRequest`、`WordProgressUpdate`)搬到獨立的 `Models/Dtos/` 子資料夾(namespace `Nooka.Api.Models.Dtos`),跟 `Models/` 底下真正對應 DB 表的 entity(`Word`/`Category`/`WordProgress` 等)分開。
+- Controller class 實際命名 `ProgressController`(檔名維持 `WordProgressController.cs`),用 `[Route("api/[controller]")]` 慣例自動產生 `api/Progress` 前綴(routing 不分大小寫,不影響前端打 `/api/progress/...`)。
+- `POST /api/progress/batch` 的 body 已確認是**純陣列** `[{ wordId, level, isArchived, nextReviewAt }]`,不包一層 `{ updates: [...] }`(上面表格已同步更新)。
+
+### Stage 4 — 彙總查詢 `/api/progress/summary`(進行中)
 
 在 `IWordProgressRepository`/`EfWordProgressRepository` 加 `GetSummaryAsync(int userId)`,跨所有 category 彙總每本書「已精熟(`IsArchived`)/學習中(`Level != null && !IsArchived`)/尚未開始」的數量 + 今天到期(`NextReviewAt <= today`)張數。Controller 加 `GET /api/progress/summary`——**回傳時只回分類後的計數,不回傳原始 `Level` 數字**(前端「學習紀錄」頁不顯示 Lv1~5 這種內部分級)。
+
+**回傳形狀已定案並建好 DTO**(`Models/Dtos/CategoryProgressSummary.cs`):
+```csharp
+public record CategoryProgressSummary(int CategoryId, string CategoryName, int Familiar, int Learning, int NewWords, int DueToday);
+```
+一個單字只會落在 `Familiar`/`Learning`/`NewWords` 三者之一(互斥);`DueToday` 不是第四種狀態,是 `Learning` 這群裡再篩 `NextReviewAt <= 今天` 的子集合計數,疊加在 `Learning` 之上,不是獨立一批單字。
+
+**尚未做**(明天接續):`GetSummaryAsync` 的查詢邏輯(`WordProgresses` join `WordCategories` 按 `CategoryId` 分組;`NewWords` 要另外拿 `WordCategories` 算每本書總字數,扣掉已有進度紀錄的數量)+ Controller 的 `GET /api/progress/summary` action。
 
 驗證:標記幾張卡後打這支 API,人工核對計數對不對。
 
