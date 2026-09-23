@@ -2,6 +2,7 @@
 import type { Word } from "~/types/practice"
 import { gsap } from "gsap"
 
+// ========== 共用工具 ==========
 type PartOfSpeech = "形容詞" | "副詞" | "動詞" | "名詞" | "代名詞" | "介系詞" | "連接詞" | "感嘆詞"
 
 const posColors: Record<PartOfSpeech, { bg: string; text: string }> = {
@@ -15,10 +16,12 @@ const posColors: Record<PartOfSpeech, { bg: string; text: string }> = {
   感嘆詞: { bg: "rgba(161,63,94,.16)", text: "#7a2f47" }
 }
 const defaultPosColor = { bg: "rgba(120,120,120,.16)", text: "#555555" }
-function posColor(pos: string) {
+
+const posColor = (pos: string) => {
   return posColors[pos as PartOfSpeech] ?? defaultPosColor
 }
 
+// ========== 資料載入 ==========
 const route = useRoute()
 const categoryId = route.params.categoryId as string
 const mode = route.query.mode === "review" ? "review" : "new"
@@ -27,10 +30,18 @@ const { data: words, pending, error } = await useFetch<Word[]>(useApiUrl(`/api/w
 
 const progress = useFlashcardProgress(categoryId)
 
+// ========== 練習 Session 狀態 ==========
 // 進度來自 localStorage,只存在 client,server render 時算不出正確清單,
 // 所以這份清單留到 onMounted 才算,搭配 template 用 <ClientOnly> 包住這一段,避免 SSR/CSR 算出不同清單而 hydration mismatch
 const sessionWords = ref<Word[]>([])
 const sessionReady = ref(false)
+const currentIndex = ref(0)
+
+const currentWord = computed(() => sessionWords.value[currentIndex.value])
+const currentLevel = computed(() => (currentWord.value ? (progress.getProgress(currentWord.value.id)?.level ?? 1) : 1))
+const progressPercent = computed(() =>
+  sessionWords.value.length ? (currentIndex.value / sessionWords.value.length) * 100 : 0
+)
 
 onMounted(() => {
   if (words.value) {
@@ -39,42 +50,36 @@ onMounted(() => {
   sessionReady.value = true
 })
 
-const currentIndex = ref(0)
-const currentWord = computed(() => sessionWords.value[currentIndex.value])
-const currentLevel = computed(() => (currentWord.value ? (progress.getProgress(currentWord.value.id)?.level ?? 1) : 1))
-const progressPercent = computed(() =>
-  sessionWords.value.length ? (currentIndex.value / sessionWords.value.length) * 100 : 0
-)
+const advanceCard = () => {
+  currentIndex.value++
+}
 
-// 翻牌動畫沿用 cardTest.vue 的 GSAP 手法
+// ========== 翻牌動畫(沿用 cardTest.vue 的 GSAP 手法) ==========
 const cardRef = ref<HTMLElement | null>(null)
 const isFlipped = ref(false)
 
-function flipCard() {
+const flipCard = () => {
   isFlipped.value = !isFlipped.value
   gsap.to(cardRef.value, { rotateY: isFlipped.value ? 180 : 0, duration: 0.6 })
 }
 
-function resetFlip() {
+const resetFlip = () => {
   isFlipped.value = false
   if (cardRef.value) gsap.set(cardRef.value, { rotateY: 0 })
 }
 
 watch(currentWord, () => resetFlip())
 
-function advanceCard() {
-  currentIndex.value++
-}
+// ========== 標記操作(三選一 / 複習 / Lv5 滿級) ==========
+const isLevel5ModalOpen = ref(false)
 
-function markInitial(choice: "unknown" | "familiar" | "mastered") {
+const markInitial = (choice: "unknown" | "familiar" | "mastered") => {
   if (!currentWord.value) return
   progress.markInitialLearning(currentWord.value.id, choice)
   advanceCard()
 }
 
-const isLevel5ModalOpen = ref(false)
-
-function handleReviewed() {
+const handleReviewed = () => {
   if (!currentWord.value) return
   if (currentLevel.value === 5) {
     isLevel5ModalOpen.value = true
@@ -84,7 +89,7 @@ function handleReviewed() {
   advanceCard()
 }
 
-function resolveLevel5(action: "graduate" | "restart") {
+const resolveLevel5 = (action: "graduate" | "restart") => {
   if (!currentWord.value) return
   progress.resolveLevel5(currentWord.value.id, action)
   isLevel5ModalOpen.value = false

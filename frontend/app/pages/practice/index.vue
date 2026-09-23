@@ -3,6 +3,7 @@ import type { Category, Word } from "~/types/practice"
 import type { QuizDirection } from "~/utils/quiz"
 const router = useRouter()
 
+// ========== 共用工具 ==========
 type PartOfSpeech = "形容詞" | "副詞" | "動詞" | "名詞" | "代名詞" | "介系詞" | "連接詞" | "感嘆詞"
 
 const posColors: Record<PartOfSpeech, { bg: string; text: string }> = {
@@ -16,11 +17,19 @@ const posColors: Record<PartOfSpeech, { bg: string; text: string }> = {
   感嘆詞: { bg: "rgba(161,63,94,.16)", text: "#7a2f47" }
 }
 
-//TODO: 這裡要再理解
 const posColor = (pos: string) => {
   return posColors[pos as PartOfSpeech]
 }
 
+const darken = (hex: string, amount = 0.25) => {
+  const num = parseInt(hex.replace("#", ""), 16)
+  const r = Math.round(((num >> 16) & 255) * (1 - amount))
+  const g = Math.round(((num >> 8) & 255) * (1 - amount))
+  const b = Math.round((num & 255) * (1 - amount))
+  return `rgb(${r}, ${g}, ${b})`
+}
+
+// ========== 書架/選書 ==========
 const selectedId = ref<number | null>(null)
 const selectedBook = computed(() => categories.value?.find((c) => c.id === selectedId.value) ?? null)
 
@@ -38,30 +47,88 @@ const { data: words, pending: wordsPending } = await useFetch<Word[]>(
   { watch: [selectedId] }
 )
 
-const darken = (hex: string, amount = 0.25) => {
-  const num = parseInt(hex.replace("#", ""), 16)
-  const r = Math.round(((num >> 16) & 255) * (1 - amount))
-  const g = Math.round(((num >> 8) & 255) * (1 - amount))
-  const b = Math.round((num & 255) * (1 - amount))
-  return `rgb(${r}, ${g}, ${b})`
+const selectBook = (id: number) => {
+  selectedId.value = id
 }
 
-const isChoiceModalOpen = ref(false)
-const isTypingModalOpen = ref(false)
-const isFlashcardModalOpen = ref(false)
-const direction = ref<QuizDirection>("enToCn")
-const questionCount = ref(1)
+// ========== 練習模式切換 ==========
+type PracticeMode = "flashcard" | "choice" | "typing"
+const selectedMode = ref<PracticeMode | null>(null)
 
+const selectMode = (mode: PracticeMode) => {
+  selectedMode.value = mode
+  if (mode === "choice") openChoiceModal()
+  if (mode === "typing") openTypingModal()
+  if (mode === "flashcard") openFlashcardModal()
+}
+
+// ========== 共用:題數設定(選擇題、打字拼寫都用得到) ==========
+const questionCount = ref(1)
+const minCount = ref(5) //computed(() => Math.min(5, selectedBook.value?.count ?? 5))
+const maxCount = computed(() => words.value?.length ?? 5)
+
+// ========== 選擇題 Modal ==========
+const isChoiceModalOpen = ref(false)
+const direction = ref<QuizDirection>("enToCn")
+
+const directionOptions: { label: string; value: QuizDirection }[] = [
+  { label: "看英文,選中文答案", value: "enToCn" },
+  { label: "看中文,選英文答案", value: "cnToEn" }
+]
+
+const openChoiceModal = () => {
+  if (!selectedBook.value) return
+  questionCount.value = maxCount.value
+  isChoiceModalOpen.value = true
+}
+
+const startChoiceQuiz = () => {
+  if (!selectedBook.value) return
+  isChoiceModalOpen.value = false
+  const targetId = selectedBook.value.id
+  router.push(`/practice/${targetId}/choice?direction=${direction.value}&count=${questionCount.value}`)
+}
+
+// ========== 打字拼寫 Modal ==========
+const isTypingModalOpen = ref(false)
+
+const openTypingModal = () => {
+  if (!selectedBook.value) return
+  questionCount.value = maxCount.value
+  isTypingModalOpen.value = true
+}
+
+const startTypingQuiz = () => {
+  if (!selectedBook.value) return
+  isTypingModalOpen.value = false
+  const targetId = selectedBook.value.id
+  router.push(`/practice/${targetId}/typing?count=${questionCount.value}`)
+}
+
+// ========== 單字卡 Modal ==========
+const isFlashcardModalOpen = ref(false)
 const flashcardStep = ref<"choose" | "intro">("choose")
 const flashcardModeChoice = ref<"new" | "review" | null>(null)
-const flashcardCounts = computed(() => {
-  if (!selectedBook.value || !words.value) return { newCount: 0, dueCount: 0 }
-  return useFlashcardProgress(selectedBook.value.id).getCounts(words.value)
+
+const FLASHCARD_INTRO_SECONDS = 10
+const introCountdown = ref(FLASHCARD_INTRO_SECONDS)
+
+let introTimer: ReturnType<typeof setInterval> | null = null
+
+const flashcardProgress = computed(() => {
+  return selectedId.value !== null ? useFlashcardProgress(selectedId.value) : null
 })
 
-const FLASHCARD_INTRO_SECONDS = 3
-const introCountdown = ref(FLASHCARD_INTRO_SECONDS)
-let introTimer: ReturnType<typeof setInterval> | null = null
+const { data: flashcardCounts } = await useAsyncData(
+  "flashcard-counts", // key:唯一的名字，Nuxt 用它做 SSR/CSR 之間的快取比對
+  async () => {
+    // 執行非同步
+    if (!selectedBook.value || !words.value || !flashcardProgress.value) return { newCount: 0, dueCount: 0 }
+    await flashcardProgress.value.loadProgressList()
+    return flashcardProgress.value.getCounts(words.value)
+  },
+  { watch: [selectedId, words], default: () => ({ newCount: 0, dueCount: 0 }) }
+)
 
 const clearIntroTimer = () => {
   if (introTimer === null) return
@@ -90,36 +157,6 @@ watch(isFlashcardModalOpen, (open) => {
 
 onUnmounted(() => clearIntroTimer())
 
-const directionOptions: { label: string; value: QuizDirection }[] = [
-  { label: "看英文,選中文答案", value: "enToCn" },
-  { label: "看中文,選英文答案", value: "cnToEn" }
-]
-
-const minCount = ref(5) //computed(() => Math.min(5, selectedBook.value?.count ?? 5))
-const maxCount = computed(() => words.value?.length ?? 5)
-
-type PracticeMode = "flashcard" | "choice" | "typing"
-const selectedMode = ref<PracticeMode | null>(null)
-
-const selectMode = (mode: PracticeMode) => {
-  selectedMode.value = mode
-  if (mode === "choice") openChoiceModal()
-  if (mode === "typing") openTypingModal()
-  if (mode === "flashcard") openFlashcardModal()
-}
-
-const openChoiceModal = () => {
-  if (!selectedBook.value) return
-  questionCount.value = maxCount.value
-  isChoiceModalOpen.value = true
-}
-
-const openTypingModal = () => {
-  if (!selectedBook.value) return
-  questionCount.value = maxCount.value
-  isTypingModalOpen.value = true
-}
-
 const openFlashcardModal = () => {
   if (!selectedBook.value) return
   flashcardStep.value = "choose"
@@ -127,10 +164,10 @@ const openFlashcardModal = () => {
 }
 
 const chooseFlashcardMode = (mode: "new" | "review") => {
-  if (!selectedBook.value) return
+  if (!selectedBook.value || !flashcardProgress.value) return
   flashcardModeChoice.value = mode
 
-  if (useFlashcardProgress(selectedBook.value.id).isFirstTimeForBook()) {
+  if (flashcardProgress.value.isFirstTimeForBook()) {
     flashcardStep.value = "intro"
     startIntroCountdown()
   } else {
@@ -149,24 +186,6 @@ const goToFlashcard = () => {
   isFlashcardModalOpen.value = false
   const targetId = selectedBook.value.id
   router.push(`/practice/${targetId}/flashcard?mode=${flashcardModeChoice.value}`)
-}
-
-const selectBook = (id: number) => {
-  selectedId.value = id
-}
-
-const startChoiceQuiz = () => {
-  if (!selectedBook.value) return
-  isChoiceModalOpen.value = false
-  const targetId = selectedBook.value.id
-  router.push(`/practice/${targetId}/choice?direction=${direction.value}&count=${questionCount.value}`)
-}
-
-const startTypingQuiz = () => {
-  if (!selectedBook.value) return
-  isTypingModalOpen.value = false
-  const targetId = selectedBook.value.id
-  router.push(`/practice/${targetId}/typing?count=${questionCount.value}`)
 }
 </script>
 
@@ -502,7 +521,12 @@ const startTypingQuiz = () => {
           >
             <div class="font-display text-xl text-paper-fg mb-1">學習新單字</div>
             <p class="text-paper-muted text-sm m-0">
-              {{ flashcardCounts.newCount > 0 ? `還有 ${flashcardCounts.newCount} 個字沒學過` : "這本書都學過了" }}
+              <template v-if="flashcardCounts.newCount > 0">
+                還有
+                <span class="text-red-700">{{ flashcardCounts.newCount }}</span>
+                個字沒學過
+              </template>
+              <template v-else>這本書都學過了</template>
             </p>
           </button>
 
@@ -514,13 +538,16 @@ const startTypingQuiz = () => {
           >
             <div class="font-display text-xl text-paper-fg mb-1">複習已學過的單字</div>
             <p class="text-paper-muted text-sm m-0">
-              今天有 <span class="text-paper-accent font-medium">{{ flashcardCounts.dueCount }}</span> 張待複習
+              今天有
+              <span class="text-paper-accent font-medium text-red-500">{{ flashcardCounts.dueCount }}</span>
+              張待複習
             </p>
           </button>
           <div v-else class="text-left rounded-2xl border-2 border-paper-fg/10 p-5 opacity-70">
-            <div class="font-display text-xl text-paper-muted mb-1">複習已學過的單字</div>
+            <div class="font-display text-xl text-paper-muted mb-1">複習單字</div>
             <p class="text-paper-muted text-sm m-0">今天的複習都完成了 🎉</p>
-            <p class="text-paper-muted text-xs mt-2 mb-0">明天會有新的複習排程,現在可以先點左邊「學習新單字」。</p>
+            <p class="text-paper-muted text-xs mt-2 mb-0">明天會有新的複習排程</p>
+            <p class="text-paper-muted text-xs mt-2 mb-0">現在可以先點左邊「學習新單字」</p>
           </div>
         </div>
 
