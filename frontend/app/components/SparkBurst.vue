@@ -6,18 +6,32 @@ interface SparkParticle {
   warm: boolean
 }
 
-const SPARK_COUNT = 10
+type SparkSize = "sm" | "md" | "lg" | "xl"
 
-const particles: SparkParticle[] = Array.from({ length: SPARK_COUNT }, (_, i) => ({
-  angle: (360 / SPARK_COUNT) * i + (Math.random() * 18 - 9),
-  dist: 30 + Math.random() * 26,
-  delay: Math.random() * 60,
-  warm: i % 2 === 1
-}))
+const SIZE_PRESETS: Record<SparkSize, { count: number; distMin: number; distMax: number; scale: number }> = {
+  sm: { count: 8, distMin: 18, distMax: 30, scale: 0.75 },
+  md: { count: 10, distMin: 30, distMax: 56, scale: 1 },
+  lg: { count: 16, distMin: 46, distMax: 80, scale: 1.25 },
+  xl: { count: 30, distMin: 100, distMax: 160, scale: 1.5 }
+}
+
+const props = withDefaults(defineProps<{ size?: SparkSize }>(), { size: "md" })
+
+const preset = computed(() => SIZE_PRESETS[props.size])
+
+const particles = computed<SparkParticle[]>(() => {
+  const { count, distMin, distMax } = preset.value
+  return Array.from({ length: count }, (_, i) => ({
+    angle: (360 / count) * i + (Math.random() * 18 - 9),
+    dist: distMin + Math.random() * (distMax - distMin),
+    delay: Math.random() * 60,
+    warm: i % 2 === 1
+  }))
+})
 </script>
 
 <template>
-  <span class="pointer-events-none" aria-hidden="true">
+  <span class="pointer-events-none" aria-hidden="true" :style="{ '--spark-scale': preset.scale }">
     <span
       v-for="(p, i) in particles"
       :key="i"
@@ -33,8 +47,8 @@ const particles: SparkParticle[] = Array.from({ length: SPARK_COUNT }, (_, i) =>
   position: absolute;
   top: 0;
   left: 0;
-  width: 5px;
-  height: 5px;
+  width: calc(5px * var(--spark-scale, 1));
+  height: calc(5px * var(--spark-scale, 1));
   border-radius: 50%;
   background: var(--color-paper-accent);
   opacity: 0;
@@ -43,8 +57,8 @@ const particles: SparkParticle[] = Array.from({ length: SPARK_COUNT }, (_, i) =>
 }
 
 .spark-warm {
-  width: 4px;
-  height: 4px;
+  width: calc(4px * var(--spark-scale, 1));
+  height: calc(4px * var(--spark-scale, 1));
   background: var(--color-paper-primary);
 }
 
@@ -58,7 +72,7 @@ const particles: SparkParticle[] = Array.from({ length: SPARK_COUNT }, (_, i) =>
   }
   100% {
     opacity: 0;
-    transform: rotate(var(--angle)) translate(var(--dist), -8px) scale(0.3);
+    transform: rotate(var(--angle)) translate(var(--dist), calc(var(--dist) * -0.15)) scale(0.3);
   }
 }
 

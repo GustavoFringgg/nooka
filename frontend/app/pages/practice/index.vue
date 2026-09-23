@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Category, Word } from "~/types/practice"
 import type { QuizDirection } from "~/utils/quiz"
+import { gsap } from "gsap"
 const router = useRouter()
 
 // ========== 共用工具 ==========
@@ -110,11 +111,6 @@ const isFlashcardModalOpen = ref(false)
 const flashcardStep = ref<"choose" | "intro">("choose")
 const flashcardModeChoice = ref<"new" | "review" | null>(null)
 
-const FLASHCARD_INTRO_SECONDS = 10
-const introCountdown = ref(FLASHCARD_INTRO_SECONDS)
-
-let introTimer: ReturnType<typeof setInterval> | null = null
-
 const flashcardProgress = computed(() => {
   return selectedId.value !== null ? useFlashcardProgress(selectedId.value) : null
 })
@@ -130,32 +126,61 @@ const { data: flashcardCounts } = await useAsyncData(
   { watch: [selectedId, words], default: () => ({ newCount: 0, dueCount: 0 }) }
 )
 
-const clearIntroTimer = () => {
-  if (introTimer === null) return
-  clearInterval(introTimer)
-  introTimer = null
-}
-
-const startIntroCountdown = () => {
-  clearIntroTimer()
-  introCountdown.value = FLASHCARD_INTRO_SECONDS
-  introTimer = setInterval(() => {
-    introCountdown.value--
-    if (introCountdown.value <= 0) {
-      clearIntroTimer()
-      goToFlashcard()
-    }
-  }, 1000)
-}
-
 watch(isFlashcardModalOpen, (open) => {
-  if (!open) {
-    clearIntroTimer()
-    flashcardStep.value = "choose"
-  }
+  if (!open) flashcardStep.value = "choose"
 })
 
-onUnmounted(() => clearIntroTimer())
+const flashcardModalUi = computed(() => ({
+  content: `bg-paper-bg text-paper-fg ring-paper-fg/10 divide-paper-fg/10 ${flashcardStep.value === "intro" ? "sm:max-w-xl" : ""}`,
+  header: "border-paper-fg/10",
+  footer: "border-paper-fg/10",
+  title: "text-paper-fg font-display text-2xl font-normal",
+  description: "text-paper-muted",
+  close: "text-paper-muted hover:bg-paper-fg/10 hover:text-paper-fg",
+  overlay: "bg-paper-fg/40"
+}))
+
+const introDemoRef = ref<HTMLElement | null>(null)
+const introFlipped = ref(false)
+const introChoicesRevealed = ref(false)
+
+const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
+
+const flipIntroDemo = () => {
+  const root = introDemoRef.value
+  const card = root?.querySelector<HTMLElement>(".intro-demo-card")
+  if (!root || !card) return
+
+  introFlipped.value = !introFlipped.value
+  const rotateY = introFlipped.value ? 180 : 0
+  if (prefersReducedMotion()) {
+    gsap.set(card, { rotateY })
+  } else {
+    gsap.to(card, { rotateY, duration: 0.6, ease: "power2.inOut" })
+  }
+
+  if (introFlipped.value && !introChoicesRevealed.value) {
+    introChoicesRevealed.value = true
+    const choices = root.querySelectorAll<HTMLElement>(".intro-choice")
+    if (prefersReducedMotion()) {
+      gsap.set(choices, { opacity: 1, y: 0 })
+    } else {
+      gsap.fromTo(choices, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.12, ease: "power2.out" })
+    }
+  }
+}
+
+watch(flashcardStep, (step) => {
+  if (step !== "intro") return
+  introFlipped.value = false
+  introChoicesRevealed.value = false
+  nextTick(() => {
+    const root = introDemoRef.value
+    if (!root) return
+    gsap.set(root.querySelector(".intro-demo-card"), { rotateY: 0 })
+    gsap.set(root.querySelectorAll(".intro-choice"), { opacity: 0, y: 10 })
+  })
+})
 
 const openFlashcardModal = () => {
   if (!selectedBook.value) return
@@ -169,20 +194,17 @@ const chooseFlashcardMode = (mode: "new" | "review") => {
 
   if (flashcardProgress.value.isFirstTimeForBook()) {
     flashcardStep.value = "intro"
-    startIntroCountdown()
   } else {
     goToFlashcard()
   }
 }
 
 const backToFlashcardChoose = () => {
-  clearIntroTimer()
   flashcardStep.value = "choose"
 }
 
 const goToFlashcard = () => {
   if (!selectedBook.value || !flashcardModeChoice.value) return
-  clearIntroTimer()
   isFlashcardModalOpen.value = false
   const targetId = selectedBook.value.id
   router.push(`/practice/${targetId}/flashcard?mode=${flashcardModeChoice.value}`)
@@ -496,15 +518,7 @@ const goToFlashcard = () => {
       :description="
         flashcardStep === 'choose' ? '選學新字,或複習已經標記過的單字' : '第一次玩這本書的單字卡,先看一下規則'
       "
-      :ui="{
-        content: 'bg-paper-bg text-paper-fg ring-paper-fg/10 divide-paper-fg/10',
-        header: 'border-paper-fg/10',
-        footer: 'border-paper-fg/10',
-        title: 'text-paper-fg font-display text-2xl font-normal',
-        description: 'text-paper-muted',
-        close: 'text-paper-muted hover:bg-paper-fg/10 hover:text-paper-fg',
-        overlay: 'bg-paper-fg/40'
-      }"
+      :ui="flashcardModalUi"
     >
       <template #body>
         <div v-if="flashcardStep === 'choose'" class="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -551,12 +565,50 @@ const goToFlashcard = () => {
           </div>
         </div>
 
-        <div v-else class="text-center py-2">
-          <p class="text-paper-fg text-[15px] leading-relaxed mb-6">
-            每張卡片點一下會翻面看意思,看完誠實選:不認識、知道但不熟,或非常熟悉。之後複習只要點「今天已練習」,系統會自動安排下次什麼時候再看到這張卡。
+        <div v-else ref="introDemoRef" class="flex flex-col items-center gap-6 py-2">
+          <p class="text-paper-fg text-[15px] leading-relaxed text-center max-w-sm">
+            每張卡片點一下會翻面看意思,看完誠實選你有多熟悉這個字
           </p>
-          <div class="font-display text-5xl text-paper-accent">{{ introCountdown }}</div>
-          <p class="text-paper-muted text-xs mt-2">幾秒後自動開始</p>
+
+          <div style="perspective: 1200px; cursor: pointer" @click="flipIntroDemo">
+            <div class="intro-demo-card" style="position: relative; width: 220px; height: 160px; transform-style: preserve-3d">
+              <div
+                class="rounded-2xl bg-paper-bg-alt border-2 border-paper-fg/25 shadow-[0_14px_30px_-18px_rgba(43,42,37,0.3)] flex flex-col items-center justify-center gap-1.5"
+                style="position: absolute; inset: 0; backface-visibility: hidden"
+              >
+                <div class="font-display text-2xl text-paper-fg">nostalgia</div>
+                <div class="text-paper-muted text-xs" style="font-family: ui-monospace, &quot;SF Mono&quot;, monospace">
+                  /nɒˈstældʒə/
+                </div>
+                <p class="text-[11px] text-paper-muted mt-1 m-0">點卡片看意思</p>
+              </div>
+              <div
+                class="rounded-2xl bg-paper-primary/10 flex flex-col items-center justify-center gap-1 px-4 text-center"
+                style="position: absolute; inset: 0; backface-visibility: hidden; transform: rotateY(180deg)"
+              >
+                <div class="font-display text-xl text-paper-primary">懷舊之情</div>
+                <div class="text-xs text-paper-fg">a wistful longing for the past</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 w-full max-w-sm">
+            <div class="intro-choice rounded-xl border-1.5 border-paper-fg/20 text-paper-fg text-[11.5px] py-2.5 text-center">
+              不認識
+            </div>
+            <div
+              class="intro-choice rounded-xl border-1.5 border-paper-primary/50 text-paper-primary text-[11.5px] py-2.5 text-center"
+            >
+              認識但不熟
+            </div>
+            <div class="intro-choice rounded-xl bg-paper-primary text-paper-bg text-[11.5px] py-2.5 text-center">
+              非常熟悉
+            </div>
+          </div>
+
+          <p class="text-paper-muted text-xs text-center max-w-sm">
+            之後複習只要點「今天已練習」,系統會自動安排下次什麼時候再看到這張卡
+          </p>
         </div>
       </template>
 
@@ -578,11 +630,13 @@ const goToFlashcard = () => {
             class="flex-1 justify-center bg-transparent border-paper-fg/25 text-paper-fg hover:bg-paper-fg/5"
             @click="backToFlashcardChoose"
           />
-          <UButton
-            label="立即開始"
-            class="flex-[2] justify-center bg-paper-primary text-paper-bg hover:bg-paper-accent"
+          <button
+            type="button"
+            class="flex-[2] inline-flex items-center justify-center rounded-md px-4 py-2.5 text-sm font-medium bg-paper-primary text-paper-bg hover:bg-paper-accent cursor-pointer transition-colors"
             @click="goToFlashcard"
-          />
+          >
+            立即開始
+          </button>
         </div>
       </template>
     </UModal>

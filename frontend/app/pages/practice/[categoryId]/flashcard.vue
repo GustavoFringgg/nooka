@@ -25,30 +25,27 @@ const posColor = (pos: string) => {
 const route = useRoute()
 const categoryId = route.params.categoryId as string
 const mode = route.query.mode === "review" ? "review" : "new"
+const progress = useFlashcardProgress(categoryId)
 
 const { data: words, pending, error } = await useFetch<Word[]>(useApiUrl(`/api/words/category/${categoryId}`))
 
-const progress = useFlashcardProgress(categoryId)
+const { data: sessionWords } = await useAsyncData(
+  `flashcard-session-${categoryId}-${mode}`,
+  async () => {
+    if (!words.value) return []
+    await progress.loadProgressList()
+    return mode === "review" ? progress.getDueWords(words.value) : progress.getNewWords(words.value)
+  },
+  { default: () => [] }
+)
 
 // ========== 練習 Session 狀態 ==========
-// 進度來自 localStorage,只存在 client,server render 時算不出正確清單,
-// 所以這份清單留到 onMounted 才算,搭配 template 用 <ClientOnly> 包住這一段,避免 SSR/CSR 算出不同清單而 hydration mismatch
-const sessionWords = ref<Word[]>([])
-const sessionReady = ref(false)
 const currentIndex = ref(0)
-
 const currentWord = computed(() => sessionWords.value[currentIndex.value])
 const currentLevel = computed(() => (currentWord.value ? (progress.getProgress(currentWord.value.id)?.level ?? 1) : 1))
 const progressPercent = computed(() =>
-  sessionWords.value.length ? (currentIndex.value / sessionWords.value.length) * 100 : 0
+  sessionWords.value.length ? ((currentIndex.value + 1) / sessionWords.value.length) * 100 : 0
 )
-
-onMounted(() => {
-  if (words.value) {
-    sessionWords.value = mode === "review" ? progress.getDueWords(words.value) : progress.getNewWords(words.value)
-  }
-  sessionReady.value = true
-})
 
 const advanceCard = () => {
   currentIndex.value++
@@ -69,6 +66,51 @@ const resetFlip = () => {
 }
 
 watch(currentWord, () => resetFlip())
+
+// ========== 完成畫面動畫(蓋章效果 + 爆量) ==========
+const completionRef = ref<HTMLElement | null>(null)
+const showCompletionBurst = ref(false)
+
+const playCompletionAnimation = () => {
+  const root = completionRef.value
+  if (!root) return
+
+  showCompletionBurst.value = false
+
+  const stamp = root.querySelector<HTMLElement>(".completion-stamp")
+  const ring = root.querySelector<HTMLElement>(".completion-ring")
+  const heading = root.querySelector<HTMLElement>(".completion-heading")
+  const text = root.querySelector<HTMLElement>(".completion-text")
+  const button = root.querySelector<HTMLElement>(".completion-button")
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    gsap.set([stamp, ring, heading, text, button], { clearProps: "all" })
+    showCompletionBurst.value = true
+    return
+  }
+
+  gsap
+    .timeline()
+    .fromTo(ring, { scale: 0.6, opacity: 0.5 }, { scale: 1.8, opacity: 0, duration: 0.6, ease: "power2.out" })
+    .fromTo(
+      stamp,
+      { scale: 2.2, y: -50, opacity: 0, rotate: -20 },
+      { scale: 1, y: 0, opacity: 1, rotate: -8, duration: 0.5, ease: "back.out(1.9)" },
+      0
+    )
+    .call(() => (showCompletionBurst.value = true), undefined, 0.4)
+    .fromTo(heading, { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" }, "-=0.15")
+    .fromTo(text, { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" }, "-=0.25")
+    .fromTo(button, { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power2.out" }, "-=0.2")
+}
+
+watch(
+  currentWord,
+  (word) => {
+    if (!word) nextTick(() => playCompletionAnimation())
+  },
+  { immediate: true }
+)
 
 // ========== 標記操作(三選一 / 複習 / Lv5 滿級) ==========
 const isLevel5ModalOpen = ref(false)
@@ -105,14 +147,7 @@ const resolveLevel5 = (action: "graduate" | "restart") => {
     <p v-else-if="error" class="text-center text-paper-muted py-24">載入失敗...</p>
 
     <template v-else>
-      <ClientOnly>
-        <template #fallback>
-          <p class="text-center text-paper-muted py-24">載入中...</p>
-        </template>
-
-      <p v-if="!sessionReady" class="text-center text-paper-muted py-24">載入中...</p>
-
-      <div v-else-if="currentWord" class="max-w-2xl mx-auto px-6 pt-8">
+      <div v-if="currentWord" class="max-w-2xl mx-auto px-6 pt-8">
         <div class="mb-8">
           <div class="flex items-center justify-between mb-2 text-sm text-paper-muted">
             <span>第 {{ currentIndex + 1 }} / {{ sessionWords.length }} 張</span>
@@ -141,7 +176,10 @@ const resolveLevel5 = (action: "graduate" | "restart") => {
               </div>
               <span
                 class="text-[11px] px-1.5 py-0.5 rounded-full mt-2"
-                :style="{ color: posColor(currentWord.partOfSpeech).text, background: posColor(currentWord.partOfSpeech).bg }"
+                :style="{
+                  color: posColor(currentWord.partOfSpeech).text,
+                  background: posColor(currentWord.partOfSpeech).bg
+                }"
               >
                 {{ currentWord.partOfSpeech }}
               </span>
@@ -172,27 +210,30 @@ const resolveLevel5 = (action: "graduate" | "restart") => {
         </div>
 
         <div v-if="mode === 'new'" class="grid grid-cols-3 gap-3">
-          <button
-            type="button"
-            class="rounded-2xl border-1.5 border-paper-fg/20 text-paper-fg h-18 flex flex-col items-center justify-center gap-1.5 text-[13.5px] cursor-pointer transition-colors hover:bg-paper-fg/5"
+          <FillButton
+            fill="var(--color-paper-fg)"
+            text-color="var(--color-paper-bg)"
+            class="rounded-2xl border-1.5 border-paper-fg/20 text-paper-fg h-18 flex flex-col items-center justify-center gap-1.5 text-[13.5px]"
             @click="markInitial('unknown')"
           >
             不認識
-          </button>
-          <button
-            type="button"
-            class="rounded-2xl border-1.5 border-paper-primary/50 text-paper-primary h-18 flex flex-col items-center justify-center gap-1.5 text-[13.5px] cursor-pointer transition-colors hover:bg-paper-primary/8"
+          </FillButton>
+          <FillButton
+            fill="var(--color-paper-primary)"
+            text-color="var(--color-paper-bg)"
+            class="rounded-2xl border-1.5 border-paper-primary/50 text-paper-primary h-18 flex flex-col items-center justify-center gap-1.5 text-[13.5px]"
             @click="markInitial('familiar')"
           >
             認識但不熟
-          </button>
-          <button
-            type="button"
-            class="rounded-2xl bg-paper-primary text-paper-bg h-18 flex flex-col items-center justify-center gap-1.5 text-[13.5px] cursor-pointer transition-colors hover:bg-paper-accent"
+          </FillButton>
+          <FillButton
+            fill="var(--color-paper-accent)"
+            text-color="var(--color-paper-bg)"
+            class="rounded-2xl bg-paper-primary text-paper-bg h-18 flex flex-col items-center justify-center gap-1.5 text-[13.5px]"
             @click="markInitial('mastered')"
           >
             非常熟悉
-          </button>
+          </FillButton>
         </div>
 
         <UButton
@@ -205,18 +246,42 @@ const resolveLevel5 = (action: "graduate" | "restart") => {
         />
       </div>
 
-      <div v-else class="max-w-2xl mx-auto px-6 pt-16 text-center">
-        <h1 class="font-display font-normal text-4xl mb-2 text-paper-fg">
-          {{ mode === "review" ? "今天的複習都完成了 🎉" : "這批新字都學完了" }}
+      <div v-else ref="completionRef" class="max-w-2xl mx-auto px-6 pt-16 text-center">
+        <div class="relative w-24 h-24 mx-auto mb-6">
+          <div class="completion-ring absolute inset-0 rounded-full border-2 border-paper-accent/50" />
+          <div
+            class="completion-stamp absolute inset-0 rounded-full border-[3px] border-dashed border-paper-accent bg-paper-bg-alt flex items-center justify-center"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="w-9 h-9 text-paper-accent"
+            >
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+          </div>
+          <SparkBurst
+            v-if="showCompletionBurst"
+            size="xl"
+            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+          />
+        </div>
+        <h1 class="completion-heading font-display font-normal text-4xl mb-2 text-paper-fg">
+          {{ mode === "review" ? "今天的複習都完成了" : "這批新字都學完了" }}
         </h1>
-        <p class="text-paper-muted mb-10">可以回書架看看別的練習方式,或明天再回來複習。</p>
-        <UButton
-          label="返回書架"
-          class="bg-paper-primary text-paper-bg hover:bg-paper-accent"
+        <p class="completion-text text-paper-muted mb-10">可以回書架看看別的練習方式,或明天再回來複習。</p>
+        <button
+          type="button"
+          class="completion-button inline-flex items-center justify-center rounded-md px-4 py-2.5 text-sm font-medium bg-paper-primary text-paper-bg hover:bg-paper-accent cursor-pointer transition-colors"
           @click="navigateTo('/practice')"
-        />
+        >
+          返回書架
+        </button>
       </div>
-      </ClientOnly>
     </template>
 
     <UModal
