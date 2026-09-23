@@ -18,11 +18,22 @@ public class EfWordProgressRepository : IWordProgressRepository
     }
     public async Task BatchUpsertAsync(int userId, List<WordProgressUpdate> updates)
     {
+        var wordIds = updates.Select(u => u.WordId).ToList();
+
+        var result = await _context.WordProgresses.Where(wp => wp.UserId == userId && wordIds.Contains(wp.WordId)).ToListAsync();
+
+        var existingDict = result.ToDictionary(wp => wp.WordId);
+
         foreach (var update in updates)
         {
-            var existing = await _context.WordProgresses.FirstOrDefaultAsync(wp => wp.UserId == userId && wp.WordId == update.WordId);
-
-            if (existing is null)
+            if (existingDict.TryGetValue(update.WordId, out var existing))
+            {
+                existing.Level = update.Level;
+                existing.IsArchived = update.IsArchived;
+                existing.NextReviewAt = update.NextReviewAt;
+                existing.UpdatedAt = DateTime.UtcNow;
+            }
+            else
             {
                 _context.WordProgresses.Add(new WordProgress
                 {
@@ -32,13 +43,6 @@ public class EfWordProgressRepository : IWordProgressRepository
                     IsArchived = update.IsArchived,
                     NextReviewAt = update.NextReviewAt
                 });
-            }
-            else
-            {
-                existing.Level = update.Level;
-                existing.IsArchived = update.IsArchived;
-                existing.NextReviewAt = update.NextReviewAt;
-                existing.UpdatedAt = DateTime.UtcNow;
             }
 
         }

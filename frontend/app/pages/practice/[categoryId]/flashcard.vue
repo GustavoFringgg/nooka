@@ -107,7 +107,10 @@ const playCompletionAnimation = () => {
 watch(
   currentWord,
   (word) => {
-    if (!word) nextTick(() => playCompletionAnimation())
+    if (!word) {
+      progress.submitBatch()
+      nextTick(() => playCompletionAnimation())
+    }
   },
   { immediate: true }
 )
