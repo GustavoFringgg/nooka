@@ -32,4 +32,14 @@ public class ProgressController : ControllerBase
         await _repository.BatchUpsertAsync(userId, updates);
         return Ok(new { message = "update success" });
     }
+
+    [Authorize]
+    [HttpGet("summary")]
+    public async Task<IActionResult> GetProgressSummary()
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var summary = await _repository.GetSummaryAsync(userId);
+        return Ok(summary);
+    }
+
 }

@@ -44,4 +44,40 @@ public class EfWordProgressRepository : IWordProgressRepository
         }
         await _context.SaveChangesAsync();
     }
+
+    public async Task<List<CategoryProgressSummary>> GetSummaryAsync(int userId)
+    {
+        var totalWordCount = await _context.WordCategories
+        .GroupBy(wc => wc.CategoryId)
+        .Select(g => new { CategoryId = g.Key, Total = g.Count() })
+        .ToListAsync();
+
+        var progressByCategory = await _context.WordProgresses
+        .Where(wp => wp.UserId == userId)
+        .Join(_context.WordCategories, wp => wp.WordId, wc => wc.WordId, (wp, wc) => new { wp, wc.CategoryId })
+        .GroupBy(x => x.CategoryId).Select(g => new
+        {
+            CategoryId = g.Key,
+            Familiar = g.Count(x => x.wp.IsArchived),
+            Learning = g.Count(x => x.wp.Level != null && !x.wp.IsArchived),
+            DueToday = g.Count(x => x.wp.Level != null && !x.wp.IsArchived && x.wp.NextReviewAt <= DateOnly.FromDateTime(DateTime.UtcNow))
+        })
+        .ToListAsync();
+
+        var categories = await _context.Categories.ToListAsync();
+
+        var result = totalWordCount.Select(t =>
+        {
+            var progress = progressByCategory.FirstOrDefault(p => p.CategoryId == t.CategoryId);
+            var categoryName = categories.First(c => c.Id == t.CategoryId).Name;
+
+            int familiar = progress?.Familiar ?? 0;
+            int learning = progress?.Learning ?? 0;
+            int dueToday = progress?.DueToday ?? 0;
+            int newWords = t.Total - familiar - learning;
+
+            return new CategoryProgressSummary(t.CategoryId, categoryName, familiar, learning, newWords, dueToday);
+        }).ToList();
+        return result;
+    }
 }

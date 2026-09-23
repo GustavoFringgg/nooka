@@ -2,7 +2,12 @@
 
 > 目標:把 `useFlashcardProgress.ts` 現有的 Lv1~5 分級邏輯(初學三選一、複習升級、Lv5 滿級彈窗)從 localStorage 換成存 DB,跟會員帳號綁定;未登入使用者改成純瀏覽單字卡(不能標記熟悉度);新增「學習紀錄」頁面給會員看自己的進度總覽。
 >
-> **狀態(2026/09/19):規劃完成,尚未開始實作。**
+> **狀態(2026/09/22):Stage 0~5 完成並 commit(後端 WordProgress API 全部完成;`useFlashcardProgress.ts` 已改寫成打 API,不再用 localStorage)。Stage 6(呼叫端接線)進行中,`practice/index.vue` 已照功能重新分組、`flashcardCounts` 改用 `useAsyncData`,但還有兩個沒改完:**
+>
+> 1. `flashcardProgress` 這個 `computed` 宣告寫在用到它的 `useAsyncData` **之後**([index.vue:134](frontend/app/pages/practice/index.vue:134) 在 [index.vue:123](frontend/app/pages/practice/index.vue:123) 下面),`const` 沒有 hoisting,實測會噴 `ReferenceError`——要把 `flashcardProgress` 的宣告搬到 `useAsyncData` 之前。
+> 2. `chooseFlashcardMode` 裡還是重新呼叫 `useFlashcardProgress(selectedBook.value.id)`,沒有重用 `flashcardProgress.value`,`isFirstTimeForBook()` 會永遠讀到空的 `progressList`。
+>
+> `flashcard.vue` 那邊(sessionWords 串 API、submitBatch 呼叫時機)完全還沒動。明天(9/23)接續。
 
 ## 為什麼
 
@@ -71,13 +76,27 @@ Task BatchUpsertAsync(int userId, List<WordProgressUpdate> updates);
 
 驗證:用 `Nooka.Api.http` 或 Swagger,帶登入後拿到的 `access_token` cookie 測兩支;不帶 cookie 應該回 401。
 
-### Stage 4 — 彙總查詢 `/api/progress/summary`
+**實作備註(跟原規劃的小差異)**:
+
+- 兩支 DTO(`GoogleLoginRequest`、`WordProgressUpdate`)搬到獨立的 `Models/Dtos/` 子資料夾(namespace `Nooka.Api.Models.Dtos`),跟 `Models/` 底下真正對應 DB 表的 entity(`Word`/`Category`/`WordProgress` 等)分開。
+- Controller class 實際命名 `ProgressController`(檔名維持 `WordProgressController.cs`),用 `[Route("api/[controller]")]` 慣例自動產生 `api/Progress` 前綴(routing 不分大小寫,不影響前端打 `/api/progress/...`)。
+- `POST /api/progress/batch` 的 body 已確認是**純陣列** `[{ wordId, level, isArchived, nextReviewAt }]`,不包一層 `{ updates: [...] }`(上面表格已同步更新)。
+
+### Stage 4 — 彙總查詢 `/api/progress/summary`(完成)
 
 在 `IWordProgressRepository`/`EfWordProgressRepository` 加 `GetSummaryAsync(int userId)`,跨所有 category 彙總每本書「已精熟(`IsArchived`)/學習中(`Level != null && !IsArchived`)/尚未開始」的數量 + 今天到期(`NextReviewAt <= today`)張數。Controller 加 `GET /api/progress/summary`——**回傳時只回分類後的計數,不回傳原始 `Level` 數字**(前端「學習紀錄」頁不顯示 Lv1~5 這種內部分級)。
 
+**回傳形狀已定案並建好 DTO**(`Models/Dtos/CategoryProgressSummary.cs`):
+```csharp
+public record CategoryProgressSummary(int CategoryId, string CategoryName, int Familiar, int Learning, int NewWords, int DueToday);
+```
+一個單字只會落在 `Familiar`/`Learning`/`NewWords` 三者之一(互斥);`DueToday` 不是第四種狀態,是 `Learning` 這群裡再篩 `NextReviewAt <= 今天` 的子集合計數,疊加在 `Learning` 之上,不是獨立一批單字。
+
+**完成**:`GetSummaryAsync` 查詢邏輯 + Controller 的 `GET /api/progress/summary` action 都寫完,`dotnet build` 過,實測(帶登入 userId=1 手動測試後已改回 `[Authorize]` + 讀真實 userId)回傳結構正確。已 commit(`feat(backend): 新增單字卡進度彙總查詢 API`)。
+
 驗證:標記幾張卡後打這支 API,人工核對計數對不對。
 
-### Stage 5 — `useFlashcardProgress.ts` 換成打 API
+### Stage 5 — `useFlashcardProgress.ts` 換成打 API(完成)
 
 保留現有四個純函式(`getNewWords`/`getDueWords`/`getCounts`/`getProgress`)的篩選邏輯不變,`markInitialLearning`/`markReviewed`/`resolveLevel5` 這三個狀態轉換函式的計算邏輯也**不變**,但:
 
@@ -88,12 +107,26 @@ Task BatchUpsertAsync(int userId, List<WordProgressUpdate> updates);
 
 驗證:先不改 UI,console.log 確認一輪結束時才打出一支帶完整 `updates` 陣列的 batch API,中途點擊三選一/今天已練習不會觸發任何網路請求。
 
-### Stage 6 — 呼叫端調整(`practice/index.vue`、`flashcard.vue`)
+**完成**:`progressList`/`dirtyMap` 改成宣告在 `useFlashcardProgress(categoryId)` 內部(每次呼叫都是獨立一份,不會跨分類/跨呼叫互相污染);`loadProgressList` 改打 `GET /api/progress/category/{categoryId}`;`submitBatch()` 打 `POST /api/progress/batch` 後清空 `dirtyMap`;localStorage 相關的 `storageKey`/`saveProgressList` 已刪除。所有 function 也順手改成箭頭函式。已 commit。
+
+### Stage 6 — 呼叫端調整(`practice/index.vue`、`flashcard.vue`)(進行中)
 
 - `practice/index.vue`:`flashcardCounts` 從同步 `computed` 改用 `useAsyncData`;`chooseFlashcardMode` 裡的 `isFirstTimeForBook()` 改成 await。
 - `flashcard.vue`:`sessionWords` 改用 `useAsyncData` 直接抓,原本為了 localStorage/SSR 不一致包的 `<ClientOnly>` 可以拿掉;在最後一張卡完成、或使用者主動結束這輪(例如按返回書架)時呼叫 `submitBatch()`。
 
 驗證:登入後走一次完整流程(學新字三選一 → 複習「今天已練習」→ Lv5 滿級彈窗),重新整理頁面或換瀏覽器登入同帳號,進度應該還在(證明真的存 DB)。
+
+**進行中(2026/09/22)**:
+
+- `practice/index.vue` 整個 `<script setup>` 已照功能重新分組(共用工具 / 書架選書 / 練習模式切換 / 共用題數設定 / 選擇題 Modal / 打字拼寫 Modal / 單字卡 Modal),所有 function 也改成箭頭函式。實測畫面正常、單字卡 Modal 顯示正確的新字數。
+- 新增 `flashcardProgress` computed(依 `selectedId` 建立唯一一份 `useFlashcardProgress` instance,避免每次呼叫都重新產生空的 `progressList`)。
+- `flashcardCounts` 已改成 `useAsyncData`,裡面先 `await flashcardProgress.value.loadProgressList()` 再呼叫 `getCounts`。
+
+**尚未做(明天接續)**:
+
+1. **修 bug**:`flashcardProgress` 的 `computed` 宣告目前寫在 `useAsyncData` 呼叫**之後**(檔案裡的物理順序),`const` 沒有 hoisting,會是 TDZ ReferenceError——要把 `flashcardProgress` 的宣告搬到 `flashcardCounts` 的 `useAsyncData` 之前。
+2. `chooseFlashcardMode` 裡的 `useFlashcardProgress(selectedBook.value.id).isFirstTimeForBook()` 要改成重用 `flashcardProgress.value.isFirstTimeForBook()`,不要再重新呼叫 `useFlashcardProgress(...)` 產生新 instance。
+3. `flashcard.vue` 完全還沒開始改(`sessionWords` 串 API、`submitBatch()` 呼叫時機)。
 
 ### Stage 7 — 未登入 = 純瀏覽模式
 

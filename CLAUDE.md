@@ -55,6 +55,7 @@
 - ASP.NET Identity(`AppUser`/`AppRole`,int 主鍵)+ JWT(httpOnly `access_token` cookie)基礎建設,`Admin`/`User` 角色種子資料
 - Google 登入/登出:`POST /api/auth/google-login`(`GoogleJsonWebSignature.ValidateAsync` 驗證 + 查/建 `AppUser`)、`POST /api/auth/logout`、`GET /api/auth/me`(前端 `useAuth.ts` 已串接,`AppNav.vue` 反映真實登入狀態);詳細分階段記錄見 git 歷史上的 `plan.md`(該檔案內容會隨新任務覆寫,舊紀錄留在 commit 裡)
 - 單字卡 Lv1~5 分級邏輯(初學三選一 / 複習升級 / Lv5 滿級彈窗)前端已完成,見下方「A-1 單字卡練習模式」
+- `WordProgress` 資料表(複合鍵 `UserId`+`WordId`)+ 後端 API 全部完成:`GET /api/progress/category/{categoryId}`、`POST /api/progress/batch`、`GET /api/progress/summary`;`useFlashcardProgress.ts` 已改寫成打這幾支 API,不再用 localStorage,細節見 `plan.md`
 
 ---
 
