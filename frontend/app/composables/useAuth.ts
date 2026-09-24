@@ -2,6 +2,8 @@ import type { AuthUser } from "~/types/auth"
 
 export const useAuthUser = () => useState<AuthUser | null>("authUser", () => null)
 
+export const useIsLoggedIn = () => computed(() => useAuthUser().value !== null)
+
 export const fetchMe = async () => {
   const user = useAuthUser()
   try {

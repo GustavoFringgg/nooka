@@ -3,6 +3,7 @@ import type { Category, Word } from "~/types/practice"
 import type { QuizDirection } from "~/utils/quiz"
 import { gsap } from "gsap"
 const router = useRouter()
+const isLoggedIn = useIsLoggedIn()
 
 // ========== 共用工具 ==========
 type PartOfSpeech = "形容詞" | "副詞" | "動詞" | "名詞" | "代名詞" | "介系詞" | "連接詞" | "感嘆詞"
@@ -119,7 +120,8 @@ const { data: flashcardCounts } = await useAsyncData(
   "flashcard-counts", // key:唯一的名字，Nuxt 用它做 SSR/CSR 之間的快取比對
   async () => {
     // 執行非同步
-    if (!selectedBook.value || !words.value || !flashcardProgress.value) return { newCount: 0, dueCount: 0 }
+    if (!selectedBook.value || !words.value || !flashcardProgress.value || !isLoggedIn.value)
+      return { newCount: 0, dueCount: 0 }
     await flashcardProgress.value.loadProgressList()
     return flashcardProgress.value.getCounts(words.value)
   },
@@ -128,6 +130,17 @@ const { data: flashcardCounts } = await useAsyncData(
 
 watch(isFlashcardModalOpen, (open) => {
   if (!open) flashcardStep.value = "choose"
+})
+
+const flashcardModalTitle = computed(() => {
+  if (!isLoggedIn.value) return "先看看這些單字"
+  return flashcardStep.value === "choose" ? "今天想怎麼練？" : "開始之前"
+})
+const flashcardModalDescription = computed(() => {
+  if (!isLoggedIn.value) return "登入後就能標記熟悉度、追蹤學習進度"
+  return flashcardStep.value === "choose"
+    ? "選學新字,或複習已經標記過的單字"
+    : "第一次玩這本書的單字卡,先看一下規則"
 })
 
 const flashcardModalUi = computed(() => ({
@@ -165,7 +178,11 @@ const flipIntroDemo = () => {
     if (prefersReducedMotion()) {
       gsap.set(choices, { opacity: 1, y: 0 })
     } else {
-      gsap.fromTo(choices, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.12, ease: "power2.out" })
+      gsap.fromTo(
+        choices,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.35, stagger: 0.12, ease: "power2.out" }
+      )
     }
   }
 }
@@ -203,11 +220,18 @@ const backToFlashcardChoose = () => {
   flashcardStep.value = "choose"
 }
 
-const goToFlashcard = () => {
-  if (!selectedBook.value || !flashcardModeChoice.value) return
+const navigateToFlashcard = (mode: "new" | "review" | "browse") => {
+  if (!selectedBook.value) return
   isFlashcardModalOpen.value = false
   const targetId = selectedBook.value.id
-  router.push(`/practice/${targetId}/flashcard?mode=${flashcardModeChoice.value}`)
+  router.push(`/practice/${targetId}/flashcard?mode=${mode}`)
+}
+
+const goBrowseFlashcard = () => navigateToFlashcard("browse")
+
+const goToFlashcard = () => {
+  if (!flashcardModeChoice.value) return
+  navigateToFlashcard(flashcardModeChoice.value)
 }
 </script>
 
@@ -514,14 +538,18 @@ const goToFlashcard = () => {
 
     <UModal
       v-model:open="isFlashcardModalOpen"
-      :title="flashcardStep === 'choose' ? '今天想怎麼練？' : '開始之前'"
-      :description="
-        flashcardStep === 'choose' ? '選學新字,或複習已經標記過的單字' : '第一次玩這本書的單字卡,先看一下規則'
-      "
+      :title="flashcardModalTitle"
+      :description="flashcardModalDescription"
       :ui="flashcardModalUi"
     >
       <template #body>
-        <div v-if="flashcardStep === 'choose'" class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div v-if="!isLoggedIn" class="text-center py-4">
+          <p class="text-paper-muted text-sm m-0">
+            登入後就能標記熟悉度、追蹤學習進度,現在可以先翻牌看看這本書的單字。
+          </p>
+        </div>
+
+        <div v-else-if="flashcardStep === 'choose'" class="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <button
             type="button"
             class="text-left rounded-2xl border-2 p-5 transition-colors"
@@ -571,7 +599,10 @@ const goToFlashcard = () => {
           </p>
 
           <div style="perspective: 1200px; cursor: pointer" @click="flipIntroDemo">
-            <div class="intro-demo-card" style="position: relative; width: 220px; height: 160px; transform-style: preserve-3d">
+            <div
+              class="intro-demo-card"
+              style="position: relative; width: 220px; height: 160px; transform-style: preserve-3d"
+            >
               <div
                 class="rounded-2xl bg-paper-bg-alt border-2 border-paper-fg/25 shadow-[0_14px_30px_-18px_rgba(43,42,37,0.3)] flex flex-col items-center justify-center gap-1.5"
                 style="position: absolute; inset: 0; backface-visibility: hidden"
@@ -593,7 +624,9 @@ const goToFlashcard = () => {
           </div>
 
           <div class="grid grid-cols-3 gap-2 w-full max-w-sm">
-            <div class="intro-choice rounded-xl border-1.5 border-paper-fg/20 text-paper-fg text-[11.5px] py-2.5 text-center">
+            <div
+              class="intro-choice rounded-xl border-1.5 border-paper-fg/20 text-paper-fg text-[11.5px] py-2.5 text-center"
+            >
               不認識
             </div>
             <div
@@ -613,7 +646,16 @@ const goToFlashcard = () => {
       </template>
 
       <template #footer>
-        <div v-if="flashcardStep === 'choose'" class="flex gap-3 w-full">
+        <div v-if="!isLoggedIn" class="flex gap-3 w-full">
+          <button
+            type="button"
+            class="flex-1 inline-flex items-center justify-center rounded-md px-4 py-2.5 text-sm font-medium bg-paper-primary text-paper-bg hover:bg-paper-accent cursor-pointer transition-colors"
+            @click="goBrowseFlashcard"
+          >
+            先看看這本書的單字
+          </button>
+        </div>
+        <div v-else-if="flashcardStep === 'choose'" class="flex gap-3 w-full">
           <UButton
             label="取消"
             color="neutral"

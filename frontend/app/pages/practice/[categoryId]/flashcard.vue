@@ -24,17 +24,21 @@ const posColor = (pos: string) => {
 // ========== 資料載入 ==========
 const route = useRoute()
 const categoryId = route.params.categoryId as string
-const mode = route.query.mode === "review" ? "review" : "new"
+const isLoggedIn = useIsLoggedIn()
+
+const requestedMode = route.query.mode === "review" ? "review" : route.query.mode === "browse" ? "browse" : "new"
+const mode = computed(() => (isLoggedIn.value ? requestedMode : "browse"))
 const progress = useFlashcardProgress(categoryId)
 
 const { data: words, pending, error } = await useFetch<Word[]>(useApiUrl(`/api/words/category/${categoryId}`))
 
 const { data: sessionWords } = await useAsyncData(
-  `flashcard-session-${categoryId}-${mode}`,
+  `flashcard-session-${categoryId}-${mode.value}`,
   async () => {
     if (!words.value) return []
+    if (mode.value === "browse") return words.value
     await progress.loadProgressList()
-    return mode === "review" ? progress.getDueWords(words.value) : progress.getNewWords(words.value)
+    return mode.value === "review" ? progress.getDueWords(words.value) : progress.getNewWords(words.value)
   },
   { default: () => [] }
 )
@@ -50,6 +54,16 @@ const progressPercent = computed(() =>
 const advanceCard = () => {
   currentIndex.value++
 }
+
+const goPrev = () => {
+  if (currentIndex.value > 0) currentIndex.value--
+}
+
+const goNext = () => {
+  if (currentIndex.value < sessionWords.value.length - 1) currentIndex.value++
+}
+
+const isLastCard = computed(() => currentIndex.value === sessionWords.value.length - 1)
 
 // ========== 翻牌動畫(沿用 cardTest.vue 的 GSAP 手法) ==========
 const cardRef = ref<HTMLElement | null>(null)
@@ -108,7 +122,7 @@ watch(
   currentWord,
   (word) => {
     if (!word) {
-      progress.submitBatch()
+      if (isLoggedIn.value) progress.submitBatch()
       nextTick(() => playCompletionAnimation())
     }
   },
@@ -154,7 +168,7 @@ const resolveLevel5 = (action: "graduate" | "restart") => {
         <div class="mb-8">
           <div class="flex items-center justify-between mb-2 text-sm text-paper-muted">
             <span>第 {{ currentIndex + 1 }} / {{ sessionWords.length }} 張</span>
-            <span class="text-paper-accent">{{ mode === "review" ? "複習" : "學習新單字" }}</span>
+            <span class="text-paper-accent">{{ mode === "review" ? "複習" : mode === "browse" ? "瀏覽單字" : "學習新單字" }}</span>
           </div>
           <div class="h-1.5 rounded-full bg-paper-fg/10 overflow-hidden">
             <div
@@ -227,6 +241,24 @@ const resolveLevel5 = (action: "graduate" | "restart") => {
           >
             非常熟悉
           </FillButton>
+        </div>
+
+        <div v-else-if="mode === 'browse'" class="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            class="rounded-2xl border-1.5 border-paper-fg/20 text-paper-fg h-14 flex items-center justify-center text-sm disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors hover:bg-paper-fg/5"
+            :disabled="currentIndex === 0"
+            @click="goPrev"
+          >
+            上一張
+          </button>
+          <button
+            type="button"
+            class="rounded-2xl bg-paper-primary text-paper-bg h-14 flex items-center justify-center text-sm cursor-pointer transition-colors hover:bg-paper-accent"
+            @click="isLastCard ? navigateTo('/practice') : goNext()"
+          >
+            {{ isLastCard ? "此為最後一張，回到書架" : "下一張" }}
+          </button>
         </div>
 
         <button
