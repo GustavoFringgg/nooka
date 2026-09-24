@@ -16,8 +16,4 @@ useHead({
 // defer:布林值。設 true 代表「一樣背景下載,但要等整份 HTML 都解析完才執行」
 
 // 規格上如果兩個都設 true,瀏覽器會照 async 的行為走(defer 被忽略) 兩個一起加是常見寫法,是為了相容一些很舊、不支援 async 的瀏覽器(那些瀏覽器就會退回用 defer 的行為)
-
-onMounted(() => {
-  fetchMe()
-})
 </script>

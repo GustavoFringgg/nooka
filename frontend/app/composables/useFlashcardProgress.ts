@@ -103,7 +103,7 @@ export const useFlashcardProgress = (categoryId: number | string) => {
     upsertProgress(wordId, { level, isArchived: false, nextReviewAt: addDays(1) })
   }
 
-  // 複習「今天已練習」:Lv1~3 升一級 + 明天複習,Lv4 升 Lv5 + 後天複習(強制冷卻)
+  // 複習「今天已複習」:Lv1~3 升一級 + 明天複習,Lv4 升 Lv5 + 後天複習(強制冷卻)
   // Lv5 不在這裡處理,呼叫端要先攔截,改走 resolveLevel5
   const markReviewed = (wordId: number) => {
     const progress = progressList.value.find((p) => p.wordId === wordId)

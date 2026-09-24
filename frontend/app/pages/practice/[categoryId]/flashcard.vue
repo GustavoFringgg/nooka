@@ -186,16 +186,6 @@ const resolveLevel5 = (action: "graduate" | "restart") => {
               >
                 {{ currentWord.partOfSpeech }}
               </span>
-
-              <div v-if="mode === 'review'" class="flex gap-1.5 mt-3">
-                <div
-                  v-for="n in 5"
-                  :key="n"
-                  class="w-6.5 h-1.5 rounded-full"
-                  :class="n <= currentLevel ? 'bg-paper-accent' : 'bg-paper-fg/10'"
-                />
-              </div>
-
               <p class="text-xs text-paper-muted mt-4 m-0">點卡片看意思</p>
             </div>
 
@@ -239,14 +229,15 @@ const resolveLevel5 = (action: "graduate" | "restart") => {
           </FillButton>
         </div>
 
-        <UButton
+        <button
           v-else
-          label="今天已練習"
-          size="xl"
-          class="w-full justify-center bg-paper-primary text-paper-bg hover:bg-paper-accent"
+          type="button"
+          class="w-full inline-flex items-center justify-center rounded-md text-base font-medium bg-paper-primary text-paper-bg hover:bg-paper-accent cursor-pointer transition-colors"
           style="height: 60px"
           @click="handleReviewed"
-        />
+        >
+          今天已複習
+        </button>
       </div>
 
       <div v-else ref="completionRef" class="max-w-2xl mx-auto px-6 pt-16 text-center">
@@ -303,19 +294,20 @@ const resolveLevel5 = (action: "graduate" | "restart") => {
     >
       <template #footer>
         <div class="flex flex-col gap-2 w-full">
-          <UButton
-            label="不再顯示(畢業封存)"
-            size="xl"
-            class="justify-center bg-paper-primary text-paper-bg hover:bg-paper-accent"
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-md px-4 py-3 text-base font-medium bg-paper-primary text-paper-bg hover:bg-paper-accent cursor-pointer transition-colors"
             @click="resolveLevel5('graduate')"
-          />
-          <UButton
-            label="重新學習(打回 Lv1)"
-            color="neutral"
-            variant="ghost"
-            class="justify-center text-paper-muted"
+          >
+            不再顯示(畢業封存)
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-md px-4 py-2.5 text-sm font-medium text-paper-muted hover:bg-paper-fg/5 cursor-pointer transition-colors"
             @click="resolveLevel5('restart')"
-          />
+          >
+            重新學習(打回 Lv1)
+          </button>
         </div>
       </template>
     </UModal>

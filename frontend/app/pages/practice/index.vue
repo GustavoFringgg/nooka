@@ -607,7 +607,7 @@ const goToFlashcard = () => {
           </div>
 
           <p class="text-paper-muted text-xs text-center max-w-sm">
-            之後複習只要點「今天已練習」,系統會自動安排下次什麼時候再看到這張卡
+            之後複習只要點「今天已複習」,系統會自動安排下次什麼時候再看到這張卡
           </p>
         </div>
       </template>
