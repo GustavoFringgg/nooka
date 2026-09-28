@@ -275,42 +275,60 @@ const goToFlashcard = () => {
         <div class="max-w-[1040px] mx-auto pt-8 w-full shrink-0">
           <div class="mb-6 flex flex-wrap gap-4">
             <button
+              v-if="selectedMode === 'flashcard'"
               type="button"
-              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5"
-              :class="
-                selectedMode === 'flashcard'
-                  ? 'bg-paper-primary text-paper-bg'
-                  : 'bg-paper-fg/8 text-paper-muted/70 hover:bg-paper-primary hover:text-paper-bg'
-              "
+              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-primary text-paper-bg"
               @click="selectMode('flashcard')"
             >
               單字卡
             </button>
+            <FillButton
+              v-else
+              fill="var(--color-paper-primary)"
+              text-color="var(--color-paper-bg)"
+              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-fg/8 text-paper-muted/70"
+              @click="selectMode('flashcard')"
+            >
+              單字卡
+            </FillButton>
+
             <button
+              v-if="selectedMode === 'choice'"
               type="button"
-              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out"
-              :class="
-                selectedMode === 'choice'
-                  ? 'bg-paper-primary text-paper-bg cursor-pointer hover:-translate-y-0.5'
-                  : 'bg-paper-fg/8 text-paper-muted/70 cursor-pointer hover:-translate-y-0.5 hover:bg-paper-primary hover:text-paper-bg'
-              "
+              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-primary text-paper-bg"
               :disabled="!selectedBook"
               @click="selectMode('choice')"
             >
               選擇題
             </button>
+            <FillButton
+              v-else
+              fill="var(--color-paper-primary)"
+              text-color="var(--color-paper-bg)"
+              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-fg/8 text-paper-muted/70"
+              :disabled="!selectedBook"
+              @click="selectMode('choice')"
+            >
+              選擇題
+            </FillButton>
+
             <button
+              v-if="selectedMode === 'typing'"
               type="button"
-              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5"
-              :class="
-                selectedMode === 'typing'
-                  ? 'bg-paper-primary text-paper-bg'
-                  : 'bg-paper-fg/8 text-paper-muted/70 hover:bg-paper-primary hover:text-paper-bg'
-              "
+              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-primary text-paper-bg"
               @click="selectMode('typing')"
             >
               打字拼寫
             </button>
+            <FillButton
+              v-else
+              fill="var(--color-paper-primary)"
+              text-color="var(--color-paper-bg)"
+              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-fg/8 text-paper-muted/70"
+              @click="selectMode('typing')"
+            >
+              打字拼寫
+            </FillButton>
           </div>
         </div>
 
