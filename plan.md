@@ -2,16 +2,13 @@
 
 > 目標:把 `useFlashcardProgress.ts` 現有的 Lv1~5 分級邏輯(初學三選一、複習升級、Lv5 滿級彈窗)從 localStorage 換成存 DB,跟會員帳號綁定;未登入使用者改成純瀏覽單字卡(不能標記熟悉度);新增「學習紀錄」頁面給會員看自己的進度總覽。
 >
-> **狀態(2026/09/22):Stage 0~5 完成並 commit(後端 WordProgress API 全部完成;`useFlashcardProgress.ts` 已改寫成打 API,不再用 localStorage)。Stage 6(呼叫端接線)進行中,`practice/index.vue` 已照功能重新分組、`flashcardCounts` 改用 `useAsyncData`,但還有兩個沒改完:**
+> **狀態(2026/09/24):Stage 0~6 完成並 commit。**`practice/index.vue`、`flashcard.vue` 都已接上真實 API(共用 `flashcardProgress` instance、`useAsyncData` 載入、`submitBatch()` 在標記完最後一張卡時自動送出);順便修掉後端 `BatchUpsertAsync` 的 N+1 查詢效能問題(13.6s → 2s);UI 也做了一輪打磨(完成畫面蓋章動畫 + 火花特效、教學步驟改互動示範、`FillButton` 共用元件取代會有預設綠色 focus 樣式的 `UButton`)。
 >
-> 1. `flashcardProgress` 這個 `computed` 宣告寫在用到它的 `useAsyncData` **之後**([index.vue:134](frontend/app/pages/practice/index.vue:134) 在 [index.vue:123](frontend/app/pages/practice/index.vue:123) 下面),`const` 沒有 hoisting,實測會噴 `ReferenceError`——要把 `flashcardProgress` 的宣告搬到 `useAsyncData` 之前。
-> 2. `chooseFlashcardMode` 裡還是重新呼叫 `useFlashcardProgress(selectedBook.value.id)`,沒有重用 `flashcardProgress.value`,`isFirstTimeForBook()` 會永遠讀到空的 `progressList`。
->
-> `flashcard.vue` 那邊(sessionWords 串 API、submitBatch 呼叫時機)完全還沒動。明天(9/23)接續。
+> 接下來做 **Stage 7(未登入 = 純瀏覽模式)**。
 
 ## 為什麼
 
-A-1 的 Lv1~5 分級規則(不認識→Lv1、認識但不熟→Lv2、非常熟悉→封存;複習「今天已練習」逐級升,Lv4→Lv5 強制冷卻一天,Lv5 滿級彈窗選畢業/重來)其實已經**做完了**,實作在 `useFlashcardProgress.ts` + `flashcard.vue`,但進度存在瀏覽器 `localStorage`(key: `nooka:flashcard-progress:${categoryId}`)——`useFlashcardProgress.ts` 檔頭註解本來就寫明「之後接後端 API,呼叫端不用改介面」。
+A-1 的 Lv1~5 分級規則(不認識→Lv1、認識但不熟→Lv2、非常熟悉→封存;複習「今天已複習」逐級升,Lv4→Lv5 強制冷卻一天,Lv5 滿級彈窗選畢業/重來)其實已經**做完了**,實作在 `useFlashcardProgress.ts` + `flashcard.vue`,但進度存在瀏覽器 `localStorage`(key: `nooka:flashcard-progress:${categoryId}`)——`useFlashcardProgress.ts` 檔頭註解本來就寫明「之後接後端 API,呼叫端不用改介面」。
 
 現在 Google 登入 + JWT + Identity 的會員系統已經做完(見上一輪 git 歷史),`UserId` 這個硬依賴已經有了,可以把進度真的存進 DB。同時使用者確認:未登入的人只能純瀏覽單字卡(翻牌看意思),不能標記熟悉度、不記錄進度;會員要能在「學習紀錄」看到自己的進度總覽,但不曝露內部 Lv1~5 數字,只顯示分類後的統計(未學過/學習中/已精熟、待複習張數)。
 
@@ -105,7 +102,7 @@ public record CategoryProgressSummary(int CategoryId, string CategoryName, int F
 - 新增 `submitBatch()`,把 dirty list 整理成純陣列,一輪練習的最後一張卡完成時(或使用者主動結束這輪)呼叫一次 `POST /api/progress/batch`;沒呼叫到就等同這輪沒發生。
 - 讀取(`loadProgressList`)變非同步要 `await`;三個標記函式本身維持同步(純算記憶體狀態),只有 `submitBatch()` 是非同步。
 
-驗證:先不改 UI,console.log 確認一輪結束時才打出一支帶完整 `updates` 陣列的 batch API,中途點擊三選一/今天已練習不會觸發任何網路請求。
+驗證:先不改 UI,console.log 確認一輪結束時才打出一支帶完整 `updates` 陣列的 batch API,中途點擊三選一/今天已複習不會觸發任何網路請求。
 
 **完成**:`progressList`/`dirtyMap` 改成宣告在 `useFlashcardProgress(categoryId)` 內部(每次呼叫都是獨立一份,不會跨分類/跨呼叫互相污染);`loadProgressList` 改打 `GET /api/progress/category/{categoryId}`;`submitBatch()` 打 `POST /api/progress/batch` 後清空 `dirtyMap`;localStorage 相關的 `storageKey`/`saveProgressList` 已刪除。所有 function 也順手改成箭頭函式。已 commit。
 
@@ -114,7 +111,7 @@ public record CategoryProgressSummary(int CategoryId, string CategoryName, int F
 - `practice/index.vue`:`flashcardCounts` 從同步 `computed` 改用 `useAsyncData`;`chooseFlashcardMode` 裡的 `isFirstTimeForBook()` 改成 await。
 - `flashcard.vue`:`sessionWords` 改用 `useAsyncData` 直接抓,原本為了 localStorage/SSR 不一致包的 `<ClientOnly>` 可以拿掉;在最後一張卡完成、或使用者主動結束這輪(例如按返回書架)時呼叫 `submitBatch()`。
 
-驗證:登入後走一次完整流程(學新字三選一 → 複習「今天已練習」→ Lv5 滿級彈窗),重新整理頁面或換瀏覽器登入同帳號,進度應該還在(證明真的存 DB)。
+驗證:登入後走一次完整流程(學新字三選一 → 複習「今天已複習」→ Lv5 滿級彈窗),重新整理頁面或換瀏覽器登入同帳號,進度應該還在(證明真的存 DB)。
 
 **進行中(2026/09/22)**:
 
@@ -130,7 +127,7 @@ public record CategoryProgressSummary(int CategoryId, string CategoryName, int F
 
 ### Stage 7 — 未登入 = 純瀏覽模式
 
-- `flashcard.vue` 用 `useAuthUser()` 判斷:未登入時不呼叫任何 `/api/progress/*`,單字照表列順序全部顯示,只能翻牌 + 上一張/下一張,不出現三選一按鈕、不出現「今天已練習」按鈕與 Lv 圓點。
+- `flashcard.vue` 用 `useAuthUser()` 判斷:未登入時不呼叫任何 `/api/progress/*`,單字照表列順序全部顯示,只能翻牌 + 上一張/下一張,不出現三選一按鈕、不出現「今天已複習」按鈕與 Lv 圓點。
 - `practice/index.vue` 的單字卡 UModal:未登入時不顯示「學習新單字/複習已學過的單字」這組,改顯示「先看看這本書的單字」瀏覽入口,導去 `flashcard.vue` 的瀏覽模式(例如 `?mode=browse`)。
 - 不新增登入保護 middleware(維持書架頁本身不擋登入的既有決定),只在單字卡子功能內用 `useAuthUser()` 做 UI 分支。
 
@@ -153,7 +150,7 @@ public record CategoryProgressSummary(int CategoryId, string CategoryName, int F
 | 學習紀錄要不要顯示 Lv1~5            | 不顯示,只顯示「已精熟/學習中/尚未開始」+ 待複習張數                 | Lv1~5 是內部演算法分級,對使用者沒有意義,只會增加認知負荷                      |
 | LIMIT/排序邏輯放前端還是後端        | 維持在前端(`getNewWords`/`getDueWords` 純函式不變),後端只回完整清單 | 單一使用者單本書的進度筆數不大,MVP 先不做這層效能優化,之後有需要再搬進 SQL    |
 | 要不要做 localStorage → DB 資料搬遷 | 不用                                                                | MVP 尚未上線,現有 localStorage 資料是開發測試產生的,直接讓新版本改吃 API 即可 |
-| 進度 API 呼叫時機                   | 一輪練習結束才打一次 batch API,不是每次點擊三選一/今天已練習都打    | 頻繁單次呼叫對前後端流量都是不必要負擔;使用者確認不在意「中途關頁籤導致這輪進度遺失」,所以不需要逐步存檔換取容錯 |
+| 進度 API 呼叫時機                   | 一輪練習結束才打一次 batch API,不是每次點擊三選一/今天已複習都打    | 頻繁單次呼叫對前後端流量都是不必要負擔;使用者確認不在意「中途關頁籤導致這輪進度遺失」,所以不需要逐步存檔換取容錯 |
 
 ## 涉及檔案
 
@@ -178,7 +175,7 @@ public record CategoryProgressSummary(int CategoryId, string CategoryName, int F
 ## 驗證方式
 
 - 登入後標記幾張 Lv1/Lv2,重新整理頁面、或換瀏覽器再登入同一帳號,進度應該還在(證明真的存 DB 而不是 localStorage)。
-- 登出後開同一本書單字卡,應該只能翻牌瀏覽,看不到三選一/今天已練習按鈕。
+- 登出後開同一本書單字卡,應該只能翻牌瀏覽,看不到三選一/今天已複習按鈕。
 - 「學習紀錄」頁面能看到剛剛標記過的書出現對應的計數,且畫面上不出現 Lv1~Lv5 這種字眼。
 - 後端可用 `.http`/Swagger 直接呼叫 `/api/progress/*` 系列 API,確認 `[Authorize]` 生效(未帶 cookie 應該 401)。
 

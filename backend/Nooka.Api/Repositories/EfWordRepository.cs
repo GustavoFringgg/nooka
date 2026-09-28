@@ -19,7 +19,7 @@ public class EfWordRepository : IWordRepository
 
     public async Task<IEnumerable<Word>> GetByCategoryIdAsync(int categoryId)
     {
-        var wordIds = _context.WordCategories.Where(wc=>wc.CategoryId == categoryId).Select(wc => wc.WordId);
+        var wordIds = _context.WordCategories.Where(wc => wc.CategoryId == categoryId).Select(wc => wc.WordId);
         return await _context.Words.Where(w => wordIds.Contains(w.Id)).ToListAsync();
     }
 
@@ -28,6 +28,4 @@ public class EfWordRepository : IWordRepository
         // TODO: 這裡要理解為啥用 async
         return await _context.Words.FirstOrDefaultAsync(w => w.Id == id);
     }
-
-
 }

@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import type { Category, Word } from "~/types/practice"
+import type { Category, CategoryProgressSummary, Word } from "~/types/practice"
 import type { QuizDirection } from "~/utils/quiz"
 import { gsap } from "gsap"
 const router = useRouter()
+const isLoggedIn = useIsLoggedIn()
 
 // ========== 共用工具 ==========
 type PartOfSpeech = "形容詞" | "副詞" | "動詞" | "名詞" | "代名詞" | "介系詞" | "連接詞" | "感嘆詞"
@@ -51,6 +52,39 @@ const { data: words, pending: wordsPending } = await useFetch<Word[]>(
 const selectBook = (id: number) => {
   selectedId.value = id
 }
+
+// ========== 書封進度標示(總字數/已學數/今日待複習數)==========
+// 直接沿用現有的 GET /api/progress/summary(已回傳每本書各自的 Familiar/Learning/NewWords/DueToday),不用等後端補新 API
+const { data: categorySummaries } = await useAsyncData(
+  "category-progress-summary",
+  async () => {
+    if (!isLoggedIn.value) return []
+    return await useApiFetch<CategoryProgressSummary[]>("/api/progress/summary")
+  },
+  { watch: [isLoggedIn], default: () => [] as CategoryProgressSummary[] }
+)
+
+const summaryByCategory = computed(() => {
+  const map = new Map<number, CategoryProgressSummary>()
+  for (const s of categorySummaries.value) map.set(s.categoryId, s)
+  return map
+})
+
+const bookStats = (categoryId: number) => {
+  const s = summaryByCategory.value.get(categoryId)
+  if (!s) return null
+  const total = s.familiar + s.learning + s.newWords
+  const learned = s.familiar + s.learning
+  return { total, learned, due: s.dueToday, pct: total > 0 ? Math.round((learned / total) * 100) : 0 }
+}
+
+// 書封卡片要重複用到書本資料 + 這本書的進度,合併成一個 list 給 v-for 用,避免在 template 裡重複呼叫 bookStats()
+const booksWithStats = computed(() =>
+  (categories.value ?? []).map((book) => ({
+    book,
+    stats: isLoggedIn.value ? bookStats(book.id) : null
+  }))
+)
 
 // ========== 練習模式切換 ==========
 type PracticeMode = "flashcard" | "choice" | "typing"
@@ -119,7 +153,8 @@ const { data: flashcardCounts } = await useAsyncData(
   "flashcard-counts", // key:唯一的名字，Nuxt 用它做 SSR/CSR 之間的快取比對
   async () => {
     // 執行非同步
-    if (!selectedBook.value || !words.value || !flashcardProgress.value) return { newCount: 0, dueCount: 0 }
+    if (!selectedBook.value || !words.value || !flashcardProgress.value || !isLoggedIn.value)
+      return { newCount: 0, dueCount: 0 }
     await flashcardProgress.value.loadProgressList()
     return flashcardProgress.value.getCounts(words.value)
   },
@@ -128,6 +163,15 @@ const { data: flashcardCounts } = await useAsyncData(
 
 watch(isFlashcardModalOpen, (open) => {
   if (!open) flashcardStep.value = "choose"
+})
+
+const flashcardModalTitle = computed(() => {
+  if (!isLoggedIn.value) return "先看看這些單字"
+  return flashcardStep.value === "choose" ? "今天想怎麼練？" : "開始之前"
+})
+const flashcardModalDescription = computed(() => {
+  if (!isLoggedIn.value) return "登入後就能標記熟悉度、追蹤學習進度"
+  return flashcardStep.value === "choose" ? "選學新字,或複習已經標記過的單字" : "第一次玩這本書的單字卡,先看一下規則"
 })
 
 const flashcardModalUi = computed(() => ({
@@ -165,7 +209,11 @@ const flipIntroDemo = () => {
     if (prefersReducedMotion()) {
       gsap.set(choices, { opacity: 1, y: 0 })
     } else {
-      gsap.fromTo(choices, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.12, ease: "power2.out" })
+      gsap.fromTo(
+        choices,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.35, stagger: 0.12, ease: "power2.out" }
+      )
     }
   }
 }
@@ -203,11 +251,18 @@ const backToFlashcardChoose = () => {
   flashcardStep.value = "choose"
 }
 
-const goToFlashcard = () => {
-  if (!selectedBook.value || !flashcardModeChoice.value) return
+const navigateToFlashcard = (mode: "new" | "review" | "browse") => {
+  if (!selectedBook.value) return
   isFlashcardModalOpen.value = false
   const targetId = selectedBook.value.id
-  router.push(`/practice/${targetId}/flashcard?mode=${flashcardModeChoice.value}`)
+  router.push(`/practice/${targetId}/flashcard?mode=${mode}`)
+}
+
+const goBrowseFlashcard = () => navigateToFlashcard("browse")
+
+const goToFlashcard = () => {
+  if (!flashcardModeChoice.value) return
+  navigateToFlashcard(flashcardModeChoice.value)
 }
 </script>
 
@@ -220,42 +275,60 @@ const goToFlashcard = () => {
         <div class="max-w-[1040px] mx-auto pt-8 w-full shrink-0">
           <div class="mb-6 flex flex-wrap gap-4">
             <button
+              v-if="selectedMode === 'flashcard'"
               type="button"
-              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5"
-              :class="
-                selectedMode === 'flashcard'
-                  ? 'bg-paper-primary text-paper-bg'
-                  : 'bg-paper-fg/8 text-paper-muted/70 hover:bg-paper-primary hover:text-paper-bg'
-              "
+              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-primary text-paper-bg"
               @click="selectMode('flashcard')"
             >
               單字卡
             </button>
+            <FillButton
+              v-else
+              fill="var(--color-paper-primary)"
+              text-color="var(--color-paper-bg)"
+              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-fg/8 text-paper-muted/70"
+              @click="selectMode('flashcard')"
+            >
+              單字卡
+            </FillButton>
+
             <button
+              v-if="selectedMode === 'choice'"
               type="button"
-              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out"
-              :class="
-                selectedMode === 'choice'
-                  ? 'bg-paper-primary text-paper-bg cursor-pointer hover:-translate-y-0.5'
-                  : 'bg-paper-fg/8 text-paper-muted/70 cursor-pointer hover:-translate-y-0.5 hover:bg-paper-primary hover:text-paper-bg'
-              "
+              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-primary text-paper-bg"
               :disabled="!selectedBook"
               @click="selectMode('choice')"
             >
               選擇題
             </button>
+            <FillButton
+              v-else
+              fill="var(--color-paper-primary)"
+              text-color="var(--color-paper-bg)"
+              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-fg/8 text-paper-muted/70"
+              :disabled="!selectedBook"
+              @click="selectMode('choice')"
+            >
+              選擇題
+            </FillButton>
+
             <button
+              v-if="selectedMode === 'typing'"
               type="button"
-              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5"
-              :class="
-                selectedMode === 'typing'
-                  ? 'bg-paper-primary text-paper-bg'
-                  : 'bg-paper-fg/8 text-paper-muted/70 hover:bg-paper-primary hover:text-paper-bg'
-              "
+              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-primary text-paper-bg"
               @click="selectMode('typing')"
             >
               打字拼寫
             </button>
+            <FillButton
+              v-else
+              fill="var(--color-paper-primary)"
+              text-color="var(--color-paper-bg)"
+              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-fg/8 text-paper-muted/70"
+              @click="selectMode('typing')"
+            >
+              打字拼寫
+            </FillButton>
           </div>
         </div>
 
@@ -263,7 +336,12 @@ const goToFlashcard = () => {
           <div
             class="styled-scrollbar lg:flex-[1.15] h-full min-h-0 grid grid-cols-2 gap-6 box-border overflow-y-auto pt-7 pr-1"
           >
-            <div v-for="book in categories" :key="book.id" class="cursor-pointer" @click="selectBook(book.id)">
+            <div
+              v-for="{ book, stats } in booksWithStats"
+              :key="book.id"
+              class="cursor-pointer"
+              @click="selectBook(book.id)"
+            >
               <div
                 class="flex rounded-l-[3px] rounded-r-[10px] transition-transform duration-250 ease-out hover:-translate-y-2.5 hover:-rotate-[1.5deg] hover:shadow-[0_26px_34px_-18px_rgba(43,42,37,0.4)]"
                 :class="
@@ -294,7 +372,14 @@ const goToFlashcard = () => {
                     class="absolute -top-0.5 right-4.5 w-6.5 h-9.5 bg-paper-primary shadow-[0_4px_8px_rgba(43,42,37,0.3)] z-10"
                     style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%)"
                   />
-                  <span class="text-[11px] tracking-[0.1em] text-white/75 uppercase">單字書</span>
+                  <div class="flex items-center gap-2">
+                    <span
+                      v-if="stats && stats.due > 0"
+                      class="w-6.5 h-6.5 rounded-full bg-paper-accent text-white text-[11px] font-semibold flex items-center justify-center shadow-[0_2px_6px_rgba(0,0,0,0.25)]"
+                    >
+                      {{ stats.due }}
+                    </span>
+                  </div>
                   <div>
                     <div
                       class="font-display text-[26px] text-white leading-tight"
@@ -302,8 +387,15 @@ const goToFlashcard = () => {
                     >
                       {{ book.name }}
                     </div>
-                    <!-- <div class="text-white/85 text-[13px] mt-1.5">{{ book.count }} 個單字</div> -->
-                    <!-- TODO: 之後透過 api 獲取真正書量 -->
+                    <template v-if="stats">
+                      <div class="mt-2 h-2 rounded-[3px] bg-white border border-black/20 overflow-hidden">
+                        <div
+                          class="h-full rounded-[2px] bg-[#8CFF00] shadow-[inset_0_-2px_0_rgba(0,0,0,0.28),0_0_6px_rgba(140,255,0,0.7)]"
+                          :style="{ width: `${stats.pct}%` }"
+                        />
+                      </div>
+                      <div class="text-white/85 text-[12px] mt-1">{{ stats.learned }} / {{ stats.total }}</div>
+                    </template>
                   </div>
                 </div>
               </div>
@@ -514,14 +606,18 @@ const goToFlashcard = () => {
 
     <UModal
       v-model:open="isFlashcardModalOpen"
-      :title="flashcardStep === 'choose' ? '今天想怎麼練？' : '開始之前'"
-      :description="
-        flashcardStep === 'choose' ? '選學新字,或複習已經標記過的單字' : '第一次玩這本書的單字卡,先看一下規則'
-      "
+      :title="flashcardModalTitle"
+      :description="flashcardModalDescription"
       :ui="flashcardModalUi"
     >
       <template #body>
-        <div v-if="flashcardStep === 'choose'" class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div v-if="!isLoggedIn" class="text-center py-4">
+          <p class="text-paper-muted text-sm m-0">
+            登入後就能標記熟悉度、追蹤學習進度,現在可以先翻牌看看這本書的單字。
+          </p>
+        </div>
+
+        <div v-else-if="flashcardStep === 'choose'" class="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <button
             type="button"
             class="text-left rounded-2xl border-2 p-5 transition-colors"
@@ -571,7 +667,10 @@ const goToFlashcard = () => {
           </p>
 
           <div style="perspective: 1200px; cursor: pointer" @click="flipIntroDemo">
-            <div class="intro-demo-card" style="position: relative; width: 220px; height: 160px; transform-style: preserve-3d">
+            <div
+              class="intro-demo-card"
+              style="position: relative; width: 220px; height: 160px; transform-style: preserve-3d"
+            >
               <div
                 class="rounded-2xl bg-paper-bg-alt border-2 border-paper-fg/25 shadow-[0_14px_30px_-18px_rgba(43,42,37,0.3)] flex flex-col items-center justify-center gap-1.5"
                 style="position: absolute; inset: 0; backface-visibility: hidden"
@@ -593,7 +692,9 @@ const goToFlashcard = () => {
           </div>
 
           <div class="grid grid-cols-3 gap-2 w-full max-w-sm">
-            <div class="intro-choice rounded-xl border-1.5 border-paper-fg/20 text-paper-fg text-[11.5px] py-2.5 text-center">
+            <div
+              class="intro-choice rounded-xl border-1.5 border-paper-fg/20 text-paper-fg text-[11.5px] py-2.5 text-center"
+            >
               不認識
             </div>
             <div
@@ -607,13 +708,22 @@ const goToFlashcard = () => {
           </div>
 
           <p class="text-paper-muted text-xs text-center max-w-sm">
-            之後複習只要點「今天已練習」,系統會自動安排下次什麼時候再看到這張卡
+            之後複習只要點「今天已複習」,系統會自動安排下次什麼時候再看到這張卡
           </p>
         </div>
       </template>
 
       <template #footer>
-        <div v-if="flashcardStep === 'choose'" class="flex gap-3 w-full">
+        <div v-if="!isLoggedIn" class="flex gap-3 w-full">
+          <button
+            type="button"
+            class="flex-1 inline-flex items-center justify-center rounded-md px-4 py-2.5 text-sm font-medium bg-paper-primary text-paper-bg hover:bg-paper-accent cursor-pointer transition-colors"
+            @click="goBrowseFlashcard"
+          >
+            先看看這本書的單字
+          </button>
+        </div>
+        <div v-else-if="flashcardStep === 'choose'" class="flex gap-3 w-full">
           <UButton
             label="取消"
             color="neutral"
