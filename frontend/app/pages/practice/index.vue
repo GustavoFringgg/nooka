@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Category, Word } from "~/types/practice"
+import type { Category, CategoryProgressSummary, Word } from "~/types/practice"
 import type { QuizDirection } from "~/utils/quiz"
 import { gsap } from "gsap"
 const router = useRouter()
@@ -52,6 +52,39 @@ const { data: words, pending: wordsPending } = await useFetch<Word[]>(
 const selectBook = (id: number) => {
   selectedId.value = id
 }
+
+// ========== 書封進度標示(總字數/已學數/今日待複習數)==========
+// 直接沿用現有的 GET /api/progress/summary(已回傳每本書各自的 Familiar/Learning/NewWords/DueToday),不用等後端補新 API
+const { data: categorySummaries } = await useAsyncData(
+  "category-progress-summary",
+  async () => {
+    if (!isLoggedIn.value) return []
+    return await useApiFetch<CategoryProgressSummary[]>("/api/progress/summary")
+  },
+  { watch: [isLoggedIn], default: () => [] as CategoryProgressSummary[] }
+)
+
+const summaryByCategory = computed(() => {
+  const map = new Map<number, CategoryProgressSummary>()
+  for (const s of categorySummaries.value) map.set(s.categoryId, s)
+  return map
+})
+
+const bookStats = (categoryId: number) => {
+  const s = summaryByCategory.value.get(categoryId)
+  if (!s) return null
+  const total = s.familiar + s.learning + s.newWords
+  const learned = s.familiar + s.learning
+  return { total, learned, due: s.dueToday, pct: total > 0 ? Math.round((learned / total) * 100) : 0 }
+}
+
+// 書封卡片要重複用到書本資料 + 這本書的進度,合併成一個 list 給 v-for 用,避免在 template 裡重複呼叫 bookStats()
+const booksWithStats = computed(() =>
+  (categories.value ?? []).map((book) => ({
+    book,
+    stats: isLoggedIn.value ? bookStats(book.id) : null
+  }))
+)
 
 // ========== 練習模式切換 ==========
 type PracticeMode = "flashcard" | "choice" | "typing"
@@ -138,9 +171,7 @@ const flashcardModalTitle = computed(() => {
 })
 const flashcardModalDescription = computed(() => {
   if (!isLoggedIn.value) return "登入後就能標記熟悉度、追蹤學習進度"
-  return flashcardStep.value === "choose"
-    ? "選學新字,或複習已經標記過的單字"
-    : "第一次玩這本書的單字卡,先看一下規則"
+  return flashcardStep.value === "choose" ? "選學新字,或複習已經標記過的單字" : "第一次玩這本書的單字卡,先看一下規則"
 })
 
 const flashcardModalUi = computed(() => ({
@@ -287,7 +318,12 @@ const goToFlashcard = () => {
           <div
             class="styled-scrollbar lg:flex-[1.15] h-full min-h-0 grid grid-cols-2 gap-6 box-border overflow-y-auto pt-7 pr-1"
           >
-            <div v-for="book in categories" :key="book.id" class="cursor-pointer" @click="selectBook(book.id)">
+            <div
+              v-for="{ book, stats } in booksWithStats"
+              :key="book.id"
+              class="cursor-pointer"
+              @click="selectBook(book.id)"
+            >
               <div
                 class="flex rounded-l-[3px] rounded-r-[10px] transition-transform duration-250 ease-out hover:-translate-y-2.5 hover:-rotate-[1.5deg] hover:shadow-[0_26px_34px_-18px_rgba(43,42,37,0.4)]"
                 :class="
@@ -318,7 +354,14 @@ const goToFlashcard = () => {
                     class="absolute -top-0.5 right-4.5 w-6.5 h-9.5 bg-paper-primary shadow-[0_4px_8px_rgba(43,42,37,0.3)] z-10"
                     style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%)"
                   />
-                  <span class="text-[11px] tracking-[0.1em] text-white/75 uppercase">單字書</span>
+                  <div class="flex items-center gap-2">
+                    <span
+                      v-if="stats && stats.due > 0"
+                      class="w-6.5 h-6.5 rounded-full bg-paper-accent text-white text-[11px] font-semibold flex items-center justify-center shadow-[0_2px_6px_rgba(0,0,0,0.25)]"
+                    >
+                      {{ stats.due }}
+                    </span>
+                  </div>
                   <div>
                     <div
                       class="font-display text-[26px] text-white leading-tight"
@@ -326,8 +369,15 @@ const goToFlashcard = () => {
                     >
                       {{ book.name }}
                     </div>
-                    <!-- <div class="text-white/85 text-[13px] mt-1.5">{{ book.count }} 個單字</div> -->
-                    <!-- TODO: 之後透過 api 獲取真正書量 -->
+                    <template v-if="stats">
+                      <div class="mt-2 h-2 rounded-[3px] bg-white border border-black/20 overflow-hidden">
+                        <div
+                          class="h-full rounded-[2px] bg-[#8CFF00] shadow-[inset_0_-2px_0_rgba(0,0,0,0.28),0_0_6px_rgba(140,255,0,0.7)]"
+                          :style="{ width: `${stats.pct}%` }"
+                        />
+                      </div>
+                      <div class="text-white/85 text-[12px] mt-1">{{ stats.learned }} / {{ stats.total }}</div>
+                    </template>
                   </div>
                 </div>
               </div>

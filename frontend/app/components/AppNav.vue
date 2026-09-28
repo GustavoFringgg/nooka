@@ -16,8 +16,8 @@ const confirmLogout = async () => {
 const links = [
   { label: "首頁", to: "/" },
   { label: "總覽", to: "/overview" },
-  { label: "練習", to: "/practice" },
-  { label: "學習紀錄", to: "#" }
+  { label: "書架", to: "/practice" },
+  { label: "學習紀錄", to: "/progress" }
 ]
 
 const ctaLabel = computed(() => (loggedIn.value ? "登出" : "登入 / 註冊"))

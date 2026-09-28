@@ -7,6 +7,15 @@ export interface Category {
   updatedAt: string
 }
 
+export interface CategoryProgressSummary {
+  categoryId: number
+  categoryName: string
+  familiar: number
+  learning: number
+  newWords: number
+  dueToday: number
+}
+
 export interface Word {
   id: number
   categoryId: number

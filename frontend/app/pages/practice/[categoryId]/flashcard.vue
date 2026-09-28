@@ -168,7 +168,9 @@ const resolveLevel5 = (action: "graduate" | "restart") => {
         <div class="mb-8">
           <div class="flex items-center justify-between mb-2 text-sm text-paper-muted">
             <span>第 {{ currentIndex + 1 }} / {{ sessionWords.length }} 張</span>
-            <span class="text-paper-accent">{{ mode === "review" ? "複習" : mode === "browse" ? "瀏覽單字" : "學習新單字" }}</span>
+            <span class="text-paper-accent">
+              {{ mode === "review" ? "複習" : mode === "browse" ? "瀏覽單字" : "學習新單字" }}
+            </span>
           </div>
           <div class="h-1.5 rounded-full bg-paper-fg/10 overflow-hidden">
             <div
