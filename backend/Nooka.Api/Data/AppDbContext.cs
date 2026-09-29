@@ -21,7 +21,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
     // 微調欄位
     {
         base.OnModelCreating(modelBuilder);
-
+        // Category
         modelBuilder.Entity<Category>()
             .Property(c => c.CreatedAt)
             .HasDefaultValueSql("now()");
@@ -30,16 +30,21 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
             .Property(c => c.UpdatedAt)
             .HasDefaultValueSql("now()");
 
+        modelBuilder.Entity<Category>()
+            .HasIndex(c => c.Name)
+            .IsUnique();
 
+        // Word
         modelBuilder.Entity<Word>()
             .HasIndex(w => w.Term)
             .IsUnique();
 
-
+        // WordCategory
         modelBuilder.Entity<WordCategory>()
             .HasKey(wc => new { wc.WordId, wc.CategoryId });
 
         modelBuilder.Entity<WordCategory>()
+
             .HasOne<Word>()
             .WithMany()
             .HasForeignKey(wc => wc.WordId);
@@ -49,8 +54,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
             .WithMany()
             .HasForeignKey(wc => wc.CategoryId);
 
-
-
+        // WordProgress
         modelBuilder.Entity<WordProgress>()
             .HasKey(wp => new { wp.UserId, wp.WordId });
 
