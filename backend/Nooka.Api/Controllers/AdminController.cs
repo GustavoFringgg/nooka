@@ -70,4 +70,34 @@ public class AdminController : ControllerBase
         return Ok(newWord);
     }
 
+    [HttpPut("words/{id}")]
+    public async Task<IActionResult> UpdateWord(int id, WordUpsertRequest request)
+    {
+        if (id != request.Word.Id)
+        {
+            return BadRequest("網址與資料的 id 不同");
+        }
+        if (string.IsNullOrWhiteSpace(request.Word.Term))
+            return BadRequest("名稱不能空白");
+        var newWord = await _wordRepository.UpdateAsync(id, request.Word, request.CategoryIds);
+        if (newWord != null)
+        {
+            return Ok(newWord);
+        }
+        else
+        {
+            return NotFound();
+        }
+    }
+
+    [HttpDelete("words/{id}")]
+    public async Task<IActionResult> DeleteWord(int id)
+    {
+        var isDelete = await _wordRepository.DeleteAsync(id);
+        if (isDelete)
+        { return NoContent(); }
+        else
+        { return NotFound(); }
+    }
+
 }

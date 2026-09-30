@@ -54,8 +54,6 @@ public class EfCategoryRepository : ICategoryRepository
             return true;
         }
         else
-        {
-            return false;
-        }
+        { return false; }
     }
 }
