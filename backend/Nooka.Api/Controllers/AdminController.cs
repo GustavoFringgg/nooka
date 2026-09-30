@@ -1,17 +1,19 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nooka.Api.Models;
-
+using Nooka.Api.Models.Dtos.Request;
 
 [ApiController]
 [Route("api/admin")]
 [Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
-    private readonly ICategoryRepository _repository;
-    public AdminController(ICategoryRepository repository)
+    private readonly ICategoryRepository _categoryRepository;
+    private readonly IWordRepository _wordRepository;
+    public AdminController(ICategoryRepository categoryRepository, IWordRepository wordRepository)
     {
-        _repository = repository;
+        _categoryRepository = categoryRepository;
+        _wordRepository = wordRepository;
     }
 
     [HttpPost("categories")]
@@ -19,7 +21,7 @@ public class AdminController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(category.Name))
             return BadRequest("名稱不能空白");
-        var newCategory = await _repository.CreateAsync(category);
+        var newCategory = await _categoryRepository.CreateAsync(category);
         return Ok(newCategory);
     }
 
@@ -33,7 +35,7 @@ public class AdminController : ControllerBase
         }
         if (string.IsNullOrWhiteSpace(category.Name))
             return BadRequest("名稱不能空白");
-        var newCategory = await _repository.UpdateAsync(id, category);
+        var newCategory = await _categoryRepository.UpdateAsync(id, category);
         if (newCategory != null)
         {
             return Ok(newCategory);
@@ -48,7 +50,7 @@ public class AdminController : ControllerBase
     [HttpDelete("categories/{id}")]
     public async Task<IActionResult> DeleteCategory(int id)
     {
-        var isDelete = await _repository.DeleteAsync(id);
+        var isDelete = await _categoryRepository.DeleteAsync(id);
         if (isDelete)
         {
             return NoContent();
@@ -58,4 +60,14 @@ public class AdminController : ControllerBase
             return NotFound();
         }
     }
+
+    [HttpPost("words")]
+    public async Task<IActionResult> CreateWord(WordUpsertRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Word.Term))
+            return BadRequest("名稱不能空白");
+        var newWord = await _wordRepository.CreateAsync(request.Word, request.CategoryIds);
+        return Ok(newWord);
+    }
+
 }

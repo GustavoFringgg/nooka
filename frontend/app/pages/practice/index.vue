@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Category, CategoryProgressSummary, Word } from "~/types/practice"
+import type { Category, CategoryProgressSummaryResponse, Word } from "~/types/practice"
 import type { QuizDirection } from "~/utils/quiz"
 import { gsap } from "gsap"
 const router = useRouter()
@@ -59,13 +59,13 @@ const { data: categorySummaries } = await useAsyncData(
   "category-progress-summary",
   async () => {
     if (!isLoggedIn.value) return []
-    return await useApiFetch<CategoryProgressSummary[]>("/api/progress/summary")
+    return await useApiFetch<CategoryProgressSummaryResponse[]>("/api/progress/summary")
   },
-  { watch: [isLoggedIn], default: () => [] as CategoryProgressSummary[] }
+  { watch: [isLoggedIn], default: () => [] as CategoryProgressSummaryResponse[] }
 )
 
 const summaryByCategory = computed(() => {
-  const map = new Map<number, CategoryProgressSummary>()
+  const map = new Map<number, CategoryProgressSummaryResponse>()
   for (const s of categorySummaries.value) map.set(s.categoryId, s)
   return map
 })

@@ -10,6 +10,7 @@
 ## 技術棧
 
 - **Backend**: ASP.NET Core (.NET 10), `backend/Nooka.Api`
+  - **DTO 命名慣例(2026/09/30 定案)**:`Models/Dtos/` 底下的 DTO,規範「前端傳進來的格式」結尾用 `Request`(例如 `WordUpsertRequest`),規範「回傳給前端的格式」結尾用 `Response`(例如 `CategoryProgressSummaryResponse`);一個檔案一個型別,檔名跟型別名一致,不特別拆 `Interfaces`/`Implementations` 子資料夾(跟 `Repositories/` 一樣,數量少就平放,靠 `I` 前綴/`Request`/`Response` 字尾區分即可)
 - **Frontend**: Nuxt 4 (Vue 3), `frontend/`
   - **樣式**:Tailwind CSS v4(2026/08/19 從 SCSS 全面轉過來,`app/assets/scss/` 已刪除),色票/字型定義在 `app/assets/css/main.css` 的 `@theme`(`night-bg`/`night-panel`/`night-accent`/`night-fg`/`night-muted`、`hero-bg`/`hero-fg`/`hero-muted`、`font-display`/`font-body`),liquid-glass 玻璃質感效果改成 `@layer components` 的 `.liquid-glass`/`.liquid-glass-cta`/`.liquid-glass-hover` class
   - **UI 元件庫**:Nuxt UI(`@nuxt/ui`,底層是 Reka UI + Tailwind),用於 `UModal`、`URadioGroup`、`UButton` 等互動元件;純版面/排版還是手刻 Tailwind class,不是每個東西都套件化

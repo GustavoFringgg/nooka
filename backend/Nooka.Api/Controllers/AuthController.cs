@@ -20,7 +20,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authorization;
 
 using Nooka.Api.Models;
-using Nooka.Api.Models.Dtos;
+using Nooka.Api.Models.Dtos.Request;
 
 
 [ApiController]
