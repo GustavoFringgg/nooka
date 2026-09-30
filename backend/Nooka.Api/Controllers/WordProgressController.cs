@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nooka.Api.Models;
-using Nooka.Api.Models.Dtos;
+using Nooka.Api.Models.Dtos.Request;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -26,7 +26,7 @@ public class ProgressController : ControllerBase
 
     [Authorize]
     [HttpPost("batch")]
-    public async Task<IActionResult> UpdateWordProgress(List<WordProgressUpdate> updates)
+    public async Task<IActionResult> UpdateWordProgress(List<WordProgressUpdateRequest> updates)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         await _repository.BatchUpsertAsync(userId, updates);

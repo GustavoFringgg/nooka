@@ -1,185 +1,114 @@
-# 單字卡分級系統(A-1)接後端資料庫 + 會員進度總覽
+# 內容管理 Admin 後台(C 大項)— 分類 / 單字 CRUD
 
-> 目標:把 `useFlashcardProgress.ts` 現有的 Lv1~5 分級邏輯(初學三選一、複習升級、Lv5 滿級彈窗)從 localStorage 換成存 DB,跟會員帳號綁定;未登入使用者改成純瀏覽單字卡(不能標記熟悉度);新增「學習紀錄」頁面給會員看自己的進度總覽。
+> 目標:做出 `/admin/categories`、`/admin/words` 兩頁後台管理介面 + 對應後端 CRUD API,讓使用者不用手動戳 Supabase 就能管理分類跟單字。這是接下來開發順序 **C → D → B → A → G**(見 `CLAUDE.md`)的第一步,做完才回頭做 D(SM-2 學習紀錄),因為要先能好好管理單字內容,測試 SM-2 時新增/調整單字才方便。
 >
-> **狀態(2026/09/24):Stage 0~6 完成並 commit。**`practice/index.vue`、`flashcard.vue` 都已接上真實 API(共用 `flashcardProgress` instance、`useAsyncData` 載入、`submitBatch()` 在標記完最後一張卡時自動送出);順便修掉後端 `BatchUpsertAsync` 的 N+1 查詢效能問題(13.6s → 2s);UI 也做了一輪打磨(完成畫面蓋章動畫 + 火花特效、教學步驟改互動示範、`FillButton` 共用元件取代會有預設綠色 focus 樣式的 `UButton`)。
->
-> 接下來做 **Stage 7(未登入 = 純瀏覽模式)**。
+> **狀態(2026/09/28):UI 設計討論完成,尚未開始寫程式。** UI mockup(分類列表、單字列表、單字編輯抽屜、分類編輯抽屜共 4 個畫面)見 Design 畫布:https://claude.ai/artifact/SF2bV9dReQ6HcFS5sqhyrM
 
-## 為什麼
+## 為什麼另開這個任務(取代原本 plan.md 內容)
 
-A-1 的 Lv1~5 分級規則(不認識→Lv1、認識但不熟→Lv2、非常熟悉→封存;複習「今天已複習」逐級升,Lv4→Lv5 強制冷卻一天,Lv5 滿級彈窗選畢業/重來)其實已經**做完了**,實作在 `useFlashcardProgress.ts` + `flashcard.vue`,但進度存在瀏覽器 `localStorage`(key: `nooka:flashcard-progress:${categoryId}`)——`useFlashcardProgress.ts` 檔頭註解本來就寫明「之後接後端 API,呼叫端不用改介面」。
+`plan.md` 原本記錄的是「單字卡分級系統接後端 + 會員進度總覽」那個任務(Stage 0~8),那個任務**已經全部完成並 commit**(細節留在 git 歷史裡)。現在開始的是全新的一輪任務(C 大項:Admin 後台),plan.md 內容整個換掉,不用保留舊任務的分階段記錄。
 
-現在 Google 登入 + JWT + Identity 的會員系統已經做完(見上一輪 git 歷史),`UserId` 這個硬依賴已經有了,可以把進度真的存進 DB。同時使用者確認:未登入的人只能純瀏覽單字卡(翻牌看意思),不能標記熟悉度、不記錄進度;會員要能在「學習紀錄」看到自己的進度總覽,但不曝露內部 Lv1~5 數字,只顯示分類後的統計(未學過/學習中/已精熟、待複習張數)。
+## 討論定案的內容
 
-## 分階段步驟(照順序,一步做完驗證完再下一步)
+### UI
 
-### Stage 0 — `WordProgress` model + `AppDbContext` 設定
+- **視覺風格**:沿用前台 paper 色票(跟書架/nav 同一套色票字型),但排版改成後台常見的密集表格/列表,不套用書架那套視覺隱喻
+- **版面結構**:左側固定 nav(分類管理/單字管理兩個入口)+ 右側主內容區(表格 + 右上角「+ 新增」按鈕)
+- **新增/編輯共用同一張表單**:差別只在標題文字(「新增分類」vs「編輯分類」),欄位、儲存邏輯完全共用
+- **表單呈現方式**:右側抽屜(從畫面右邊滑出的長型面板),不是置中 Modal——欄位多時可以往下捲動,不會擁擠,且抽屜開著時左邊列表還看得到
+- **分類表單欄位**:名稱、描述(多行)、顏色(8 個預設色票 + `<input type="color">` color picker + 色碼文字輸入,三種方式都能選)
+- **單字表單欄位**:單字(term)、KK 音標(ipa)、詞性(下拉選單,對應現有 8 種詞性)、英文釋義、中文釋義、例句(可新增多筆,一筆一個輸入框 + 刪除按鈕)、所屬分類(打勾多選,對應多對多的 `WordCategories`)
+- **刪除**:一律要二次確認彈窗,不能點了就直接刪
+- **單字列表**:用無限捲動,不做分頁 UI(但後端查詢還是分頁式)
 
-- 新增 `backend/Nooka.Api/Models/WordProgress.cs`,比照 `WordCategory.cs` 的複合鍵 pattern:
-  ```csharp
-  public class WordProgress
-  {
-      public int UserId { get; set; }
-      public int WordId { get; set; }
-      public int? Level { get; set; }        // null = 還沒標記過(新字),1~5
-      public bool IsArchived { get; set; }
-      public DateOnly? NextReviewAt { get; set; }
-      public DateTime CreatedAt { get; set; }
-      public DateTime UpdatedAt { get; set; }
-  }
-  ```
-- `AppDbContext.cs`:新增 `DbSet<WordProgress> WordProgresses`,`OnModelCreating` 補上複合主鍵 `(UserId, WordId)`、FK → `AppUser`(cascade)、FK → `Word`(cascade)、索引 `(UserId, NextReviewAt)` 和 `(UserId, IsArchived)`,`CreatedAt`/`UpdatedAt` 比照 `Category` 用 `HasDefaultValueSql("now()")`(手動 SQL insert 不用帶這兩欄,沿用既有慣例)。
+### 後端 API
 
-驗證:`dotnet build` 過,先不跑 migration。
+- **路由分離**:新增 `/api/admin/categories`、`/api/admin/words`(`POST`/`PUT`/`DELETE`),跟現有唯讀的 `GET /api/categories`、`GET /api/words` 分開,不混在同一個 controller,方便統一在 Admin controller 上加權限
+- **分頁**:`GET /api/admin/words?page=&pageSize=20&categoryId=&search=`,依 `Term` 字母排序,支援分類篩選 + 關鍵字搜尋(前端無限捲動時遞增 `page` 呼叫)
+- **單字 ↔ 分類關聯寫入**:前端**只打一支** `PUT /api/admin/words/{id}`,body 直接帶這個單字現在應該屬於哪些分類(`categoryIds: number[]`)。後端在**同一個 transaction** 裡:① 更新單字本身欄位、② 把現有 `WordCategories` 關聯跟新的 `categoryIds` 做差異比對,多的刪掉、少的補上。這個 transaction 寫法沿用 `EfWordProgressRepository.BatchUpsertAsync` 已經驗證過的模式,不是全新概念
+- **單字名稱重複**:DB 端在 `Word.Term` 建 unique index 當最終防線,違反時 catch `DbUpdateException` 轉成 `409 Conflict` + 明確錯誤訊息;前端**不**額外打一支「即時查重複」的 API,直接在儲存失敗時把後端回傳的錯誤訊息顯示在「單字」欄位下面
+- **分類刪除不 cascade 刪單字**:單字是獨立字典實體,一個單字可以同時屬於多本書(多對多),分類被刪除時只刪對應的 `WordCategories` 關聯列,單字本身保留(失去這個分類歸屬,變成沒有分類的自由單字),`WordProgress` 學習紀錄完全不受影響。正常情況下單字很少被整筆刪除(字典性質,只會修改/新增),所以這不是常見操作但邏輯上要處理對
+- **權限**:`/api/admin/*` 全部要 `[Authorize(Roles = "Admin")]`
 
-### Stage 1 — Migration
+### 前端路由與導覽
 
-```
-dotnet ef migrations add AddWordProgress
-dotnet ef database update
-```
+- **nav 顯示條件**:「資料管理」連結只有 `useAuthUser().roles` 包含 `"Admin"` 時才顯示在「學習紀錄」右邊,一般 `User` 角色看不到、不會意識到後台存在
+- **連結指向**:`/admin/categories`(分類管理跟單字管理是兩個獨立路由:`/admin/categories`、`/admin/words`,不是同一頁切 tab)
+- **路由保護**:非 Admin(不管有沒有登入)直接輸入網址硬進 `/admin/*`,一律導回首頁 `/`,不做 404 頁面(簡單,也不用糾結要不要暴露路由存在)
 
-套用前先看一眼產生的 migration,確認有複合鍵、兩個 FK、對應索引,沒動到 `Words`/`Categories`/`WordCategories`。套用後去 Supabase table editor 肉眼確認新表結構。
+### 明確排除、不做的事
 
-### Stage 2 — Repository
+- **不做多路由 SEO**(例如 `/practice/toeic` 這種每本書獨立網址):現在 `/practice` 是單一網址 + 前端 state 切換書,`Category.description` 這個欄位先當純內容說明用,不接 meta description。理由:現階段使用者靠帳號登入使用,不是靠 Google 搜尋導流,SEO 效益低,之後真的要做流量成長再回頭處理
 
-`Repositories/IWordProgressRepository.cs` + `EfWordProgressRepository.cs`,比照 `IWordRepository`/`EfWordRepository` pattern:
+## 分階段步驟(建議順序,後端 API 先於前端頁面)
 
-```csharp
-Task<List<WordProgress>> GetByCategoryAsync(int userId, int categoryId);
-// join WordProgresses -> WordCategories(WordId) where CategoryId = X and UserId = userId
+### Stage 0 — Admin Controllers 骨架
 
-Task BatchUpsertAsync(int userId, List<WordProgressUpdate> updates);
-// updates = 前端這一輪算好的最終狀態(每張卡的 Level/IsArchived/NextReviewAt),逐筆 upsert(存在就 update,不存在就 insert),包在同一個 transaction
-```
+- 新增 `Controllers/AdminCategoriesController.cs`、`Controllers/AdminWordsController.cs`,`[Authorize(Roles = "Admin")]`,`[Route("api/admin/categories")]`/`[Route("api/admin/words")]`
+- 先寫空的 action 簽名(`POST`/`PUT`/`DELETE`),確認路由跟權限擋得住(用非 Admin 帳號打應該 403,不帶 token 應該 401)
 
-狀態轉換規則(不認識→Lv1+明天複習、認識但不熟→Lv2+明天複習、非常熟悉→封存;Lv1~3 複習後升一級+明天複習;Lv4 複習後→Lv5+後天複習;Lv5 畢業/重來)**不在後端算**,改成前端沿用 `useFlashcardProgress.ts` 現有的純函式在瀏覽器記憶體裡算完一整輪,後端只負責把算好的最終結果寫進去,不重新驗證這輪的中間過程。
+### Stage 1 — 分類 CRUD
 
-在 `Program.cs` 註冊 `AddScoped<IWordProgressRepository, EfWordProgressRepository>()`。
+- `ICategoryRepository`/`EfCategoryRepository` 加 `CreateAsync`/`UpdateAsync`/`DeleteAsync`(欄位:`Name`/`Description`/`Color`,`CreatedAt`/`UpdatedAt` 沿用 DB `DEFAULT now()` 慣例不用手動帶)
+- 刪除分類時只刪 `WordCategories` 裡對應的關聯列,不動 `Words` 表
+- 驗證:用 `.http`/Swagger 測三支,確認刪除分類後底下的單字還在(只是少了這個分類標籤)
 
-驗證:先寫一個最小的單元測試或直接在 controller 完成後用 `.http` 測。
+### Stage 2 — 單字分頁查詢
 
-### Stage 3 — Controller(mutate 三支 + 查詢一支)
+- `IWordRepository`/`EfWordRepository` 加分頁版查詢方法,支援 `page`/`pageSize`/`categoryId`/`search`,依 `Term` 排序
+- Controller 加 `GET /api/admin/words`(這支可以跟唯讀 API 共用邏輯,只是多了 Admin 權限跟分頁參數;或直接複用現有 `GET /api/words` 的查詢再疊加分頁——實作時再決定要不要重複造輪子)
+- 驗證:造超過一頁的測試資料,確認 `page=2` 能拿到下一批,`search`/`categoryId` 篩選正確
 
-新增 `Controllers/WordProgressController.cs`,`[Authorize]`(全部要登入),`[Route("api/progress")]`,User Id 從 `User.FindFirstValue(ClaimTypes.NameIdentifier)` 取得(比照 `AuthController.Me()`,不從前端傳 userId)。
+### Stage 3 — 單字 CRUD + 分類關聯 transaction
 
-| Method | Route                                 | 用途                                                                                                                                   |
-| ------ | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/progress/category/{categoryId}` | 回傳該使用者在這本書的完整進度清單,前端載入這一輪要練習的卡片時用,也給現有的 `getNewWords`/`getDueWords`/`getCounts` 純函式篩選 |
-| POST   | `/api/progress/batch`                 | body 是純陣列 `[{ wordId, level, isArchived, nextReviewAt }]`(不包 `{ updates: [...] }`),一輪練習結束(或翻到最後一張)才打一次,把整輪算好的最終狀態一次寫進去 |
+- `IWordRepository`/`EfWordRepository` 加 `CreateAsync`/`UpdateAsync`/`DeleteAsync`
+- `UpdateAsync` 內:讀現有 `WordCategories`、跟傳入的 `categoryIds` diff、`AddRange`/`RemoveRange`,整包包在 `_context.Database.BeginTransactionAsync()`(或用 EF Core 7+ 的 execution strategy)
+- `Word.Term` 加 unique index(要新增一支 migration),`UpdateAsync`/`CreateAsync` catch `DbUpdateException` 轉 409
+- 驗證:新增/編輯單字帶不同 `categoryIds` 組合,確認 `WordCategories` 正確增減;故意新增重複單字名稱,確認回 409 而不是 500
 
-中途關頁籤/離開頁面不送出 batch 就當這輪沒發生,不用額外處理「部分送出」或恢復機制。
+### Stage 4 — 前端:`/admin` 路由保護 + nav 顯示
 
-驗證:用 `Nooka.Api.http` 或 Swagger,帶登入後拿到的 `access_token` cookie 測兩支;不帶 cookie 應該回 401。
+- 新增 `frontend/app/middleware/admin.ts`,檢查 `useAuthUser()?.roles` 是否包含 `"Admin"`,沒有就 `navigateTo("/")`
+- `AppNav.vue`:「資料管理」連結只在 `roles` 含 `Admin` 時渲染,`to: "/admin/categories"`
 
-**實作備註(跟原規劃的小差異)**:
+### Stage 5 — 前端:分類管理頁
 
-- 兩支 DTO(`GoogleLoginRequest`、`WordProgressUpdate`)搬到獨立的 `Models/Dtos/` 子資料夾(namespace `Nooka.Api.Models.Dtos`),跟 `Models/` 底下真正對應 DB 表的 entity(`Word`/`Category`/`WordProgress` 等)分開。
-- Controller class 實際命名 `ProgressController`(檔名維持 `WordProgressController.cs`),用 `[Route("api/[controller]")]` 慣例自動產生 `api/Progress` 前綴(routing 不分大小寫,不影響前端打 `/api/progress/...`)。
-- `POST /api/progress/batch` 的 body 已確認是**純陣列** `[{ wordId, level, isArchived, nextReviewAt }]`,不包一層 `{ updates: [...] }`(上面表格已同步更新)。
+- 新增 `frontend/app/pages/admin/categories.vue`,套用 mockup 的列表 + 右側抽屜表單(名稱/描述/顏色)
+- 刪除加二次確認 `UModal`
 
-### Stage 4 — 彙總查詢 `/api/progress/summary`(完成)
+### Stage 6 — 前端:單字管理頁
 
-在 `IWordProgressRepository`/`EfWordProgressRepository` 加 `GetSummaryAsync(int userId)`,跨所有 category 彙總每本書「已精熟(`IsArchived`)/學習中(`Level != null && !IsArchived`)/尚未開始」的數量 + 今天到期(`NextReviewAt <= today`)張數。Controller 加 `GET /api/progress/summary`——**回傳時只回分類後的計數,不回傳原始 `Level` 數字**(前端「學習紀錄」頁不顯示 Lv1~5 這種內部分級)。
+- 新增 `frontend/app/pages/admin/words.vue`,列表(無限捲動,滾到底加載下一頁)+ 篩選列(分類下拉 + 搜尋框)+ 右側抽屜表單(含例句動態新增/刪除、分類多選)
+- 刪除加二次確認 `UModal`
 
-**回傳形狀已定案並建好 DTO**(`Models/Dtos/CategoryProgressSummary.cs`):
-```csharp
-public record CategoryProgressSummary(int CategoryId, string CategoryName, int Familiar, int Learning, int NewWords, int DueToday);
-```
-一個單字只會落在 `Familiar`/`Learning`/`NewWords` 三者之一(互斥);`DueToday` 不是第四種狀態,是 `Learning` 這群裡再篩 `NextReviewAt <= 今天` 的子集合計數,疊加在 `Learning` 之上,不是獨立一批單字。
-
-**完成**:`GetSummaryAsync` 查詢邏輯 + Controller 的 `GET /api/progress/summary` action 都寫完,`dotnet build` 過,實測(帶登入 userId=1 手動測試後已改回 `[Authorize]` + 讀真實 userId)回傳結構正確。已 commit(`feat(backend): 新增單字卡進度彙總查詢 API`)。
-
-驗證:標記幾張卡後打這支 API,人工核對計數對不對。
-
-### Stage 5 — `useFlashcardProgress.ts` 換成打 API(完成)
-
-保留現有四個純函式(`getNewWords`/`getDueWords`/`getCounts`/`getProgress`)的篩選邏輯不變,`markInitialLearning`/`markReviewed`/`resolveLevel5` 這三個狀態轉換函式的計算邏輯也**不變**,但:
-
-- `loadProgressList` 的 localStorage I/O 換成 `GET /api/progress/category/${categoryId}`(用 `useApiFetch`,`credentials: "include"`),讀進來的資料只存在這個 composable 的記憶體狀態(reactive ref)裡。
-- `markInitialLearning`/`markReviewed`/`resolveLevel5` 改成只更新記憶體裡的狀態(邏輯跟原本 localStorage 版本一樣,只是不寫 storage),同時把這筆變動記進一個「待送出」清單(dirty list)。
-- 新增 `submitBatch()`,把 dirty list 整理成純陣列,一輪練習的最後一張卡完成時(或使用者主動結束這輪)呼叫一次 `POST /api/progress/batch`;沒呼叫到就等同這輪沒發生。
-- 讀取(`loadProgressList`)變非同步要 `await`;三個標記函式本身維持同步(純算記憶體狀態),只有 `submitBatch()` 是非同步。
-
-驗證:先不改 UI,console.log 確認一輪結束時才打出一支帶完整 `updates` 陣列的 batch API,中途點擊三選一/今天已複習不會觸發任何網路請求。
-
-**完成**:`progressList`/`dirtyMap` 改成宣告在 `useFlashcardProgress(categoryId)` 內部(每次呼叫都是獨立一份,不會跨分類/跨呼叫互相污染);`loadProgressList` 改打 `GET /api/progress/category/{categoryId}`;`submitBatch()` 打 `POST /api/progress/batch` 後清空 `dirtyMap`;localStorage 相關的 `storageKey`/`saveProgressList` 已刪除。所有 function 也順手改成箭頭函式。已 commit。
-
-### Stage 6 — 呼叫端調整(`practice/index.vue`、`flashcard.vue`)(進行中)
-
-- `practice/index.vue`:`flashcardCounts` 從同步 `computed` 改用 `useAsyncData`;`chooseFlashcardMode` 裡的 `isFirstTimeForBook()` 改成 await。
-- `flashcard.vue`:`sessionWords` 改用 `useAsyncData` 直接抓,原本為了 localStorage/SSR 不一致包的 `<ClientOnly>` 可以拿掉;在最後一張卡完成、或使用者主動結束這輪(例如按返回書架)時呼叫 `submitBatch()`。
-
-驗證:登入後走一次完整流程(學新字三選一 → 複習「今天已複習」→ Lv5 滿級彈窗),重新整理頁面或換瀏覽器登入同帳號,進度應該還在(證明真的存 DB)。
-
-**進行中(2026/09/22)**:
-
-- `practice/index.vue` 整個 `<script setup>` 已照功能重新分組(共用工具 / 書架選書 / 練習模式切換 / 共用題數設定 / 選擇題 Modal / 打字拼寫 Modal / 單字卡 Modal),所有 function 也改成箭頭函式。實測畫面正常、單字卡 Modal 顯示正確的新字數。
-- 新增 `flashcardProgress` computed(依 `selectedId` 建立唯一一份 `useFlashcardProgress` instance,避免每次呼叫都重新產生空的 `progressList`)。
-- `flashcardCounts` 已改成 `useAsyncData`,裡面先 `await flashcardProgress.value.loadProgressList()` 再呼叫 `getCounts`。
-
-**尚未做(明天接續)**:
-
-1. **修 bug**:`flashcardProgress` 的 `computed` 宣告目前寫在 `useAsyncData` 呼叫**之後**(檔案裡的物理順序),`const` 沒有 hoisting,會是 TDZ ReferenceError——要把 `flashcardProgress` 的宣告搬到 `flashcardCounts` 的 `useAsyncData` 之前。
-2. `chooseFlashcardMode` 裡的 `useFlashcardProgress(selectedBook.value.id).isFirstTimeForBook()` 要改成重用 `flashcardProgress.value.isFirstTimeForBook()`,不要再重新呼叫 `useFlashcardProgress(...)` 產生新 instance。
-3. `flashcard.vue` 完全還沒開始改(`sessionWords` 串 API、`submitBatch()` 呼叫時機)。
-
-### Stage 7 — 未登入 = 純瀏覽模式
-
-- `flashcard.vue` 用 `useAuthUser()` 判斷:未登入時不呼叫任何 `/api/progress/*`,單字照表列順序全部顯示,只能翻牌 + 上一張/下一張,不出現三選一按鈕、不出現「今天已複習」按鈕與 Lv 圓點。
-- `practice/index.vue` 的單字卡 UModal:未登入時不顯示「學習新單字/複習已學過的單字」這組,改顯示「先看看這本書的單字」瀏覽入口,導去 `flashcard.vue` 的瀏覽模式(例如 `?mode=browse`)。
-- 不新增登入保護 middleware(維持書架頁本身不擋登入的既有決定),只在單字卡子功能內用 `useAuthUser()` 做 UI 分支。
-
-驗證:登出後開單字卡,應該只能翻牌瀏覽,看不到任何標記按鈕。
-
-### Stage 8 — 「學習紀錄」頁面
-
-- 新增 `frontend/app/pages/progress.vue`,抓 `GET /api/progress/summary`,顯示每本書「已精熟 X 字 / 學習中 Y 字 / 尚未開始 Z 字」+ 今天待複習張數,不出現 Lv1~5 字眼。
-- `AppNav.vue` 把「學習紀錄」的 `to: "#"` 改成 `to: "/progress"`。
-- 未登入訪問這頁:比照 `overview.vue` 現有處理登入態的方式,顯示「登入後查看你的學習進度」。
-
-驗證:標記過的書要出現在頁面上且計數正確,未登入訪問要看到登入提示而不是空白/報錯。
-
-## 決策點總表
-
-| 決策                                | 選擇                                                                | 理由                                                                          |
-| ----------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| 未登入使用者能不能玩單字卡          | 能,但純瀏覽(翻牌看意思),不能標記熟悉度、不記錄進度                  | 進度本來就要綁會員,沒有帳號就沒有東西可以存;選擇題/打字拼寫維持不用登入       |
-| 進度總覽放哪                        | 新頁面 `/progress`,掛在 AppNav 既有的「學習紀錄」佔位連結           | 比 `overview.vue` 的 mock dashboard 更明確對應「學習紀錄」這個既有 nav 入口   |
-| 學習紀錄要不要顯示 Lv1~5            | 不顯示,只顯示「已精熟/學習中/尚未開始」+ 待複習張數                 | Lv1~5 是內部演算法分級,對使用者沒有意義,只會增加認知負荷                      |
-| LIMIT/排序邏輯放前端還是後端        | 維持在前端(`getNewWords`/`getDueWords` 純函式不變),後端只回完整清單 | 單一使用者單本書的進度筆數不大,MVP 先不做這層效能優化,之後有需要再搬進 SQL    |
-| 要不要做 localStorage → DB 資料搬遷 | 不用                                                                | MVP 尚未上線,現有 localStorage 資料是開發測試產生的,直接讓新版本改吃 API 即可 |
-| 進度 API 呼叫時機                   | 一輪練習結束才打一次 batch API,不是每次點擊三選一/今天已複習都打    | 頻繁單次呼叫對前後端流量都是不必要負擔;使用者確認不在意「中途關頁籤導致這輪進度遺失」,所以不需要逐步存檔換取容錯 |
-
-## 涉及檔案
+## 涉及檔案(還沒動工,先列出預期會碰到的)
 
 **後端**
 
-- `backend/Nooka.Api/Models/WordProgress.cs`(新增)
-- `backend/Nooka.Api/Data/AppDbContext.cs`(修改)
-- `backend/Nooka.Api/Migrations/`(新增 `AddWordProgress`)
-- `backend/Nooka.Api/Repositories/IWordProgressRepository.cs`、`EfWordProgressRepository.cs`(新增)
-- `backend/Nooka.Api/Controllers/WordProgressController.cs`(新增)
-- `backend/Nooka.Api/Program.cs`(DI 註冊)
+- `backend/Nooka.Api/Controllers/AdminCategoriesController.cs`(新增)
+- `backend/Nooka.Api/Controllers/AdminWordsController.cs`(新增)
+- `backend/Nooka.Api/Repositories/ICategoryRepository.cs`、`EfCategoryRepository.cs`(修改,加 CUD 方法)
+- `backend/Nooka.Api/Repositories/IWordRepository.cs`、`EfWordRepository.cs`(修改,加分頁查詢 + CUD 方法)
+- `backend/Nooka.Api/Migrations/`(新增:`Word.Term` unique index)
 - `backend/Nooka.Api/Nooka.Api.http`(新增測試請求)
 
 **前端**
 
-- `frontend/app/composables/useFlashcardProgress.ts`(改寫成打 API)
-- `frontend/app/pages/practice/index.vue`(async 化 + 未登入分支)
-- `frontend/app/pages/practice/[categoryId]/flashcard.vue`(async 化 + 未登入純瀏覽模式)
-- `frontend/app/pages/progress.vue`(新增)
-- `frontend/app/components/AppNav.vue`(「學習紀錄」連結)
+- `frontend/app/middleware/admin.ts`(新增)
+- `frontend/app/pages/admin/categories.vue`(新增)
+- `frontend/app/pages/admin/words.vue`(新增)
+- `frontend/app/components/AppNav.vue`(修改,加「資料管理」條件式連結)
+- `frontend/app/types/auth.ts`/`practice.ts`(視情況新增 Admin CRUD 相關型別)
 
 ## 驗證方式
 
-- 登入後標記幾張 Lv1/Lv2,重新整理頁面、或換瀏覽器再登入同一帳號,進度應該還在(證明真的存 DB 而不是 localStorage)。
-- 登出後開同一本書單字卡,應該只能翻牌瀏覽,看不到三選一/今天已複習按鈕。
-- 「學習紀錄」頁面能看到剛剛標記過的書出現對應的計數,且畫面上不出現 Lv1~Lv5 這種字眼。
-- 後端可用 `.http`/Swagger 直接呼叫 `/api/progress/*` 系列 API,確認 `[Authorize]` 生效(未帶 cookie 應該 401)。
+- 非 Admin 帳號(或未登入)打 `/api/admin/*` 應該 401/403;直接網址硬進 `/admin/*` 應該被導回首頁
+- Admin 帳號能新增/編輯/刪除分類跟單字,列表跟練習頁(`/practice`)看到的資料同步更新
+- 刪除分類後,原本屬於這個分類的單字還能在單字管理列表查到(只是分類標籤消失)
+- 新增重複單字名稱應該顯示明確錯誤訊息,不是白畫面或 500
+- 單字管理頁捲到底能載入下一頁,搜尋/分類篩選正常運作
 
-完成後回頭更新 `CLAUDE.md`:A-1 狀態改成完成,補上 `WordProgress` 表 + 相關 API 到「已完成的基礎建設」,記錄「未登入 = 純瀏覽,登入才記錄進度」這條規則。
+完成後回頭更新 `CLAUDE.md`:C 大項狀態改成完成,補上 Admin API + 後台頁面到「已完成的基礎建設」,並把開發順序往下推進到 D(SM-2)。
 
 TODO: 待學習資訊
 

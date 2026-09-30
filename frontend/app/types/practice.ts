@@ -7,7 +7,7 @@ export interface Category {
   updatedAt: string
 }
 
-export interface CategoryProgressSummary {
+export interface CategoryProgressSummaryResponse {
   categoryId: number
   categoryName: string
   familiar: number

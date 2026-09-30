@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Nooka.Api.Data;
 using Nooka.Api.Models;
-using Nooka.Api.Models.Dtos;
+using Nooka.Api.Models.Dtos.Request;
+using Nooka.Api.Models.Dtos.Response;
 
 public class EfWordProgressRepository : IWordProgressRepository
 {
@@ -16,7 +17,7 @@ public class EfWordProgressRepository : IWordProgressRepository
         var wordIds = _context.WordCategories.Where(wc => wc.CategoryId == categoryId).Select(wc => wc.WordId);
         return await _context.WordProgresses.Where(wp => wp.UserId == userId && wordIds.Contains(wp.WordId)).ToListAsync();
     }
-    public async Task BatchUpsertAsync(int userId, List<WordProgressUpdate> updates)
+    public async Task BatchUpsertAsync(int userId, List<WordProgressUpdateRequest> updates)
     {
         var wordIds = updates.Select(u => u.WordId).ToList();
 
@@ -49,7 +50,7 @@ public class EfWordProgressRepository : IWordProgressRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task<List<CategoryProgressSummary>> GetSummaryAsync(int userId)
+    public async Task<List<CategoryProgressSummaryResponse>> GetSummaryAsync(int userId)
     {
         var totalWordCount = await _context.WordCategories
         .GroupBy(wc => wc.CategoryId)
@@ -80,7 +81,7 @@ public class EfWordProgressRepository : IWordProgressRepository
             int dueToday = progress?.DueToday ?? 0;
             int newWords = t.Total - familiar - learning;
 
-            return new CategoryProgressSummary(t.CategoryId, categoryName, familiar, learning, newWords, dueToday);
+            return new CategoryProgressSummaryResponse(t.CategoryId, categoryName, familiar, learning, newWords, dueToday);
         }).ToList();
         return result;
     }
