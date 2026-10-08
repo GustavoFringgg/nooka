@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Nooka.Api.Data;
 using Nooka.Api.Models;
+using Nooka.Api.Models.Dtos.Response;
+
 public class EfWordRepository : IWordRepository
 {
 
@@ -89,5 +91,48 @@ public class EfWordRepository : IWordRepository
         }
         else
         { return false; }
+    }
+
+    public async Task<PagedResponse<AdminWordResponse>> GetPagedAsync(int page, int pageSize, int? categoryId, string? keyword)
+    {
+        var query = _context.Words.AsQueryable();
+        // _context.Words => DbSet<Word> 所以要轉成 IQueryable<Word> 使用 .AsQueryable()
+        if (categoryId != null)
+        {
+            var wordIds = _context.WordCategories.Where(wc => wc.CategoryId == categoryId).Select(wc => wc.WordId);
+            query = query.Where(w => wordIds.Contains(w.Id));
+        }
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            query = query.Where(w => EF.Functions.ILike(w.Term, $"%{keyword}%"));
+        }
+        var totalCount = await query.CountAsync();
+        var words = await query
+                .OrderBy(w => w.Term)
+                .Skip((page - 1) * pageSize) // 先跳過前 ex 20 筆
+                .Take(pageSize) // 再從那裡開始取 ex 20 筆
+                .ToListAsync();
+
+        var pageWordIds = words.Select(w => w.Id).ToList();
+        var wordCategories = await _context.WordCategories
+                .Where(wc => pageWordIds.Contains(wc.WordId))
+                .ToListAsync();
+
+        var categoryIdsByWord = wordCategories
+                .GroupBy(wc => wc.WordId)
+                .ToDictionary(g => g.Key, g => g.Select(wc => wc.CategoryId).ToList());
+
+        var items = words.Select(w => new AdminWordResponse(
+                w.Id,
+                w.Term,
+                w.DefinitionCN,
+                w.DefinitionEN,
+                w.PartOfSpeech,
+                w.Examples,
+                w.Ipa,
+                categoryIdsByWord.GetValueOrDefault(w.Id) ?? new List<int>()
+        )).ToList();
+
+        return new PagedResponse<AdminWordResponse>(items, totalCount);
     }
 }

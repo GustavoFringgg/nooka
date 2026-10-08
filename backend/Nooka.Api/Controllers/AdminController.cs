@@ -146,4 +146,14 @@ public class AdminController : ControllerBase
         { return NotFound(); }
     }
 
+    [HttpGet("words")]
+    public async Task<IActionResult> GetWords(int page = 1, int pageSize = 20, int? categoryId = null, string? keyword = null)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 100) pageSize = 100;
+
+        var result = await _wordRepository.GetPagedAsync(page, pageSize, categoryId, keyword);
+        return Ok(result);
+    }
 }
