@@ -13,12 +13,18 @@ const confirmLogout = async () => {
   isLogoutModalOpen.value = false
   await logout()
 }
-const links = [
-  { label: "首頁", to: "/" },
-  { label: "總覽", to: "/overview" },
-  { label: "書架", to: "/practice" },
-  { label: "學習紀錄", to: "/progress" }
-]
+const links = computed(() => {
+  const base = [
+    { label: "首頁", to: "/" },
+    { label: "總覽", to: "/overview" },
+    { label: "書架", to: "/practice" },
+    { label: "學習紀錄", to: "/progress" }
+  ]
+  if (loggedIn.value?.roles.includes("Admin")) {
+    base.push({ label: "資料管理", to: "/admin/categories" })
+  }
+  return base
+})
 
 const ctaLabel = computed(() => (loggedIn.value ? "登出" : "登入 / 註冊"))
 const handleCtaClick = async () => {
