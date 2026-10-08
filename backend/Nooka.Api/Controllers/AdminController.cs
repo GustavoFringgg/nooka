@@ -18,6 +18,13 @@ public class AdminController : ControllerBase
         _wordRepository = wordRepository;
     }
 
+    [HttpGet("categories")]
+    public async Task<IActionResult> GetCategories()
+    {
+        var result = await _categoryRepository.GetAllWithWordCountAsync();
+        return Ok(result);
+    }
+
     [HttpPost("categories")]
     public async Task<IActionResult> CreateCategory(Category category)
     {

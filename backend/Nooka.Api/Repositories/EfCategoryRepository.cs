@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Nooka.Api.Data;
 using Nooka.Api.Models;
+using Nooka.Api.Models.Dtos.Response;
 
 public class EfCategoryRepository : ICategoryRepository
 {
@@ -55,5 +56,25 @@ public class EfCategoryRepository : ICategoryRepository
         }
         else
         { return false; }
+    }
+
+    public async Task<List<AdminCategoryResponse>> GetAllWithWordCountAsync()
+    {
+        var counts = await _context.WordCategories
+            .GroupBy(wc => wc.CategoryId)
+            .Select(g => new { CategoryId = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        var categories = await _context.Categories.OrderBy(c => c.Id).ToListAsync();
+
+        var countByCategory = counts.ToDictionary(c => c.CategoryId, c => c.Count);
+
+        return categories.Select(c => new AdminCategoryResponse(
+            c.Id,
+            c.Name,
+            c.Description,
+            c.Color,
+            c.UpdatedAt,
+            countByCategory.GetValueOrDefault(c.Id, 0))).ToList();
     }
 }
