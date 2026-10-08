@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Nooka.Api.Models;
 using Nooka.Api.Models.Dtos.Request;
 
@@ -21,8 +23,19 @@ public class AdminController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(category.Name))
             return BadRequest("名稱不能空白");
-        var newCategory = await _categoryRepository.CreateAsync(category);
-        return Ok(newCategory);
+        try
+        {
+            var newCategory = await _categoryRepository.CreateAsync(category);
+            return Ok(newCategory);
+        }
+        catch (DbUpdateException ex)
+        {
+            if (ex.InnerException is PostgresException { SqlState: "23505" })
+            {
+                return Conflict("此書籍已存在");
+            }
+            throw;
+        }
     }
 
 
@@ -35,14 +48,25 @@ public class AdminController : ControllerBase
         }
         if (string.IsNullOrWhiteSpace(category.Name))
             return BadRequest("名稱不能空白");
-        var newCategory = await _categoryRepository.UpdateAsync(id, category);
-        if (newCategory != null)
+        try
         {
-            return Ok(newCategory);
+            var newCategory = await _categoryRepository.UpdateAsync(id, category);
+            if (newCategory != null)
+            {
+                return Ok(newCategory);
+            }
+            else
+            {
+                return NotFound();
+            }
         }
-        else
+        catch (DbUpdateException ex)
         {
-            return NotFound();
+            if (ex.InnerException is PostgresException { SqlState: "23505" })
+            {
+                return Conflict("此書籍已存在");
+            }
+            throw;
         }
     }
 
@@ -66,8 +90,19 @@ public class AdminController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(request.Word.Term))
             return BadRequest("名稱不能空白");
-        var newWord = await _wordRepository.CreateAsync(request.Word, request.CategoryIds);
-        return Ok(newWord);
+        try
+        {
+            var newWord = await _wordRepository.CreateAsync(request.Word, request.CategoryIds);
+            return Ok(newWord);
+        }
+        catch (DbUpdateException ex)
+        {
+            if (ex.InnerException is PostgresException { SqlState: "23505" })
+            {
+                return Conflict("此單字已存在");
+            }
+            throw;
+        }
     }
 
     [HttpPut("words/{id}")]
@@ -79,14 +114,25 @@ public class AdminController : ControllerBase
         }
         if (string.IsNullOrWhiteSpace(request.Word.Term))
             return BadRequest("名稱不能空白");
-        var newWord = await _wordRepository.UpdateAsync(id, request.Word, request.CategoryIds);
-        if (newWord != null)
+        try
         {
-            return Ok(newWord);
+            var newWord = await _wordRepository.UpdateAsync(id, request.Word, request.CategoryIds);
+            if (newWord != null)
+            {
+                return Ok(newWord);
+            }
+            else
+            {
+                return NotFound();
+            }
         }
-        else
+        catch (DbUpdateException ex)
         {
-            return NotFound();
+            if (ex.InnerException is PostgresException { SqlState: "23505" })
+            {
+                return Conflict("此單字已存在");
+            }
+            throw;
         }
     }
 
