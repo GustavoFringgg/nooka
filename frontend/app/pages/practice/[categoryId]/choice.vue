@@ -331,14 +331,6 @@ function restartQuiz() {
     <UModal
       v-model:open="isReviewOpen"
       title="答錯了,來看看正確答案"
-      :ui="{
-        content: 'bg-paper-bg text-paper-fg ring-paper-fg/10 divide-paper-fg/10',
-        header: 'border-paper-fg/10',
-        footer: 'border-paper-fg/10',
-        title: 'text-paper-fg font-display text-2xl font-normal',
-        close: 'text-paper-muted hover:bg-paper-fg/10 hover:text-paper-fg',
-        overlay: 'bg-paper-fg/40'
-      }"
     >
       <template #body>
         <div class="space-y-4">

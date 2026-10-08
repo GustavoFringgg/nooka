@@ -1,40 +1,55 @@
 <script setup lang="ts">
+import type { AdminCategory } from "~/types/admin"
 definePageMeta({ layout: "admin", middleware: "admin" })
+const toast = useToast()
 
-// 切版階段:資料全部是假資料,按鈕只控制抽屜/彈窗的開關,還沒串 API。
-// 之後串功能時:categories 改成打 GET /api/categories,儲存/刪除改打 /api/admin/categories。
-interface CategoryRow {
-  id: number
-  name: string
-  description: string
-  color: string
-  wordCount: number
-  updatedAt: string
-}
-
-const categories = ref<CategoryRow[]>([
-  {
-    id: 1,
-    name: "TOEIC",
-    description: "多益核心單字,涵蓋職場、商務情境常見詞彙",
-    color: "#b5651d",
-    wordCount: 128,
-    updatedAt: "2026/09/20"
-  },
-  {
-    id: 2,
-    name: "TOEIC(600)",
-    description: "",
-    color: "#8a7a3e",
-    wordCount: 86,
-    updatedAt: "2026/09/18"
-  },
-  { id: 3, name: "航空英文", description: "", color: "#3e6e8e", wordCount: 54, updatedAt: "2026/09/12" },
-  { id: 4, name: "工程英文", description: "", color: "#6b4c6e", wordCount: 37, updatedAt: "2026/09/05" },
-  { id: 5, name: "資安英文", description: "", color: "#2f6e6b", wordCount: 22, updatedAt: "2026/08/29" }
-])
+const { data: categories, refresh } = await useAsyncData("admin-categories", () =>
+  useApiFetch<AdminCategory[]>("/api/admin/categories")
+)
 
 const swatches = ["#b5651d", "#8a7a3e", "#3e6e8e", "#6b4c6e", "#2f6e6b", "#3c5a44", "#c1653b", "#9c4a4a"]
+
+const isSaving = ref(false)
+const saveError = ref("")
+
+const saveCategory = async () => {
+  if (!form.name.trim()) {
+    saveError.value = "名稱不能空白"
+    return
+  }
+
+  isSaving.value = true
+  saveError.value = ""
+  const isEditing = editingId.value !== null
+  const body = {
+    name: form.name.trim(),
+    description: form.description || null,
+    color: form.color
+  }
+  try {
+    if (isEditing) {
+      await useApiFetch(`/api/admin/categories/${editingId.value}`, {
+        method: "PUT",
+        body: { id: editingId.value, ...body }
+      })
+    } else {
+      await useApiFetch("/api/admin/categories", { method: "POST", body })
+    }
+
+    isDrawerOpen.value = false
+    await refresh()
+    toast.add({ title: isEditing ? "已更新書籍" : "已新增書籍", color: "success" })
+  } catch (error) {
+    const err = error as { statusCode?: number; data?: string }
+    if (err.statusCode === 409) {
+      saveError.value = err.data ?? "此書籍已存在"
+    } else {
+      toast.add({ title: "儲存失敗，請稍後再試", color: "error" })
+    }
+  } finally {
+    isSaving.value = false
+  }
+}
 
 // ---- 抽屜表單(新增跟編輯共用同一張表單)----
 const isDrawerOpen = ref(false)
@@ -48,19 +63,21 @@ const openCreate = () => {
   form.name = ""
   form.description = ""
   form.color = swatches[0] as string
+  saveError.value = ""
   isDrawerOpen.value = true
 }
 
-const openEdit = (category: CategoryRow) => {
+const openEdit = (category: AdminCategory) => {
   editingId.value = category.id
   form.name = category.name
-  form.description = category.description
-  form.color = category.color
+  form.description = category.description ?? ""
+  form.color = category.color ?? (swatches[0] as string)
+  saveError.value = ""
   isDrawerOpen.value = true
 }
 
 // ---- 刪除確認彈窗 ----
-const deleteTarget = ref<CategoryRow | null>(null)
+const deleteTarget = ref<AdminCategory | null>(null)
 const isDeleteModalOpen = computed({
   get: () => deleteTarget.value !== null,
   set: (open: boolean) => {
@@ -68,14 +85,35 @@ const isDeleteModalOpen = computed({
   }
 })
 
-const modalUi = {
-  content: "bg-paper-bg text-paper-fg ring-paper-fg/10 divide-paper-fg/10",
-  header: "border-paper-fg/10",
-  footer: "border-paper-fg/10",
-  title: "text-paper-fg font-display text-2xl font-normal",
-  close: "text-paper-muted hover:bg-paper-fg/10 hover:text-paper-fg",
-  overlay: "bg-paper-fg/40"
+const isDeleting = ref(false)
+
+const confirmDelete = async () => {
+  if (!deleteTarget.value) return
+
+  isDeleting.value = true
+  const { id, name } = deleteTarget.value
+
+  try {
+    await useApiFetch(`/api/admin/categories/${id}`, { method: "DELETE" })
+    deleteTarget.value = null
+    await refresh()
+    toast.add({ title: `已刪除 ${name}`, color: "success" })
+  } catch (error) {
+    const err = error as { statusCode?: number }
+    if (err.statusCode === 404) {
+      deleteTarget.value = null
+      await refresh()
+      toast.add({ title: "這個分類已經不存在", color: "warning" })
+    } else {
+      toast.add({ title: "刪除失敗，請稍後再試", color: "error" })
+    }
+  } finally {
+    isDeleting.value = false
+  }
 }
+
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("zh-TW", { year: "numeric", month: "2-digit", day: "2-digit" })
 </script>
 
 <template>
@@ -105,16 +143,16 @@ const modalUi = {
       </div>
 
       <div
-        v-for="category in categories"
+        v-for="category in categories ?? []"
         :key="category.id"
         class="grid grid-cols-[64px_1fr_140px_160px_140px] items-center border-t border-paper-fg/8 text-sm"
       >
         <div class="px-5 py-4">
-          <span class="inline-block size-5 rounded-md" :style="{ backgroundColor: category.color }"></span>
+          <span class="inline-block size-5 rounded-md" :style="{ backgroundColor: category.color ?? '#d9d2c3' }"></span>
         </div>
         <div class="px-5 py-4 font-display italic text-base">{{ category.name }}</div>
         <div class="px-5 py-4">{{ category.wordCount }}</div>
-        <div class="px-5 py-4">{{ category.updatedAt }}</div>
+        <div class="px-5 py-4">{{ formatDate(category.updatedAt) }}</div>
         <div class="px-5 py-4 flex gap-3.5 text-[13px]">
           <button type="button" class="text-paper-primary cursor-pointer hover:underline" @click="openEdit(category)">
             編輯
@@ -137,13 +175,10 @@ const modalUi = {
     side="right"
     :title="drawerTitle"
     :ui="{
-      content: 'w-full max-w-120 bg-[#fdfbf6] text-paper-fg ring-paper-fg/10',
-      header: 'border-b border-paper-fg/10 px-7 py-6',
-      title: 'text-paper-fg font-display italic text-xl font-normal',
-      close: 'text-paper-muted hover:bg-paper-fg/10 hover:text-paper-fg',
+      content: 'w-full max-w-120 bg-[#fdfbf6]',
+      header: 'px-7 py-6',
       body: 'px-7 py-6',
-      footer: 'border-t border-paper-fg/10 px-7 py-4.5',
-      overlay: 'bg-paper-fg/35'
+      footer: 'px-7 py-4.5'
     }"
   >
     <template #body>
@@ -156,6 +191,7 @@ const modalUi = {
             type="text"
             class="w-full rounded-[10px] border border-paper-fg/20 bg-white px-3 py-2.25 text-sm focus:outline-2 focus:outline-offset-1 focus:outline-paper-primary"
           />
+          <p v-if="saveError" class="mt-1.5 text-xs text-paper-accent">{{ saveError }}</p>
         </div>
 
         <div>
@@ -213,7 +249,8 @@ const modalUi = {
         <button
           type="button"
           class="flex-2 cursor-pointer rounded-[10px] bg-paper-primary py-2.75 text-sm font-medium text-paper-bg"
-          @click="isDrawerOpen = false"
+          @click="saveCategory"
+          :disabled="isSaving"
         >
           儲存
         </button>
@@ -222,10 +259,10 @@ const modalUi = {
   </USlideover>
 
   <!-- 刪除確認彈窗 -->
-  <UModal v-model:open="isDeleteModalOpen" title="確定要刪除這個分類嗎？" :ui="modalUi">
+  <UModal v-model:open="isDeleteModalOpen" title="確定要刪除這個分類嗎？">
     <template #body>
       <p class="text-[15px] leading-relaxed text-paper-muted">
-        「{{ deleteTarget?.name }}」會從書架上移除,裡面的單字本身不會被刪除。
+        {{ deleteTarget?.name }} 將從書架上移除，裡面的單字本身不會被刪除
       </p>
     </template>
     <template #footer>
@@ -240,7 +277,8 @@ const modalUi = {
         <UButton
           label="刪除"
           class="flex-1 justify-center bg-paper-accent text-paper-bg hover:bg-[#a8552f]"
-          @click="deleteTarget = null"
+          :loading="isDeleting"
+          @click="confirmDelete"
         />
       </div>
     </template>

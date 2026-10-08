@@ -316,15 +316,6 @@ const resolveLevel5 = (action: "graduate" | "restart") => {
       v-model:open="isLevel5ModalOpen"
       title="這張卡你已經很熟了！"
       :description="`「${currentWord?.term ?? ''}」已經連續答對很多次,代表你已經記得很熟了。要把它畢業封存,還是重新從頭學一次？`"
-      :ui="{
-        content: 'bg-paper-bg text-paper-fg ring-paper-fg/10 divide-paper-fg/10',
-        header: 'border-paper-fg/10',
-        footer: 'border-paper-fg/10',
-        title: 'text-paper-fg font-display text-2xl font-normal',
-        description: 'text-paper-muted',
-        close: 'text-paper-muted hover:bg-paper-fg/10 hover:text-paper-fg',
-        overlay: 'bg-paper-fg/40'
-      }"
     >
       <template #footer>
         <div class="flex flex-col gap-2 w-full">

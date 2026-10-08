@@ -175,13 +175,7 @@ const flashcardModalDescription = computed(() => {
 })
 
 const flashcardModalUi = computed(() => ({
-  content: `bg-paper-bg text-paper-fg ring-paper-fg/10 divide-paper-fg/10 ${flashcardStep.value === "intro" ? "sm:max-w-xl" : ""}`,
-  header: "border-paper-fg/10",
-  footer: "border-paper-fg/10",
-  title: "text-paper-fg font-display text-2xl font-normal",
-  description: "text-paper-muted",
-  close: "text-paper-muted hover:bg-paper-fg/10 hover:text-paper-fg",
-  overlay: "bg-paper-fg/40"
+  content: flashcardStep.value === "intro" ? "sm:max-w-xl" : ""
 }))
 
 const introDemoRef = ref<HTMLElement | null>(null)
@@ -334,7 +328,7 @@ const goToFlashcard = () => {
 
         <div class="flex-1 min-h-0 pb-8 flex flex-col lg:flex-row gap-12">
           <div
-            class="styled-scrollbar lg:flex-[1.15] h-full min-h-0 grid grid-cols-2 gap-6 box-border overflow-y-auto pt-7 pr-1"
+            class="styled-scrollbar lg:flex-[1.15] h-full min-h-0 grid grid-cols-2 gap-6 content-start box-border overflow-y-auto pt-7 pr-1"
           >
             <div
               v-for="{ book, stats } in booksWithStats"
@@ -454,15 +448,6 @@ const goToFlashcard = () => {
       v-model:open="isChoiceModalOpen"
       title="練習方向"
       description="選擇練習方向與題數,設定好就可以開始測驗"
-      :ui="{
-        content: 'bg-paper-bg text-paper-fg ring-paper-fg/10 divide-paper-fg/10',
-        header: 'border-paper-fg/10',
-        footer: 'border-paper-fg/10',
-        title: 'text-paper-fg font-display text-2xl font-normal',
-        description: 'text-paper-muted',
-        close: 'text-paper-muted hover:bg-paper-fg/10 hover:text-paper-fg',
-        overlay: 'bg-paper-fg/40'
-      }"
     >
       <template #body>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-7">
@@ -551,15 +536,6 @@ const goToFlashcard = () => {
       v-model:open="isTypingModalOpen"
       title="練習題數"
       description="選擇題數,設定好就可以開始測驗"
-      :ui="{
-        content: 'bg-paper-bg text-paper-fg ring-paper-fg/10 divide-paper-fg/10',
-        header: 'border-paper-fg/10',
-        footer: 'border-paper-fg/10',
-        title: 'text-paper-fg font-display text-2xl font-normal',
-        description: 'text-paper-muted',
-        close: 'text-paper-muted hover:bg-paper-fg/10 hover:text-paper-fg',
-        overlay: 'bg-paper-fg/40'
-      }"
     >
       <template #body>
         <div class="mt-7 pt-6">

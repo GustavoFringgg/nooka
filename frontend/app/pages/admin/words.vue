@@ -141,15 +141,6 @@ const isDeleteModalOpen = computed({
   }
 })
 
-const modalUi = {
-  content: "bg-paper-bg text-paper-fg ring-paper-fg/10 divide-paper-fg/10",
-  header: "border-paper-fg/10",
-  footer: "border-paper-fg/10",
-  title: "text-paper-fg font-display text-2xl font-normal",
-  close: "text-paper-muted hover:bg-paper-fg/10 hover:text-paper-fg",
-  overlay: "bg-paper-fg/40"
-}
-
 const inputClass =
   "w-full rounded-[10px] border border-paper-fg/20 bg-white px-3 py-2.25 text-sm focus:outline-2 focus:outline-offset-1 focus:outline-paper-primary"
 </script>
@@ -240,13 +231,10 @@ const inputClass =
     side="right"
     :title="drawerTitle"
     :ui="{
-      content: 'w-full max-w-140 bg-[#fdfbf6] text-paper-fg ring-paper-fg/10',
-      header: 'border-b border-paper-fg/10 px-7 py-6',
-      title: 'text-paper-fg font-display italic text-xl font-normal',
-      close: 'text-paper-muted hover:bg-paper-fg/10 hover:text-paper-fg',
+      content: 'w-full max-w-140 bg-[#fdfbf6]',
+      header: 'px-7 py-6',
       body: 'px-7 py-6',
-      footer: 'border-t border-paper-fg/10 px-7 py-4.5',
-      overlay: 'bg-paper-fg/35'
+      footer: 'px-7 py-4.5'
     }"
   >
     <template #body>
@@ -346,7 +334,7 @@ const inputClass =
   </USlideover>
 
   <!-- 刪除確認彈窗 -->
-  <UModal v-model:open="isDeleteModalOpen" title="確定要刪除這個單字嗎？" :ui="modalUi">
+  <UModal v-model:open="isDeleteModalOpen" title="確定要刪除這個單字嗎？">
     <template #body>
       <p class="text-[15px] leading-relaxed text-paper-muted">
         「{{ deleteTarget?.term }}」會從所有書本中移除,無法復原。

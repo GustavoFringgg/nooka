@@ -36,6 +36,7 @@ public class EfCategoryRepository : ICategoryRepository
             existingCategory.Name = category.Name;
             existingCategory.Color = category.Color;
             existingCategory.Description = category.Description;
+            existingCategory.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
         else

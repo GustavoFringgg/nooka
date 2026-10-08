@@ -21,6 +21,35 @@
   --color-night-muted: #8fa3c2;
 }
 
+/*
+ * Nuxt UI 全域主題:把 Nuxt UI 元件用的 CSS 變數對到 Paper Palette,
+ * 之後 UModal / UButton / UToast / USlideover 預設就是米白紙張風,不用每個元件各自 :ui 覆蓋。
+ * 這段刻意寫在 @layer 外面:沒有 layer 的規則優先於 Nuxt UI 放在 @layer theme 裡的預設值。
+ */
+:root {
+  --ui-primary: var(--color-paper-primary);
+  --ui-success: var(--color-paper-primary);
+  --ui-error: var(--color-paper-accent);
+
+  --ui-bg: var(--color-paper-bg);
+  --ui-bg-muted: var(--color-paper-bg-alt);
+  --ui-bg-elevated: color-mix(in srgb, var(--color-paper-fg) 8%, transparent);
+  --ui-bg-accented: color-mix(in srgb, var(--color-paper-fg) 12%, transparent);
+  --ui-bg-inverted: var(--color-paper-fg);
+
+  --ui-text: var(--color-paper-fg);
+  --ui-text-highlighted: var(--color-paper-fg);
+  --ui-text-toned: var(--color-paper-muted);
+  --ui-text-muted: var(--color-paper-muted);
+  --ui-text-dimmed: #9c9384;
+  --ui-text-inverted: var(--color-paper-bg);
+
+  --ui-border: color-mix(in srgb, var(--color-paper-fg) 10%, transparent);
+  --ui-border-muted: color-mix(in srgb, var(--color-paper-fg) 10%, transparent);
+  --ui-border-accented: color-mix(in srgb, var(--color-paper-fg) 20%, transparent);
+  --ui-border-inverted: var(--color-paper-fg);
+}
+
 @layer components {
   /* 標準版 liquid-glass,對應原本 mixin 預設值 0.03 / 0.08 / 0.12 */
   .liquid-glass {
