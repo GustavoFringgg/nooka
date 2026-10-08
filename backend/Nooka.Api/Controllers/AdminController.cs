@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Nooka.Api.Models;
 using Nooka.Api.Models.Dtos.Request;
 
@@ -16,13 +18,31 @@ public class AdminController : ControllerBase
         _wordRepository = wordRepository;
     }
 
+    [HttpGet("categories")]
+    public async Task<IActionResult> GetCategories()
+    {
+        var result = await _categoryRepository.GetAllWithWordCountAsync();
+        return Ok(result);
+    }
+
     [HttpPost("categories")]
     public async Task<IActionResult> CreateCategory(Category category)
     {
         if (string.IsNullOrWhiteSpace(category.Name))
             return BadRequest("名稱不能空白");
-        var newCategory = await _categoryRepository.CreateAsync(category);
-        return Ok(newCategory);
+        try
+        {
+            var newCategory = await _categoryRepository.CreateAsync(category);
+            return Ok(newCategory);
+        }
+        catch (DbUpdateException ex)
+        {
+            if (ex.InnerException is PostgresException { SqlState: "23505" })
+            {
+                return Conflict("此書籍已存在");
+            }
+            throw;
+        }
     }
 
 
@@ -35,14 +55,25 @@ public class AdminController : ControllerBase
         }
         if (string.IsNullOrWhiteSpace(category.Name))
             return BadRequest("名稱不能空白");
-        var newCategory = await _categoryRepository.UpdateAsync(id, category);
-        if (newCategory != null)
+        try
         {
-            return Ok(newCategory);
+            var newCategory = await _categoryRepository.UpdateAsync(id, category);
+            if (newCategory != null)
+            {
+                return Ok(newCategory);
+            }
+            else
+            {
+                return NotFound();
+            }
         }
-        else
+        catch (DbUpdateException ex)
         {
-            return NotFound();
+            if (ex.InnerException is PostgresException { SqlState: "23505" })
+            {
+                return Conflict("此書籍已存在");
+            }
+            throw;
         }
     }
 
@@ -66,8 +97,19 @@ public class AdminController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(request.Word.Term))
             return BadRequest("名稱不能空白");
-        var newWord = await _wordRepository.CreateAsync(request.Word, request.CategoryIds);
-        return Ok(newWord);
+        try
+        {
+            var newWord = await _wordRepository.CreateAsync(request.Word, request.CategoryIds);
+            return Ok(newWord);
+        }
+        catch (DbUpdateException ex)
+        {
+            if (ex.InnerException is PostgresException { SqlState: "23505" })
+            {
+                return Conflict("此單字已存在");
+            }
+            throw;
+        }
     }
 
     [HttpPut("words/{id}")]
@@ -79,14 +121,25 @@ public class AdminController : ControllerBase
         }
         if (string.IsNullOrWhiteSpace(request.Word.Term))
             return BadRequest("名稱不能空白");
-        var newWord = await _wordRepository.UpdateAsync(id, request.Word, request.CategoryIds);
-        if (newWord != null)
+        try
         {
-            return Ok(newWord);
+            var newWord = await _wordRepository.UpdateAsync(id, request.Word, request.CategoryIds);
+            if (newWord != null)
+            {
+                return Ok(newWord);
+            }
+            else
+            {
+                return NotFound();
+            }
         }
-        else
+        catch (DbUpdateException ex)
         {
-            return NotFound();
+            if (ex.InnerException is PostgresException { SqlState: "23505" })
+            {
+                return Conflict("此單字已存在");
+            }
+            throw;
         }
     }
 
@@ -100,4 +153,14 @@ public class AdminController : ControllerBase
         { return NotFound(); }
     }
 
+    [HttpGet("words")]
+    public async Task<IActionResult> GetWords(int page = 1, int pageSize = 20, int? categoryId = null, string? keyword = null)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 100) pageSize = 100;
+
+        var result = await _wordRepository.GetPagedAsync(page, pageSize, categoryId, keyword);
+        return Ok(result);
+    }
 }

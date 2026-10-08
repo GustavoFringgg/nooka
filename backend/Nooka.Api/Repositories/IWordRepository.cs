@@ -1,4 +1,5 @@
 using Nooka.Api.Models;
+using Nooka.Api.Models.Dtos.Response;
 public interface IWordRepository
 {
     Task<IEnumerable<Word>> GetAllAsync(); //
@@ -10,5 +11,6 @@ public interface IWordRepository
     Task<Word> CreateAsync(Word word, List<int> categoryIds);
     Task<Word?> UpdateAsync(int id, Word word, List<int> categoryIds);
     Task<bool> DeleteAsync(int id);
+    Task<PagedResponse<AdminWordResponse>> GetPagedAsync(int page, int pageSize, int? categoryId, string? keyword);
 
 }

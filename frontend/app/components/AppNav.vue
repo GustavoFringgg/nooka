@@ -13,12 +13,18 @@ const confirmLogout = async () => {
   isLogoutModalOpen.value = false
   await logout()
 }
-const links = [
-  { label: "首頁", to: "/" },
-  { label: "總覽", to: "/overview" },
-  { label: "書架", to: "/practice" },
-  { label: "學習紀錄", to: "/progress" }
-]
+const links = computed(() => {
+  const base = [
+    { label: "首頁", to: "/" },
+    { label: "總覽", to: "/overview" },
+    { label: "書架", to: "/practice" },
+    { label: "學習紀錄", to: "/progress" }
+  ]
+  if (loggedIn.value?.roles.includes("Admin")) {
+    base.push({ label: "資料管理", to: "/admin/categories" })
+  }
+  return base
+})
 
 const ctaLabel = computed(() => (loggedIn.value ? "登出" : "登入 / 註冊"))
 const handleCtaClick = async () => {
@@ -62,14 +68,6 @@ const handleCtaClick = async () => {
   <UModal
     v-model:open="isLogoutModalOpen"
     title="要先離開了嗎？"
-    :ui="{
-      content: 'bg-paper-bg text-paper-fg ring-paper-fg/10 divide-paper-fg/10',
-      header: 'border-paper-fg/10',
-      footer: 'border-paper-fg/10',
-      title: 'text-paper-fg font-display text-2xl font-normal',
-      close: 'text-paper-muted hover:bg-paper-fg/10 hover:text-paper-fg',
-      overlay: 'bg-paper-fg/40'
-    }"
   >
     <template #body>
       <div class="flex items-start gap-4">
