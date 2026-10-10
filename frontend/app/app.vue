@@ -1,5 +1,5 @@
 <template>
-  <UApp>
+  <UApp :toaster="{ duration: 1500 }">
     <div>
       <NuxtRouteAnnouncer />
       <NuxtLayout>

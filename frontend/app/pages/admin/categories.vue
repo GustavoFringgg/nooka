@@ -37,8 +37,8 @@ const saveCategory = async () => {
     }
 
     isDrawerOpen.value = false
-    await refresh()
     toast.add({ title: isEditing ? "已更新書籍" : "已新增書籍", color: "success" })
+    await refresh()
   } catch (error) {
     const err = error as { statusCode?: number; data?: string }
     if (err.statusCode === 409) {
@@ -96,14 +96,14 @@ const confirmDelete = async () => {
   try {
     await useApiFetch(`/api/admin/categories/${id}`, { method: "DELETE" })
     deleteTarget.value = null
-    await refresh()
     toast.add({ title: `已刪除 ${name}`, color: "success" })
+    await refresh()
   } catch (error) {
     const err = error as { statusCode?: number }
     if (err.statusCode === 404) {
       deleteTarget.value = null
-      await refresh()
       toast.add({ title: "這個分類已經不存在", color: "warning" })
+      await refresh()
     } else {
       toast.add({ title: "刪除失敗，請稍後再試", color: "error" })
     }
@@ -246,14 +246,13 @@ const formatDate = (iso: string) =>
         >
           取消
         </button>
-        <button
-          type="button"
-          class="flex-2 cursor-pointer rounded-[10px] bg-paper-primary py-2.75 text-sm font-medium text-paper-bg"
-          @click="saveCategory"
+        <UButton
+          label="儲存"
+          class="flex-2 justify-center rounded-[10px] bg-paper-primary text-sm font-medium text-paper-bg"
+          :loading="isSaving"
           :disabled="isSaving"
-        >
-          儲存
-        </button>
+          @click="saveCategory"
+        />
       </div>
     </template>
   </USlideover>
