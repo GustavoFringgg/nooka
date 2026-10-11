@@ -63,6 +63,8 @@
 - 未登入 = 單字卡純瀏覽模式已完成(不能標記熟悉度、不記錄進度)
 - `/progress` 學習紀錄頁面已完成(**目前是假資料版,尚未串真實 API**):統計列(連續天數/已精熟/學習中/今天待複習,跨全部書總計,數字有從 0 滾動的 count-up 動畫)+ 近 14 天長條圖(選擇題/打字拼寫兩色柱狀)+ 全年練習熱力圖(GitHub 貢獻格樣式);未登入時背景維持版面(blur + 降透明度)、中間疊置中登入卡片,不是整頁替換;之後改真資料時統計列可直接打既有的 `GET /api/progress/summary` 加總,長條圖/熱力圖則需要新增 `DailyActivity` 表才能算,細節見 `learningRecord.md`
 - `/practice` 書架書封進度標示已完成:左上角橘色圓形角標顯示今日待複習張數(>0 才顯示,跟右上角選中書籤角標分開避免重疊)、書名下方進度條(白底 + 螢光綠填色,已學/總字數比例)+ 文字數字;直接沿用既有 `GET /api/progress/summary`(回傳每本書的 Familiar/Learning/NewWords/DueToday),不用等後端補新 API
+- Admin 後台 API 全部完成,合併在單一 `AdminController`(跟 `plan.md` 原規劃的兩個獨立 controller 不同,功能等價):分類 CRUD(`GET/POST/PUT/DELETE /api/admin/categories`)、單字 CRUD + 分頁查詢(`GET/POST/PUT/DELETE /api/admin/words`,`PUT` 在同一個 transaction 裡 diff 增減 `WordCategories` 關聯)、`Word.Term`/`Category.Name` 都有 DB unique index,違反時回傳 409;全部 `[Authorize(Roles = "Admin")]`
+- Admin 後台前端:`/admin` middleware + `AppNav.vue`「資料管理」條件式連結已完成;`/admin/categories` 分類管理頁已完成串 API(列表/新增/編輯/刪除);`/admin/words` 單字管理頁已完成新增/編輯/刪除串 API,列表可展開看例句,分類篩選(只顯示有單字的分類)、關鍵字搜尋(400ms debounce)都已接上 `GET /api/admin/words` 查詢,**無限捲動分頁還沒做**(目前固定抓第一頁 20 筆,細節見 `plan.md`)
 
 ---
 
@@ -93,11 +95,11 @@
 
 ## C. 內容管理(Admin 後台)
 
-狀態:未開始
+狀態:後端 CRUD API 全部完成;前端分類管理頁已完成;單字管理頁新增/編輯/刪除、分類篩選、關鍵字搜尋都已完成,**無限捲動分頁還沒接**
 
-1. 分類(書)CRUD API + 後台 UI
-2. 卡片 CRUD API + 後台 UI
-3. `/admin` middleware(限 `Admin` 角色)
+1. ~~分類(書)CRUD API + 後台 UI~~ → 已完成,見下方「已完成的基礎建設」
+2. 卡片(單字)CRUD API → 已完成;後台 UI 的新增/編輯/刪除、分類篩選(只顯示有單字的分類)、關鍵字搜尋(debounce 400ms)都已完成,`/admin/words` 列表目前還是固定抓第一頁 20 筆,沒做無限捲動載入下一頁
+3. ~~`/admin` middleware(限 `Admin` 角色)~~ → 已完成
 
 (未來)開放一般使用者自行建立卡片/卡片組;卡片加入「常用片語/慣用搭配詞」(collocation)欄位 — MVP 先用多筆例句(`Examples`)頂著,片語需人工 curate 內容成本高,暫不排入 MVP。
 
