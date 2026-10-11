@@ -1,25 +1,33 @@
 <script setup lang="ts">
 definePageMeta({ layout: "admin", middleware: "admin" })
-import type { Category } from "~/types/practice"
-import type { AdminWord, PagedResponse } from "~/types/admin"
-const toast = useToast()
+import type { AdminWord, PagedResponse, AdminCategory } from "~/types/admin"
 
-const { data: categories } = await useAsyncData("categories", () => useApiFetch<Category[]>("/api/categories"), {
-  default: () => []
-})
+const filterCategoryId = ref<number | null>(null)
+const toast = useToast()
+const keyword = ref("")
+const debouncedKeyword = ref("")
+let debounceTimer: ReturnType<typeof setTimeout> | undefined
+
+const { data: categories } = await useAsyncData(
+  "admin-categories",
+  () => useApiFetch<AdminCategory[]>("/api/admin/categories"),
+  {
+    default: () => []
+  }
+)
 
 const { data: wordsPage, refresh: refresh } = await useAsyncData(
   "admin-words",
   () =>
     useApiFetch<PagedResponse<AdminWord>>("/api/admin/words", {
-      query: { page: 1, pageSize: 20 }
+      query: { page: 1, pageSize: 20, categoryId: filterCategoryId.value, keyword: debouncedKeyword.value }
     }),
-  { default: () => ({ items: [], totalCount: 0 }) }
+  { default: () => ({ items: [], totalCount: 0 }), watch: [filterCategoryId, debouncedKeyword] }
 )
 
 const categoryFilterOptions = computed(() => [
   { label: "全部分類", value: null },
-  ...categories.value.map((c) => ({ label: c.name, value: c.id }))
+  ...categories.value.filter((c) => c.wordCount > 0).map((c) => ({ label: c.name, value: c.id }))
 ])
 
 const partsOfSpeech = ["形容詞", "副詞", "動詞", "名詞", "代名詞", "介系詞", "連接詞", "感嘆詞"]
@@ -86,9 +94,13 @@ const toggleExpand = (id: number) => {
   expandedIds.value = next
 }
 
-// ---- 篩選列(目前只是畫面,還沒接功能)----
-const filterCategoryId = ref<number | null>(null)
-const keyword = ref("")
+// 搜尋關鍵字 debounce
+watch(keyword, (value) => {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    debouncedKeyword.value = value
+  }, 400)
+})
 
 // ---- 抽屜表單(新增跟編輯共用同一張表單)----
 const isDrawerOpen = ref(false)
