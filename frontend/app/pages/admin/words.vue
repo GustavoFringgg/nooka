@@ -236,7 +236,7 @@ const inputClass =
             >
               ▸
             </button>
-            <span class="font-display italic text-base">{{ word.term }}</span>
+            <span class="font-display italic text-xl">{{ word.term }}</span>
           </div>
           <div class="px-5 py-3.5">{{ word.definitionCN }}</div>
           <div class="px-5 py-3.5">{{ word.partOfSpeech }}</div>
@@ -300,9 +300,7 @@ const inputClass =
           </div>
           <div class="flex-1">
             <label for="word-pos" class="mb-1.5 block text-[12.5px] font-semibold">詞性</label>
-            <select id="word-pos" v-model="form.partOfSpeech" :class="inputClass">
-              <option v-for="pos in partsOfSpeech" :key="pos" :value="pos">{{ pos }}</option>
-            </select>
+            <USelect id="word-pos" v-model="form.partOfSpeech" :items="partsOfSpeech" :ui="{ base: inputClass }" />
           </div>
         </div>
 
