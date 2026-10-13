@@ -2,6 +2,7 @@
 //TODO: 開發完要再回來整理
 import type { Word, QuizOption, QuizQuestion } from "~/types/practice"
 import type { QuizDirection } from "~/utils/quiz"
+const isLoggedIn = useIsLoggedIn()
 
 interface AnswerLogEntry {
   question: QuizQuestion
@@ -21,7 +22,7 @@ if (words.value?.length) questions.value = buildQuizQuestions(words.value, direc
 
 const currentQuestion = computed(() => questions.value[currentIndex.value])
 const progressPercent = computed(() =>
-  questions.value.length ? (currentIndex.value / questions.value.length) * 100 : 0
+  questions.value.length ? ((currentIndex.value + 1) / questions.value.length) * 100 : 0
 )
 
 const score = ref(0)
@@ -37,14 +38,14 @@ const AUTO_ADVANCE_SECONDS = 3
 const autoAdvanceCountdown = ref(0)
 let autoAdvanceTimer: ReturnType<typeof setInterval> | null = null
 
-function clearAutoAdvance() {
+const clearAutoAdvance = () => {
   if (autoAdvanceTimer === null) return
   clearInterval(autoAdvanceTimer)
   autoAdvanceTimer = null
   autoAdvanceCountdown.value = 0
 }
 
-function startAutoAdvance() {
+const startAutoAdvance = () => {
   clearAutoAdvance()
   autoAdvanceCountdown.value = AUTO_ADVANCE_SECONDS
   autoAdvanceTimer = setInterval(() => {
@@ -70,11 +71,11 @@ const reviewCards = computed(() => {
   ]
 })
 
-function isCorrectOption(option: QuizOption) {
+const isCorrectOption = (option: QuizOption) => {
   return option.word.id === currentQuestion.value?.word.id
 }
 
-function selectOption(option: QuizOption) {
+const selectOption = (option: QuizOption) => {
   if (isAnswered.value || !currentQuestion.value) return
   selectedOption.value = option
   isAnswered.value = true
@@ -91,7 +92,7 @@ function selectOption(option: QuizOption) {
 
 const OPTION_COLS = 2
 
-function moveHighlight(deltaRow: number, deltaCol: number) {
+const moveHighlight = (deltaRow: number, deltaCol: number) => {
   const len = currentQuestion.value?.options.length
   if (!len) return
   const row = Math.floor(highlightedIndex.value / OPTION_COLS)
@@ -103,12 +104,12 @@ function moveHighlight(deltaRow: number, deltaCol: number) {
   if (newIndex < len) highlightedIndex.value = newIndex
 }
 
-function confirmHighlighted() {
+const confirmHighlighted = () => {
   const option = currentQuestion.value?.options[highlightedIndex.value]
   if (option) selectOption(option)
 }
 
-function handleKeydown(e: KeyboardEvent) {
+const handleKeydown = (e: KeyboardEvent) => {
   if (!currentQuestion.value) return
 
   if (isAnswered.value) {
@@ -140,7 +141,7 @@ function handleKeydown(e: KeyboardEvent) {
 onMounted(() => window.addEventListener("keydown", handleKeydown))
 onUnmounted(() => window.removeEventListener("keydown", handleKeydown))
 
-function optionClasses(option: QuizOption, index: number) {
+const optionClasses = (option: QuizOption, index: number) => {
   if (!isAnswered.value) {
     const base = "bg-paper-bg-alt hover:border-paper-primary/40 hover:-translate-y-0.5 cursor-pointer"
     if (index === highlightedIndex.value) return `border-paper-primary/60 ring-2 ring-paper-primary/25 ${base}`
@@ -154,7 +155,7 @@ function optionClasses(option: QuizOption, index: number) {
   return "border-paper-fg/10 bg-paper-bg-alt opacity-40"
 }
 
-function letterClasses(option: QuizOption, index: number) {
+const letterClasses = (option: QuizOption, index: number) => {
   if (isAnswered.value && isCorrectOption(option)) return "border-emerald-500/60 text-emerald-600"
   if (isAnswered.value && option === selectedOption.value) return "border-rose-500/60 text-rose-600"
   if (!isAnswered.value && index === highlightedIndex.value)
@@ -162,7 +163,15 @@ function letterClasses(option: QuizOption, index: number) {
   return "border-paper-fg/20 text-paper-muted"
 }
 
-function nextQuestion() {
+const recordRoundComplete = async () => {
+  if (!isLoggedIn.value) return
+  await useApiFetch("/api/activity/round-complete", {
+    method: "POST",
+    body: { mode: "Choice" }
+  })
+}
+
+const nextQuestion = () => {
   clearAutoAdvance()
   isReviewOpen.value = false
   currentIndex.value++
@@ -170,9 +179,13 @@ function nextQuestion() {
   isAnswered.value = false
   showSparkBurst.value = false
   highlightedIndex.value = 0
+
+  if (currentIndex.value >= questions.value.length) {
+    recordRoundComplete()
+  }
 }
 
-function restartQuiz() {
+const restartQuiz = () => {
   clearAutoAdvance()
   questions.value = buildQuizQuestions(words.value!, direction, questionCount)
   currentIndex.value = 0
@@ -328,10 +341,7 @@ function restartQuiz() {
       </div>
     </template>
 
-    <UModal
-      v-model:open="isReviewOpen"
-      title="答錯了,來看看正確答案"
-    >
+    <UModal v-model:open="isReviewOpen" title="答錯了,來看看正確答案">
       <template #body>
         <div class="space-y-4">
           <div

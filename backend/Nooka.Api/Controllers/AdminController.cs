@@ -158,7 +158,7 @@ public class AdminController : ControllerBase
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 20;
-        if (pageSize > 100) pageSize = 100;
+        if (pageSize > 999) pageSize = 999;
 
         var result = await _wordRepository.GetPagedAsync(page, pageSize, categoryId, keyword);
         return Ok(result);

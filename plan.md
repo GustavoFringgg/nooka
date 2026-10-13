@@ -1,114 +1,100 @@
-# 內容管理 Admin 後台(C 大項)— 分類 / 單字 CRUD
+# 學習紀錄真資料串接(D 大項)— /progress 統計列 + 長條圖 + 熱力圖
 
-> 目標:做出 `/admin/categories`、`/admin/words` 兩頁後台管理介面 + 對應後端 CRUD API,讓使用者不用手動戳 Supabase 就能管理分類跟單字。這是接下來開發順序 **C → D → B → A → G**(見 `CLAUDE.md`)的第一步,做完才回頭做 D(SM-2 學習紀錄),因為要先能好好管理單字內容,測試 SM-2 時新增/調整單字才方便。
+> 目標:把 `/progress` 頁面(目前是純前端假資料版,見 `learningRecord.md`)換成真資料。這是開發順序 **C → D → E → B → A → H**(見 `CLAUDE.md`)的第二步,排在 E(學習紀錄 SM-2)前面,因為統計列不需要等 SM-2 定案就能做完。
 >
-> **狀態(2026/09/28):UI 設計討論完成,尚未開始寫程式。** UI mockup(分類列表、單字列表、單字編輯抽屜、分類編輯抽屜共 4 個畫面)見 Design 畫布:https://claude.ai/artifact/SF2bV9dReQ6HcFS5sqhyrM
+> **狀態(2026/10/13):全部完成。** 實作過程中有兩處跟原規劃不同,細節見下方對應段落:① `GET /api/activity/streak`/`recent`/`heatmap` 三支 API 後來合併成一支 `GET /api/activity/summary`;② 未登入呈現方式從「blur + 疊加登入卡片」改成「直接不渲染,只顯示登入引導卡」(`learningRecord.md` 有詳細原因)。
 
 ## 為什麼另開這個任務(取代原本 plan.md 內容)
 
-`plan.md` 原本記錄的是「單字卡分級系統接後端 + 會員進度總覽」那個任務(Stage 0~8),那個任務**已經全部完成並 commit**(細節留在 git 歷史裡)。現在開始的是全新的一輪任務(C 大項:Admin 後台),plan.md 內容整個換掉,不用保留舊任務的分階段記錄。
+`plan.md` 原本記錄的是「內容管理 Admin 後台」(C 大項)那個任務,已經全部完成並 commit(細節留在 git 歷史裡;無限捲動分頁後來改成延後到 MVP 後做,見 `CLAUDE.md`)。現在開始的是全新的一輪任務(D 大項:完成 `/progress` 真資料串接),plan.md 內容整個換掉。
 
 ## 討論定案的內容
 
-### UI
+### 範圍(依使用者角度,從上到下依序完成)
 
-- **視覺風格**:沿用前台 paper 色票(跟書架/nav 同一套色票字型),但排版改成後台常見的密集表格/列表,不套用書架那套視覺隱喻
-- **版面結構**:左側固定 nav(分類管理/單字管理兩個入口)+ 右側主內容區(表格 + 右上角「+ 新增」按鈕)
-- **新增/編輯共用同一張表單**:差別只在標題文字(「新增分類」vs「編輯分類」),欄位、儲存邏輯完全共用
-- **表單呈現方式**:右側抽屜(從畫面右邊滑出的長型面板),不是置中 Modal——欄位多時可以往下捲動,不會擁擠,且抽屜開著時左邊列表還看得到
-- **分類表單欄位**:名稱、描述(多行)、顏色(8 個預設色票 + `<input type="color">` color picker + 色碼文字輸入,三種方式都能選)
-- **單字表單欄位**:單字(term)、KK 音標(ipa)、詞性(下拉選單,對應現有 8 種詞性)、英文釋義、中文釋義、例句(可新增多筆,一筆一個輸入框 + 刪除按鈕)、所屬分類(打勾多選,對應多對多的 `WordCategories`)
-- **刪除**:一律要二次確認彈窗,不能點了就直接刪
-- **單字列表**:用無限捲動,不做分頁 UI(但後端查詢還是分頁式)
+`/progress` 頁面分三塊(版面定案見 `learningRecord.md`):
 
-### 後端 API
+- **上(統計列)**:依序完成 ① 連續練習天數 ② 已熟悉 ③ 學習中 ④ 今天待複習
+- **中**:近 14 天練習量長條圖(選擇題/打字拼寫兩色柱狀)
+- **下**:全年練習熱力圖(GitHub 貢獻格樣式)
 
-- **路由分離**:新增 `/api/admin/categories`、`/api/admin/words`(`POST`/`PUT`/`DELETE`),跟現有唯讀的 `GET /api/categories`、`GET /api/words` 分開,不混在同一個 controller,方便統一在 Admin controller 上加權限
-- **分頁**:`GET /api/admin/words?page=&pageSize=20&categoryId=&search=`,依 `Term` 字母排序,支援分類篩選 + 關鍵字搜尋(前端無限捲動時遞增 `page` 呼叫)
-- **單字 ↔ 分類關聯寫入**:前端**只打一支** `PUT /api/admin/words/{id}`,body 直接帶這個單字現在應該屬於哪些分類(`categoryIds: number[]`)。後端在**同一個 transaction** 裡:① 更新單字本身欄位、② 把現有 `WordCategories` 關聯跟新的 `categoryIds` 做差異比對,多的刪掉、少的補上。這個 transaction 寫法沿用 `EfWordProgressRepository.BatchUpsertAsync` 已經驗證過的模式,不是全新概念
-- **單字名稱重複**:DB 端在 `Word.Term` 建 unique index 當最終防線,違反時 catch `DbUpdateException` 轉成 `409 Conflict` + 明確錯誤訊息;前端**不**額外打一支「即時查重複」的 API,直接在儲存失敗時把後端回傳的錯誤訊息顯示在「單字」欄位下面
-- **分類刪除不 cascade 刪單字**:單字是獨立字典實體,一個單字可以同時屬於多本書(多對多),分類被刪除時只刪對應的 `WordCategories` 關聯列,單字本身保留(失去這個分類歸屬,變成沒有分類的自由單字),`WordProgress` 學習紀錄完全不受影響。正常情況下單字很少被整筆刪除(字典性質,只會修改/新增),所以這不是常見操作但邏輯上要處理對
-- **權限**:`/api/admin/*` 全部要 `[Authorize(Roles = "Admin")]`
+長條圖/熱力圖/連續天數**只算選擇題 + 打字拼寫,不含單字卡**(單字卡沒有「一輪」的概念,`flashcard.vue` 不會呼叫任何活動紀錄 API)。
 
-### 前端路由與導覽
+### 新資料表:`DailyActivity`
 
-- **nav 顯示條件**:「資料管理」連結只有 `useAuthUser().roles` 包含 `"Admin"` 時才顯示在「學習紀錄」右邊,一般 `User` 角色看不到、不會意識到後台存在
-- **連結指向**:`/admin/categories`(分類管理跟單字管理是兩個獨立路由:`/admin/categories`、`/admin/words`,不是同一頁切 tab)
-- **路由保護**:非 Admin(不管有沒有登入)直接輸入網址硬進 `/admin/*`,一律導回首頁 `/`,不做 404 頁面(簡單,也不用糾結要不要暴露路由存在)
+- 欄位:`UserId`(int)、`ActivityDate`(DateOnly)、`Mode`(string:`"Choice"` / `"Typing"`)、`CompletedRounds`(int)
+- 複合主鍵:`UserId` + `ActivityDate` + `Mode`
+- 「完整跑完一輪」的定義(沿用 `learningRecord.md`):題目全部作答完才算 1 次,中途離開不算
+- 索引規劃:`UserId` + `ActivityDate`(方便查最近 N 天/算連續天數)
 
-### 明確排除、不做的事
+### 已熟悉 / 學習中 / 今天待複習:不用新 API
 
-- **不做多路由 SEO**(例如 `/practice/toeic` 這種每本書獨立網址):現在 `/practice` 是單一網址 + 前端 state 切換書,`Category.description` 這個欄位先當純內容說明用,不接 meta description。理由:現階段使用者靠帳號登入使用,不是靠 Google 搜尋導流,SEO 效益低,之後真的要做流量成長再回頭處理
+直接用現有 `GET /api/progress/summary`(回傳每個分類的 `Familiar`/`Learning`/`NewWords`/`DueToday`),前端把所有分類加總即可,不用動後端。
 
-## 分階段步驟(建議順序,後端 API 先於前端頁面)
+### API 新增
 
-### Stage 0 — Admin Controllers 骨架
+- `POST /api/activity/round-complete`:body `{ mode: "Choice" | "Typing" }`,登入後依 JWT 的 UserId,把當天那筆 `DailyActivity` 的 `CompletedRounds` +1(沒有就新建)
+- ~~`GET /api/activity/streak`~~、~~`GET /api/activity/recent?days=14`~~、~~`GET /api/activity/heatmap`~~ → **實作時合併成一支 `GET /api/activity/summary`**,一次回傳 `{ streak, recent, heatmap }`。原因:這三支都只有 `/progress` 這頁在用、資料源都是 `DailyActivity`,原本三支各自 `await useAsyncData(...)` 會變成依序等待(waterfall),合併後這頁從 4 次網路來回(含 `GET /api/progress/summary`)降到 2 次。後端 `EfActivityRepository.GetActivitySummaryAsync` 只打一次資料庫撈這個使用者全部 `DailyActivity`,再用三個 private 方法(`CalculateStreak`/`CalculateRecent`/`CalculateHeatmap`)在記憶體裡分別算
 
-- 新增 `Controllers/AdminCategoriesController.cs`、`Controllers/AdminWordsController.cs`,`[Authorize(Roles = "Admin")]`,`[Route("api/admin/categories")]`/`[Route("api/admin/words")]`
-- 先寫空的 action 簽名(`POST`/`PUT`/`DELETE`),確認路由跟權限擋得住(用非 Admin 帳號打應該 403,不帶 token 應該 401)
+## 分階段步驟(依「上 → 中 → 下」UI 區塊順序)
 
-### Stage 1 — 分類 CRUD
+### Stage 0 — 後端:`DailyActivity` 資料表 → 已完成
 
-- `ICategoryRepository`/`EfCategoryRepository` 加 `CreateAsync`/`UpdateAsync`/`DeleteAsync`(欄位:`Name`/`Description`/`Color`,`CreatedAt`/`UpdatedAt` 沿用 DB `DEFAULT now()` 慣例不用手動帶)
-- 刪除分類時只刪 `WordCategories` 裡對應的關聯列,不動 `Words` 表
-- 驗證:用 `.http`/Swagger 測三支,確認刪除分類後底下的單字還在(只是少了這個分類標籤)
+- 新增 `Models/DailyActivity.cs`,`AppDbContext` 設定複合鍵 + 索引
+- migration:`dotnet ef migrations add AddDailyActivity`
 
-### Stage 2 — 單字分頁查詢
+### Stage 1 — 後端 + 前端:連續練習天數 → 已完成(含「最長紀錄」,原規劃沒有的額外欄位)
 
-- `IWordRepository`/`EfWordRepository` 加分頁版查詢方法,支援 `page`/`pageSize`/`categoryId`/`search`,依 `Term` 排序
-- Controller 加 `GET /api/admin/words`(這支可以跟唯讀 API 共用邏輯,只是多了 Admin 權限跟分頁參數;或直接複用現有 `GET /api/words` 的查詢再疊加分頁——實作時再決定要不要重複造輪子)
-- 驗證:造超過一頁的測試資料,確認 `page=2` 能拿到下一批,`search`/`categoryId` 篩選正確
+- `IActivityRepository`/`EfActivityRepository`:`RecordRoundCompleteAsync(userId, mode)`(upsert +1)、`GetStreakAsync(userId)`
+- 新增 `ActivityController`:`POST /api/activity/round-complete`、`GET /api/activity/streak`,都要登入(從 JWT 拿 UserId)
+- 前端:`choice.vue`/`typing.vue` 在題目全部作答完的那一刻,打 `POST /api/activity/round-complete`(對應模式 `Choice`/`Typing`)
+- 前端:`progress.vue` 連續天數卡改打 `GET /api/activity/streak`,拔掉假資料
+- 驗證:選擇題/打字拼寫各跑完一輪,確認連續天數 +1;中途離開測驗不會誤記;隔天沒練習,確認連續天數斷掉歸零
 
-### Stage 3 — 單字 CRUD + 分類關聯 transaction
+### Stage 2 — 前端:已熟悉 / 學習中 / 今天待複習 → 已完成
 
-- `IWordRepository`/`EfWordRepository` 加 `CreateAsync`/`UpdateAsync`/`DeleteAsync`
-- `UpdateAsync` 內:讀現有 `WordCategories`、跟傳入的 `categoryIds` diff、`AddRange`/`RemoveRange`,整包包在 `_context.Database.BeginTransactionAsync()`(或用 EF Core 7+ 的 execution strategy)
-- `Word.Term` 加 unique index(要新增一支 migration),`UpdateAsync`/`CreateAsync` catch `DbUpdateException` 轉 409
-- 驗證:新增/編輯單字帶不同 `categoryIds` 組合,確認 `WordCategories` 正確增減;故意新增重複單字名稱,確認回 409 而不是 500
+- `progress.vue` 這三張卡改打現有 `GET /api/progress/summary`,前端加總所有分類的 `Familiar`/`Learning`/`DueToday`,拔掉假資料
+- 驗證:在 `/admin/words` 或練習頁改變某個字的進度狀態,確認這三個數字會跟著變動
 
-### Stage 4 — 前端:`/admin` 路由保護 + nav 顯示
+### Stage 3 — 後端 + 前端:近 14 天長條圖 → 已完成
 
-- 新增 `frontend/app/middleware/admin.ts`,檢查 `useAuthUser()?.roles` 是否包含 `"Admin"`,沒有就 `navigateTo("/")`
-- `AppNav.vue`:「資料管理」連結只在 `roles` 含 `Admin` 時渲染,`to: "/admin/categories"`
+- `EfActivityRepository` 加 `GetRecentAsync(userId, days)`
+- `ActivityController` 加 `GET /api/activity/recent?days=14`
+- 前端:`progress.vue` 長條圖改打這支 API,拔掉假資料
+- 驗證:選擇題跑完一輪,確認今天那根「選擇題」柱子 +1,「打字拼寫」柱子不動
 
-### Stage 5 — 前端:分類管理頁
+### Stage 4 — 後端 + 前端:全年熱力圖 → 已完成
 
-- 新增 `frontend/app/pages/admin/categories.vue`,套用 mockup 的列表 + 右側抽屜表單(名稱/描述/顏色)
-- 刪除加二次確認 `UModal`
-
-### Stage 6 — 前端:單字管理頁
-
-- 新增 `frontend/app/pages/admin/words.vue`,列表(無限捲動,滾到底加載下一頁)+ 篩選列(分類下拉 + 搜尋框)+ 右側抽屜表單(含例句動態新增/刪除、分類多選)
-- 刪除加二次確認 `UModal`
+- `EfActivityRepository` 加 `GetHeatmapAsync(userId)`
+- `ActivityController` 加 `GET /api/activity/heatmap`
+- 前端:`progress.vue` 熱力圖改打這支 API,拔掉假資料
+- 驗證:今天格子的深淺(或是否點亮)隨完成輪數變化
 
 ## 涉及檔案(還沒動工,先列出預期會碰到的)
 
 **後端**
 
-- `backend/Nooka.Api/Controllers/AdminCategoriesController.cs`(新增)
-- `backend/Nooka.Api/Controllers/AdminWordsController.cs`(新增)
-- `backend/Nooka.Api/Repositories/ICategoryRepository.cs`、`EfCategoryRepository.cs`(修改,加 CUD 方法)
-- `backend/Nooka.Api/Repositories/IWordRepository.cs`、`EfWordRepository.cs`(修改,加分頁查詢 + CUD 方法)
-- `backend/Nooka.Api/Migrations/`(新增:`Word.Term` unique index)
-- `backend/Nooka.Api/Nooka.Api.http`(新增測試請求)
+- `backend/Nooka.Api/Models/DailyActivity.cs`(新增)
+- `backend/Nooka.Api/Controllers/ActivityController.cs`(新增)
+- `backend/Nooka.Api/Repositories/IActivityRepository.cs`、`EfActivityRepository.cs`(新增)
+- `backend/Nooka.Api/Models/Dtos/Request/ActivityRoundCompleteRequest.cs`(新增)
+- `backend/Nooka.Api/Models/Dtos/Response/ActivityStreakResponse.cs`、`ActivityRecentResponse.cs`、`ActivityHeatmapResponse.cs`(新增,視實作時要不要合併再調整)
+- `backend/Nooka.Api/Data/AppDbContext.cs`(修改,加 `DailyActivity` 設定)
+- `backend/Nooka.Api/Migrations/`(新增:`AddDailyActivity`)
 
 **前端**
 
-- `frontend/app/middleware/admin.ts`(新增)
-- `frontend/app/pages/admin/categories.vue`(新增)
-- `frontend/app/pages/admin/words.vue`(新增)
-- `frontend/app/components/AppNav.vue`(修改,加「資料管理」條件式連結)
-- `frontend/app/types/auth.ts`/`practice.ts`(視情況新增 Admin CRUD 相關型別)
+- `frontend/app/pages/practice/[categoryId]/choice.vue`(修改,跑完一輪打 round-complete)
+- `frontend/app/pages/practice/[categoryId]/typing.vue`(修改,同上)
+- `frontend/app/pages/progress.vue`(修改,四個區塊依序拔假資料換真資料)
 
 ## 驗證方式
 
-- 非 Admin 帳號(或未登入)打 `/api/admin/*` 應該 401/403;直接網址硬進 `/admin/*` 應該被導回首頁
-- Admin 帳號能新增/編輯/刪除分類跟單字,列表跟練習頁(`/practice`)看到的資料同步更新
-- 刪除分類後,原本屬於這個分類的單字還能在單字管理列表查到(只是分類標籤消失)
-- 新增重複單字名稱應該顯示明確錯誤訊息,不是白畫面或 500
-- 單字管理頁捲到底能載入下一頁,搜尋/分類篩選正常運作
+- 選擇題/打字拼寫各完整跑完一輪(中途離開的不算),確認連續天數、長條圖對應柱子、熱力圖今天格子都正確更新
+- 已熟悉/學習中/今天待複習三個數字跟 `/practice` 書架書封上的進度數字(同一來源 `GET /api/progress/summary`)加總後對得起來
+- 未登入狀態下 `/progress` 維持原本的 blur + 登入卡片呈現,不受這次改動影響
 
-完成後回頭更新 `CLAUDE.md`:C 大項狀態改成完成,補上 Admin API + 後台頁面到「已完成的基礎建設」,並把開發順序往下推進到 D(SM-2)。
+~~完成後回頭更新 `CLAUDE.md`:D 大項狀態改成完成,補上活動紀錄 API + `/progress` 真資料串接到「已完成的基礎建設」,並把開發順序往下推進到 E(SM-2)。~~ → 已完成(2026/10/13)。
 
 TODO: 待學習資訊
 

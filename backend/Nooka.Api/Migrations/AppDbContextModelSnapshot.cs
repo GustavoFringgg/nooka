@@ -258,6 +258,25 @@ namespace Nooka.Api.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("Nooka.Api.Models.DailyActivity", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("ActivityDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Mode")
+                        .HasColumnType("text");
+
+                    b.Property<int>("CompletedRounds")
+                        .HasColumnType("integer");
+
+                    b.HasKey("UserId", "ActivityDate", "Mode");
+
+                    b.ToTable("DailyActivities");
+                });
+
             modelBuilder.Entity("Nooka.Api.Models.Word", b =>
                 {
                     b.Property<int>("Id")
@@ -393,6 +412,15 @@ namespace Nooka.Api.Migrations
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
+                {
+                    b.HasOne("Nooka.Api.Models.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Nooka.Api.Models.DailyActivity", b =>
                 {
                     b.HasOne("Nooka.Api.Models.AppUser", null)
                         .WithMany()

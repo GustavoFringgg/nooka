@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue"
-
 // 版面規格取自設計稿(Organic 設計系統:Caprasimo/Figtree + 暖橘/sage 綠色票),數值已直接寫死在下方,
 // 僅供這頁的儀表板內容使用;nav 沿用首頁那份 Newreader/paper 色票
 useHead({
@@ -45,7 +43,7 @@ const weakWords = [
   { word: "vicarious", meaning: "替代的感受", misses: 5, pct: 74 },
   { word: "hectic", meaning: "忙亂的", misses: 4, pct: 60 },
   { word: "hub", meaning: "中心樞紐", misses: 3, pct: 44 },
-  { word: "handout", meaning: "講義;施捨", misses: 2, pct: 28 },
+  { word: "handout", meaning: "講義;施捨", misses: 2, pct: 28 }
 ]
 </script>
 
@@ -60,7 +58,9 @@ const weakWords = [
       </div>
 
       <div class="bento-grid grid gap-4">
-        <div class="area-words relative overflow-hidden rounded-[32px] p-6.5 bg-[#fff2eb] shadow-[0_3px_10px_rgba(46,43,37,.16)]">
+        <div
+          class="area-words relative overflow-hidden rounded-[32px] p-6.5 bg-[#fff2eb] shadow-[0_3px_10px_rgba(46,43,37,.16)]"
+        >
           <div class="absolute -right-10 -top-10 w-[140px] h-[140px] rounded-full bg-[#ffe1d0] pointer-events-none" />
           <div class="relative">
             <div class="text-[10px] uppercase tracking-[.1em] text-[#c67139]">單字庫總數</div>
@@ -83,15 +83,20 @@ const weakWords = [
           <div class="text-[13px] text-[#201e1d]/80 mt-1">多益、航空、工程、資安…</div>
         </div>
 
-        <div class="area-wordcard rounded-[32px] p-6.5 bg-[#2e2b25] text-[#f5ead8] shadow-[0_3px_10px_rgba(46,43,37,.16)]">
+        <div
+          class="area-wordcard rounded-[32px] p-6.5 bg-[#2e2b25] text-[#f5ead8] shadow-[0_3px_10px_rgba(46,43,37,.16)]"
+        >
           <div class="text-[11px] uppercase tracking-[.1em] text-[#ffc6a5]">每日一字</div>
           <div class="font-heading-organic text-[38px] mt-2.5">{{ dailyWord }}</div>
           <div class="text-[#ffe1d0] text-[15px] mt-1.5">
-            {{ dailyMeaning }} <span class="opacity-60 text-[13px]">· {{ dailyPos }}</span>
+            {{ dailyMeaning }}
+            <span class="opacity-60 text-[13px]">· {{ dailyPos }}</span>
           </div>
         </div>
 
-        <div class="area-quote rounded-[32px] p-6.5 flex flex-col justify-center bg-[#ebddc5] shadow-[0_1px_2px_rgba(46,43,37,.14)]">
+        <div
+          class="area-quote rounded-[32px] p-6.5 flex flex-col justify-center bg-[#ebddc5] shadow-[0_1px_2px_rgba(46,43,37,.14)]"
+        >
           <div class="text-[10px] uppercase tracking-[.1em] text-[#c67139]">每日一句</div>
           <p class="font-heading-organic text-[22px] leading-[1.4] mt-2.5 mb-0">"{{ dailyQuoteEn }}"</p>
           <p class="text-[#645c50] text-sm mt-2.5">{{ dailyQuoteZh }}</p>
