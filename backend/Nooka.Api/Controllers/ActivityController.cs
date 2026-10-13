@@ -24,20 +24,12 @@ public class ActivityController : ControllerBase
     }
 
     [Authorize]
-    [HttpGet("streak")]
-    public async Task<IActionResult> GetStreak()
+    [HttpGet("summary")]
+    public async Task<IActionResult> GetSummary()
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var summary = await _activityRepository.GetStreakSummaryAsync(userId);
+        var summary = await _activityRepository.GetActivitySummaryAsync(userId);
         return Ok(summary);
     }
 
-    [Authorize]
-    [HttpGet("recent")]
-    public async Task<IActionResult> GetRecent(int days = 14)
-    {
-        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var result = await _activityRepository.GetRecentAsync(userId, days);
-        return Ok(result);
-    }
 }

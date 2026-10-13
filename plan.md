@@ -2,7 +2,7 @@
 
 > 目標:把 `/progress` 頁面(目前是純前端假資料版,見 `learningRecord.md`)換成真資料。這是開發順序 **C → D → E → B → A → H**(見 `CLAUDE.md`)的第二步,排在 E(學習紀錄 SM-2)前面,因為統計列不需要等 SM-2 定案就能做完。
 >
-> **狀態(2026/10/13):規劃完成,尚未開始寫程式。**
+> **狀態(2026/10/13):全部完成。** 實作過程中有兩處跟原規劃不同,細節見下方對應段落:① `GET /api/activity/streak`/`recent`/`heatmap` 三支 API 後來合併成一支 `GET /api/activity/summary`;② 未登入呈現方式從「blur + 疊加登入卡片」改成「直接不渲染,只顯示登入引導卡」(`learningRecord.md` 有詳細原因)。
 
 ## 為什麼另開這個任務(取代原本 plan.md 內容)
 
@@ -34,18 +34,16 @@
 ### API 新增
 
 - `POST /api/activity/round-complete`:body `{ mode: "Choice" | "Typing" }`,登入後依 JWT 的 UserId,把當天那筆 `DailyActivity` 的 `CompletedRounds` +1(沒有就新建)
-- `GET /api/activity/streak`:回傳目前連續練習天數(從今天往前逐日檢查 `DailyActivity` 有沒有任一 Mode 的紀錄,中斷就停)
-- `GET /api/activity/recent?days=14`:回傳最近 N 天,每天 choice/typing 各自完成輪數
-- `GET /api/activity/heatmap`:回傳全年每天 choice+typing 合計完成輪數
+- ~~`GET /api/activity/streak`~~、~~`GET /api/activity/recent?days=14`~~、~~`GET /api/activity/heatmap`~~ → **實作時合併成一支 `GET /api/activity/summary`**,一次回傳 `{ streak, recent, heatmap }`。原因:這三支都只有 `/progress` 這頁在用、資料源都是 `DailyActivity`,原本三支各自 `await useAsyncData(...)` 會變成依序等待(waterfall),合併後這頁從 4 次網路來回(含 `GET /api/progress/summary`)降到 2 次。後端 `EfActivityRepository.GetActivitySummaryAsync` 只打一次資料庫撈這個使用者全部 `DailyActivity`,再用三個 private 方法(`CalculateStreak`/`CalculateRecent`/`CalculateHeatmap`)在記憶體裡分別算
 
 ## 分階段步驟(依「上 → 中 → 下」UI 區塊順序)
 
-### Stage 0 — 後端:`DailyActivity` 資料表
+### Stage 0 — 後端:`DailyActivity` 資料表 → 已完成
 
 - 新增 `Models/DailyActivity.cs`,`AppDbContext` 設定複合鍵 + 索引
 - migration:`dotnet ef migrations add AddDailyActivity`
 
-### Stage 1 — 後端 + 前端:連續練習天數
+### Stage 1 — 後端 + 前端:連續練習天數 → 已完成(含「最長紀錄」,原規劃沒有的額外欄位)
 
 - `IActivityRepository`/`EfActivityRepository`:`RecordRoundCompleteAsync(userId, mode)`(upsert +1)、`GetStreakAsync(userId)`
 - 新增 `ActivityController`:`POST /api/activity/round-complete`、`GET /api/activity/streak`,都要登入(從 JWT 拿 UserId)
@@ -53,19 +51,19 @@
 - 前端:`progress.vue` 連續天數卡改打 `GET /api/activity/streak`,拔掉假資料
 - 驗證:選擇題/打字拼寫各跑完一輪,確認連續天數 +1;中途離開測驗不會誤記;隔天沒練習,確認連續天數斷掉歸零
 
-### Stage 2 — 前端:已熟悉 / 學習中 / 今天待複習
+### Stage 2 — 前端:已熟悉 / 學習中 / 今天待複習 → 已完成
 
 - `progress.vue` 這三張卡改打現有 `GET /api/progress/summary`,前端加總所有分類的 `Familiar`/`Learning`/`DueToday`,拔掉假資料
 - 驗證:在 `/admin/words` 或練習頁改變某個字的進度狀態,確認這三個數字會跟著變動
 
-### Stage 3 — 後端 + 前端:近 14 天長條圖
+### Stage 3 — 後端 + 前端:近 14 天長條圖 → 已完成
 
 - `EfActivityRepository` 加 `GetRecentAsync(userId, days)`
 - `ActivityController` 加 `GET /api/activity/recent?days=14`
 - 前端:`progress.vue` 長條圖改打這支 API,拔掉假資料
 - 驗證:選擇題跑完一輪,確認今天那根「選擇題」柱子 +1,「打字拼寫」柱子不動
 
-### Stage 4 — 後端 + 前端:全年熱力圖
+### Stage 4 — 後端 + 前端:全年熱力圖 → 已完成
 
 - `EfActivityRepository` 加 `GetHeatmapAsync(userId)`
 - `ActivityController` 加 `GET /api/activity/heatmap`
@@ -96,7 +94,7 @@
 - 已熟悉/學習中/今天待複習三個數字跟 `/practice` 書架書封上的進度數字(同一來源 `GET /api/progress/summary`)加總後對得起來
 - 未登入狀態下 `/progress` 維持原本的 blur + 登入卡片呈現,不受這次改動影響
 
-完成後回頭更新 `CLAUDE.md`:D 大項狀態改成完成,補上活動紀錄 API + `/progress` 真資料串接到「已完成的基礎建設」,並把開發順序往下推進到 E(SM-2)。
+~~完成後回頭更新 `CLAUDE.md`:D 大項狀態改成完成,補上活動紀錄 API + `/progress` 真資料串接到「已完成的基礎建設」,並把開發順序往下推進到 E(SM-2)。~~ → 已完成(2026/10/13)。
 
 TODO: 待學習資訊
 

@@ -52,7 +52,24 @@ export interface FlashcardProgress {
   nextReviewAt: string | null // ISO 日期字串(yyyy-MM-dd),null = 不用複習(封存或還沒標記)
 }
 
-export interface ActivityStreakResponse {
+export interface ActivityStreak {
   currentStreak: number
   longestStreak: number
+}
+
+export interface ActivityRecentDay {
+  date: string
+  choice: number
+  typing: number
+}
+
+export interface ActivityHeatmapDay {
+  date: string
+  count: number
+}
+
+export interface ActivitySummaryResponse {
+  streak: ActivityStreak
+  recent: ActivityRecentDay[]
+  heatmap: ActivityHeatmapDay[]
 }

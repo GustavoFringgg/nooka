@@ -61,7 +61,7 @@
 - 單字卡 Lv1~5 分級邏輯(初學三選一 / 複習升級 / Lv5 滿級彈窗)前端已完成,見下方「A-1 單字卡練習模式」
 - `WordProgress` 資料表(複合鍵 `UserId`+`WordId`)+ 後端 API 全部完成:`GET /api/progress/category/{categoryId}`、`POST /api/progress/batch`、`GET /api/progress/summary`;`useFlashcardProgress.ts` 已改寫成打這幾支 API,不再用 localStorage,細節見 `plan.md`
 - 未登入 = 單字卡純瀏覽模式已完成(不能標記熟悉度、不記錄進度)
-- `/progress` 學習紀錄頁面:統計列(連續天數/已熟悉/學習中/今天待複習,跨全部書總計,數字有從 0 滾動的 count-up 動畫)已完成串真實 API(2026/10/13)——已熟悉/學習中/今天待複習打 `GET /api/progress/summary` 前端加總,連續天數打 `GET /api/activity/streak`(含最長紀錄);**近 14 天長條圖、全年練習熱力圖目前仍是假資料**,要串真資料需要新增 `DailyActivity` 表的查詢 API(目前只有寫入/算連續天數用到這張表);未登入時**不渲染學習紀錄區塊**,只顯示登入引導卡(`v-if="isLoggedIn"`/`v-else`),2026/10/13 把原本「blur + 降透明度背景疊登入卡片」的呈現方式拿掉,因為 `/overview` 已經有登入引導的職責,不用在這頁重複;細節見 `learningRecord.md`
+- `/progress` 學習紀錄頁面**全部完成串真實 API(2026/10/13)**:統計列(連續天數+最長紀錄/已熟悉/學習中/今天待複習,跨全部書總計,數字有從 0 滾動的 count-up 動畫)+ 近 14 天長條圖(選擇題/打字拼寫兩色柱狀)+ 全年練習熱力圖(GitHub 貢獻格樣式),已熟悉/學習中/今天待複習打 `GET /api/progress/summary` 前端加總,連續天數/長條圖/熱力圖打合併後的單一端點 `GET /api/activity/summary`(細節見下方 D 大項);未登入時**不渲染學習紀錄區塊**,只顯示登入引導卡(`v-if="isLoggedIn"`/`v-else`),原本「blur + 降透明度背景疊登入卡片」的呈現方式已拿掉,因為 `/overview` 已經有登入引導的職責,不用在這頁重複;細節見 `learningRecord.md`
 - `/practice` 書架書封進度標示已完成:左上角橘色圓形角標顯示今日待複習張數(>0 才顯示,跟右上角選中書籤角標分開避免重疊)、書名下方進度條(白底 + 螢光綠填色,已學/總字數比例)+ 文字數字;直接沿用既有 `GET /api/progress/summary`(回傳每本書的 Familiar/Learning/NewWords/DueToday),不用等後端補新 API
 - Admin 後台 API 全部完成,合併在單一 `AdminController`(跟 `plan.md` 原規劃的兩個獨立 controller 不同,功能等價):分類 CRUD(`GET/POST/PUT/DELETE /api/admin/categories`)、單字 CRUD + 分頁查詢(`GET/POST/PUT/DELETE /api/admin/words`,`PUT` 在同一個 transaction 裡 diff 增減 `WordCategories` 關聯)、`Word.Term`/`Category.Name` 都有 DB unique index,違反時回傳 409;全部 `[Authorize(Roles = "Admin")]`
 - Admin 後台前端:`/admin` middleware + `AppNav.vue`「資料管理」條件式連結已完成;`/admin/categories` 分類管理頁已完成串 API(列表/新增/編輯/刪除);`/admin/words` 單字管理頁已完成新增/編輯/刪除串 API,列表可展開看例句,分類篩選(只顯示有單字的分類)、關鍵字搜尋(400ms debounce)都已接上 `GET /api/admin/words` 查詢,**分頁 UI 還沒做**(2026/10/12 定案:管理後台用傳統分頁 component,不做無限捲動——無限捲動對瀏覽內容才有意義,管理後台需要看到總筆數;分頁 component 排到 MVP 結束後再做,目前先把前端 `pageSize` 跟後端上限都調大,一次撈全部頂著)
@@ -105,12 +105,13 @@
 
 ## D. 完成 /progress 真資料串接
 
-狀態:未開始,細項待補(2026/10/13 新增,從 E 大項前插入,細節範圍見 `learningRecord.md`)
+狀態:**已完成(2026/10/13)**,細節見 `learningRecord.md`
 
-1. 統計列(連續天數/已精熟/學習中/今天待複習)串真資料:前端直接把現有 `GET /api/progress/summary` 每本書的數字加總,不需要新增/修改後端 API
-2. 新增 `DailyActivity` 表(`UserId` + `Date` + `Mode`(choice/typing)+ 當天完成輪數),選擇題/打字拼寫「完整跑完一輪」(題目全部作答完,中途離開不算)時 +1,供近 14 天長條圖、全年熱力圖使用
-3. 連續練習天數(streak)計算邏輯,依賴 `DailyActivity` 判斷連續有活動的天數
-4. 跟 E 大項(SM-2)的差異:這裡只是「有沒有完成一輪練習」的活動日誌,不涉及 SM-2 的 ease factor/interval 計算,兩者互相獨立,不互相卡進度
+1. ~~統計列(連續天數/已精熟/學習中/今天待複習)串真資料~~ → 已完成:已精熟/學習中/今天待複習打 `GET /api/progress/summary` 前端加總;連續天數(含最長紀錄)打新增的 `GET /api/activity/summary`
+2. ~~新增 `DailyActivity` 表~~ → 已完成:`UserId`+`ActivityDate`+`Mode`(`"Choice"`/`"Typing"`字串)複合主鍵 + `CompletedRounds`,選擇題/打字拼寫「完整跑完一輪」時由 `POST /api/activity/round-complete` +1
+3. ~~連續練習天數(streak)計算邏輯~~ → 已完成,含「最長紀錄」(歷史上最長連續區間,不限於目前這段)
+4. 近 14 天長條圖、全年熱力圖也一併完成,三者(連續天數/長條圖/熱力圖)原本規劃三支獨立 API,後來合併成一支 `GET /api/activity/summary`(一次回傳 `{ streak, recent, heatmap }`),理由是這三個都只有 `/progress` 這頁在用、資料源都是 `DailyActivity`,合併可以把這頁的網路來回從 4 次砍到 2 次(另一次是 `GET /api/progress/summary`),避免依序 `await` 4 支 API 的 waterfall;熱力圖「幾輪對應幾級」的門檻(`heatmapLevel`)先用參考值(0/1-2/3-4/5-6/7+),之後可依實際使用情況調整
+5. 跟 E 大項(SM-2)的差異:這裡只是「有沒有完成一輪練習」的活動日誌,不涉及 SM-2 的 ease factor/interval 計算,兩者互相獨立,不互相卡進度
 
 ## E. 學習紀錄(SM-2)
 
