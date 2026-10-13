@@ -51,3 +51,8 @@ export interface FlashcardProgress {
   isArchived: boolean // true = 已畢業/封存,不再出現在複習清單
   nextReviewAt: string | null // ISO 日期字串(yyyy-MM-dd),null = 不用複習(封存或還沒標記)
 }
+
+export interface ActivityStreakResponse {
+  currentStreak: number
+  longestStreak: number
+}

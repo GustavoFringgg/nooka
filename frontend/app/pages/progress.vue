@@ -1,13 +1,35 @@
 <script setup lang="ts">
 import type { Ref } from "vue"
-import { onMounted, ref } from "vue"
-
-// Stage 8(學習紀錄頁面):目前是純假資料版面,對應 learningRecord.md 2026/09/28 定案(9/28 後續補充:統計列改回這頁,代表跨全部書的總計)。
-// 統計列(連續天數/已精熟/學習中/今天待複習)之後改真資料時,可以直接打現有的 GET /api/progress/summary(回傳每本書的數字)再前端加總,不用等後端補新功能;
-// 14 天長條圖 / 全年熱力圖只算「選擇題 + 打字拼寫」,不含單字卡,這兩個要串真資料則需要新增 DailyActivity 表才能算,還沒排。
-// 這次先把版面全部用假資料撐起來,之後輪到串 API 再逐一替換。
-
+import type { ActivityStreakResponse, CategoryProgressSummaryResponse } from "~/types/practice"
 const isLoggedIn = useIsLoggedIn()
+
+const { data: categorySummaries } = await useAsyncData(
+  "progress-category-summary",
+  async () => {
+    if (!isLoggedIn.value) return []
+    return await useApiFetch<CategoryProgressSummaryResponse[]>("/api/progress/summary")
+  },
+  { watch: [isLoggedIn], default: () => [] as CategoryProgressSummaryResponse[] }
+)
+
+const familiarWords = computed(() => categorySummaries.value.reduce((sum, s) => sum + s.familiar, 0))
+
+const learningWords = computed(() => categorySummaries.value.reduce((sum, s) => sum + s.learning, 0))
+
+const learningBookCount = computed(() => categorySummaries.value.filter((s) => s.familiar + s.learning > 0).length)
+
+const dueToday = computed(() => categorySummaries.value.reduce((sum, s) => sum + s.dueToday, 0))
+
+const { data: streakSummary } = await useAsyncData(
+  "progress-streak-summary",
+  async () => {
+    if (!isLoggedIn.value) return { currentStreak: 0, longestStreak: 0 }
+    return await useApiFetch<ActivityStreakResponse>("/api/activity/streak")
+  },
+  { watch: [isLoggedIn], default: () => ({ currentStreak: 0, longestStreak: 0 }) }
+)
+
+const streakBest = computed(() => streakSummary.value.longestStreak)
 
 // 統計列數字從 0 開始滾到目標值的動畫,手法跟 overview.vue 的 totalWordsDisplay 一樣(requestAnimationFrame + ease-out)
 const animateCount = (target: number, display: Ref<number>, duration = 1000) => {
@@ -35,25 +57,16 @@ function mulberry32(seed: number) {
   }
 }
 
-// ---- 統計列(假資料,跨全部書的總計;之後改真資料會串 GET /api/progress/summary 並把各本書加總)----
-const streakDays = 12
-const streakBest = 27
-const familiarWords = 184
-const familiarWeeklyDelta = 14
-const learningWords = 96
-const learningBookCount = 3
-const dueToday = 23
-
 const streakDaysDisplay = ref(0)
 const familiarWordsDisplay = ref(0)
 const learningWordsDisplay = ref(0)
 const dueTodayDisplay = ref(0)
 
 onMounted(() => {
-  animateCount(streakDays, streakDaysDisplay)
-  animateCount(familiarWords, familiarWordsDisplay)
-  animateCount(learningWords, learningWordsDisplay)
-  animateCount(dueToday, dueTodayDisplay)
+  animateCount(streakSummary.value.currentStreak, streakDaysDisplay)
+  animateCount(familiarWords.value, familiarWordsDisplay)
+  animateCount(learningWords.value, learningWordsDisplay)
+  animateCount(dueToday.value, dueTodayDisplay)
 })
 
 // ---- 近 14 天練習量:選擇題 / 打字拼寫(假資料)----
@@ -139,51 +152,57 @@ useHead({
     <AppNav />
 
     <div class="max-w-[1080px] mx-auto px-6 md:px-8 pt-11 pb-20">
-      <div class="relative">
-        <div
-          class="transition-[filter,opacity] duration-200"
-          :class="!isLoggedIn ? 'blur-[6px] opacity-70 pointer-events-none select-none' : ''"
-        >
+      <div v-if="isLoggedIn">
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-            <div class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
-              <div class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em] mb-2.5">連續練習</div>
+            <div
+              class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)] flex flex-col justify-center"
+            >
+              <div class="flex items-center justify-between mb-2.5">
+                <span class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em]">連續練習</span>
+                <span class="text-xs text-paper-primary">▲ 最長紀錄 {{ streakBest }} 天</span>
+              </div>
               <div class="font-display text-[32px] leading-none">
                 {{ streakDaysDisplay }}
                 <span class="font-body text-[13px] text-paper-muted ml-1">天</span>
               </div>
-              <div class="mt-2.5 text-xs text-paper-primary">▲ 最長紀錄 {{ streakBest }} 天</div>
             </div>
 
-            <div class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
+            <div
+              class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)] flex flex-col justify-center"
+            >
               <div class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em] mb-2.5">已熟悉</div>
               <div class="font-display text-[32px] leading-none">
                 {{ familiarWordsDisplay }}
                 <span class="font-body text-[13px] text-paper-muted ml-1">個字</span>
               </div>
-              <div class="mt-2.5 text-xs text-paper-primary">▲ 本週 +{{ familiarWeeklyDelta }}</div>
             </div>
 
-            <div class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
-              <div class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em] mb-2.5">學習中</div>
+            <div
+              class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)] flex flex-col justify-center"
+            >
+              <div class="flex items-center justify-between mb-2.5">
+                <span class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em]">學習中</span>
+                <span class="text-xs text-paper-muted">你讀了 {{ learningBookCount }} 本書</span>
+              </div>
               <div class="font-display text-[32px] leading-none">
                 {{ learningWordsDisplay }}
                 <span class="font-body text-[13px] text-paper-muted ml-1">個字</span>
               </div>
-              <div class="mt-2.5 text-xs text-paper-muted">你讀了 {{ learningBookCount }} 本書</div>
             </div>
 
-            <div class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
-              <div class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em] mb-2.5">今天待複習</div>
+            <div
+              class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)] flex flex-col justify-center"
+            >
+              <div class="flex items-center justify-between mb-2.5">
+                <span class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em]">今天待複習</span>
+                <NuxtLink to="/practice" class="text-xs text-paper-primary no-underline hover:text-paper-accent">
+                  → 去練習
+                </NuxtLink>
+              </div>
               <div class="font-display text-[32px] leading-none text-paper-accent">
                 {{ dueTodayDisplay }}
                 <span class="font-body text-[13px] text-paper-muted ml-1">張</span>
               </div>
-              <NuxtLink
-                to="/practice"
-                class="inline-block mt-3 rounded-[10px] bg-paper-primary text-paper-bg text-xs px-3.5 py-1.5 no-underline"
-              >
-                去複習
-              </NuxtLink>
             </div>
           </div>
 
@@ -280,21 +299,20 @@ useHead({
             <NuxtLink to="/practice" class="text-paper-primary">書架</NuxtLink>
             看單字書上的標示。
           </p>
-        </div>
+      </div>
 
-        <div v-if="!isLoggedIn" class="absolute inset-0 flex items-center justify-center px-6">
-          <div
-            class="bg-paper-bg rounded-[20px] px-10 py-8 text-center shadow-[0_25px_60px_-20px_rgba(43,42,37,0.45)] max-w-sm"
+      <div v-else class="flex items-center justify-center px-6 py-24">
+        <div
+          class="bg-paper-bg rounded-[20px] px-10 py-8 text-center shadow-[0_25px_60px_-20px_rgba(43,42,37,0.45)] max-w-sm"
+        >
+          <p class="font-display text-xl m-0 mb-2">登入後查看你的學習進度</p>
+          <p class="text-paper-muted text-sm m-0 mb-5">練習紀錄會跟你的帳號綁在一起,登入後才會開始累積。</p>
+          <NuxtLink
+            to="/login"
+            class="inline-block rounded-full bg-paper-primary text-paper-bg font-body px-6 py-2.5 text-sm font-medium no-underline transition-colors hover:bg-paper-accent"
           >
-            <p class="font-display text-xl m-0 mb-2">登入後查看你的學習進度</p>
-            <p class="text-paper-muted text-sm m-0 mb-5">練習紀錄會跟你的帳號綁在一起,登入後才會開始累積。</p>
-            <NuxtLink
-              to="/login"
-              class="inline-block rounded-full bg-paper-primary text-paper-bg font-body px-6 py-2.5 text-sm font-medium no-underline transition-colors hover:bg-paper-accent"
-            >
-              去登入
-            </NuxtLink>
-          </div>
+            去登入
+          </NuxtLink>
         </div>
       </div>
     </div>

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from "vue"
-
 // 版面規格取自 claude-design/Nooka 首頁設計.dc.html
 useHead({
   link: [
