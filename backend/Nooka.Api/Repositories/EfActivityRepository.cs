@@ -64,8 +64,6 @@ public class EfActivityRepository : IActivityRepository
         }
         return new ActivityStreakResponse(currentStreak, longestStreak);
     }
-
-
     public async Task RecordRoundCompleteAsync(int userId, string mode)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -87,6 +85,25 @@ public class EfActivityRepository : IActivityRepository
             });
         }
         await _context.SaveChangesAsync();
+    }
+    public async Task<List<ActivityRecentDayResponse>> GetRecentAsync(int userId, int days)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var startDate = today.AddDays(-(days - 1));
+        var rows = await _context.DailyActivities
+        .Where(da => da.UserId == userId && da.ActivityDate >= startDate && da.ActivityDate <= today)
+        .ToListAsync();
+
+        var result = new List<ActivityRecentDayResponse>();
+
+        for (int i = days - 1; i >= 0; i--)
+        {
+            var date = today.AddDays(-i);
+            var choice = rows.FirstOrDefault(r => r.ActivityDate == date && r.Mode == "Choice")?.CompletedRounds ?? 0;
+            var typing = rows.FirstOrDefault(r => r.ActivityDate == date && r.Mode == "Typing")?.CompletedRounds ?? 0;
+            result.Add(new ActivityRecentDayResponse(date, choice, typing));
+        }
+        return result;
     }
 }
 

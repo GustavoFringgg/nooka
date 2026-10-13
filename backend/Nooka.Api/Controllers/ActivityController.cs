@@ -31,4 +31,13 @@ public class ActivityController : ControllerBase
         var summary = await _activityRepository.GetStreakSummaryAsync(userId);
         return Ok(summary);
     }
+
+    [Authorize]
+    [HttpGet("recent")]
+    public async Task<IActionResult> GetRecent(int days = 14)
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var result = await _activityRepository.GetRecentAsync(userId, days);
+        return Ok(result);
+    }
 }
