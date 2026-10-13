@@ -8,4 +8,5 @@ public interface IWordProgressRepository
     Task BatchUpsertAsync(int userId, List<WordProgressUpdateRequest> updates);
     Task<List<CategoryProgressSummaryResponse>> GetSummaryAsync(int userId);
 
+
 }

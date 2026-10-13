@@ -8,11 +8,11 @@ using Nooka.Api.Models.Dtos.Request;
 [Route("api/[controller]")]
 public class ProgressController : ControllerBase
 {
-    private readonly IWordProgressRepository _repository;
+    private readonly IWordProgressRepository _wordProgressRepository;
 
-    public ProgressController(IWordProgressRepository repository)
+    public ProgressController(IWordProgressRepository wordProgressRepository)
     {
-        _repository = repository;
+        _wordProgressRepository = wordProgressRepository;
     }
 
     [Authorize]
@@ -20,7 +20,7 @@ public class ProgressController : ControllerBase
     public async Task<IActionResult> GetProgressByCategory(int categoryId)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var words = await _repository.GetByCategoryAsync(userId, categoryId);
+        var words = await _wordProgressRepository.GetByCategoryAsync(userId, categoryId);
         return Ok(words);
     }
 
@@ -29,7 +29,7 @@ public class ProgressController : ControllerBase
     public async Task<IActionResult> UpdateWordProgress(List<WordProgressUpdateRequest> updates)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        await _repository.BatchUpsertAsync(userId, updates);
+        await _wordProgressRepository.BatchUpsertAsync(userId, updates);
         return Ok(new { message = "update success" });
     }
 
@@ -38,7 +38,7 @@ public class ProgressController : ControllerBase
     public async Task<IActionResult> GetProgressSummary()
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var summary = await _repository.GetSummaryAsync(userId);
+        var summary = await _wordProgressRepository.GetSummaryAsync(userId);
         return Ok(summary);
     }
 
