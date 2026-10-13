@@ -20,7 +20,7 @@ const { data: wordsPage, refresh: refresh } = await useAsyncData(
   "admin-words",
   () =>
     useApiFetch<PagedResponse<AdminWord>>("/api/admin/words", {
-      query: { page: 1, pageSize: 20, categoryId: filterCategoryId.value, keyword: debouncedKeyword.value }
+      query: { page: 1, pageSize: 999, categoryId: filterCategoryId.value, keyword: debouncedKeyword.value }
     }),
   { default: () => ({ items: [], totalCount: 0 }), watch: [filterCategoryId, debouncedKeyword] }
 )
@@ -99,7 +99,7 @@ watch(keyword, (value) => {
   clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
     debouncedKeyword.value = value
-  }, 400)
+  }, 150)
 })
 
 // ---- 抽屜表單(新增跟編輯共用同一張表單)----

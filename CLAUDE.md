@@ -34,7 +34,7 @@
   - 答對 / 答錯各對應一組固定的 quality 分數,餵進 SM-2 公式計算下次複習間隔(interval)與 ease factor
   - 答對不代表不用再複習,只是複習間隔會拉長
 - **開發階段**:先做 MVP(會員 + 卡片學習 + SM-2),AI 功能列為 Phase 2,MVP 完成上線後再疊加
-  - **接下來的開發順序(2026/09/28 定案)**:**C(內容管理 Admin 後台)→ D(學習紀錄 SM-2)→ B(會員系統補 refresh token)→ A(學習核心收尾:發音/RWD/loading 畫面等)→ G(部署)**。C 排在 D 前面雖然不算 MVP 範圍,但原因是先有 Admin 後台才能好好管理單字內容,不用手動戳 Supabase,之後開發/測試 SM-2 演算法時比較方便新增調整單字。
+  - **接下來的開發順序(2026/09/28 定案,2026/10/13 調整)**:**C(內容管理 Admin 後台)→ D(完成 /progress 真資料串接)→ E(學習紀錄 SM-2)→ B(會員系統補 refresh token)→ A(學習核心收尾:發音/RWD/loading 畫面等)→ H(部署)**。C 排在 D 前面雖然不算 MVP 範圍,但原因是先有 Admin 後台才能好好管理單字內容,不用手動戳 Supabase,之後開發/測試 SM-2 演算法時比較方便新增調整單字。2026/10/13 在原本的 D(SM-2)前面插入新的 D(完成 /progress 真資料串接),原 D 往後推成 E,原 E/F/G(介面/測試/部署)依序推成 F/G/H——原因是 `/progress` 統計列可以直接用現有 `GET /api/progress/summary` 加總,不需要等 SM-2 定案就能做完,順手先把這塊收掉。
   - **AI 功能方向(2026/08/20 討論)**:鎖定以下兩個,都是「後台/演算法輔助,使用者無感」性質
     1. **AI 輔助產生卡片內容**:AI 讀 DB 現有分類/單字(避免重複、抓上下文)生成新單字的中英釋義、例句、詞性,存 DB 標記「待審核」,審核管道兩個都要保留:(a)內容管理 Admin 後台 UI(見下方 C 大項),(b)LINE Messaging API 推播通知 + 按鈕核准(用 postback 夾帶單字 ID,不 parse 純文字回覆,避免多筆待審時對不上),核准後才正式發布
     2. **語意向量(embedding)挑選干擾項**:每個單字的釋義預先算好 embedding 存 DB,出題時用 cosine similarity 挑語意相近的單字當選擇題干擾項,取代目前隨機挑同分類單字的做法;這步是一次性預計算 + 純數學比對,不用每次出題都即時呼叫 AI API
@@ -64,7 +64,7 @@
 - `/progress` 學習紀錄頁面已完成(**目前是假資料版,尚未串真實 API**):統計列(連續天數/已精熟/學習中/今天待複習,跨全部書總計,數字有從 0 滾動的 count-up 動畫)+ 近 14 天長條圖(選擇題/打字拼寫兩色柱狀)+ 全年練習熱力圖(GitHub 貢獻格樣式);未登入時背景維持版面(blur + 降透明度)、中間疊置中登入卡片,不是整頁替換;之後改真資料時統計列可直接打既有的 `GET /api/progress/summary` 加總,長條圖/熱力圖則需要新增 `DailyActivity` 表才能算,細節見 `learningRecord.md`
 - `/practice` 書架書封進度標示已完成:左上角橘色圓形角標顯示今日待複習張數(>0 才顯示,跟右上角選中書籤角標分開避免重疊)、書名下方進度條(白底 + 螢光綠填色,已學/總字數比例)+ 文字數字;直接沿用既有 `GET /api/progress/summary`(回傳每本書的 Familiar/Learning/NewWords/DueToday),不用等後端補新 API
 - Admin 後台 API 全部完成,合併在單一 `AdminController`(跟 `plan.md` 原規劃的兩個獨立 controller 不同,功能等價):分類 CRUD(`GET/POST/PUT/DELETE /api/admin/categories`)、單字 CRUD + 分頁查詢(`GET/POST/PUT/DELETE /api/admin/words`,`PUT` 在同一個 transaction 裡 diff 增減 `WordCategories` 關聯)、`Word.Term`/`Category.Name` 都有 DB unique index,違反時回傳 409;全部 `[Authorize(Roles = "Admin")]`
-- Admin 後台前端:`/admin` middleware + `AppNav.vue`「資料管理」條件式連結已完成;`/admin/categories` 分類管理頁已完成串 API(列表/新增/編輯/刪除);`/admin/words` 單字管理頁已完成新增/編輯/刪除串 API,列表可展開看例句,分類篩選(只顯示有單字的分類)、關鍵字搜尋(400ms debounce)都已接上 `GET /api/admin/words` 查詢,**無限捲動分頁還沒做**(目前固定抓第一頁 20 筆,細節見 `plan.md`)
+- Admin 後台前端:`/admin` middleware + `AppNav.vue`「資料管理」條件式連結已完成;`/admin/categories` 分類管理頁已完成串 API(列表/新增/編輯/刪除);`/admin/words` 單字管理頁已完成新增/編輯/刪除串 API,列表可展開看例句,分類篩選(只顯示有單字的分類)、關鍵字搜尋(400ms debounce)都已接上 `GET /api/admin/words` 查詢,**分頁 UI 還沒做**(2026/10/12 定案:管理後台用傳統分頁 component,不做無限捲動——無限捲動對瀏覽內容才有意義,管理後台需要看到總筆數;分頁 component 排到 MVP 結束後再做,目前先把前端 `pageSize` 跟後端上限都調大,一次撈全部頂著)
 
 ---
 
@@ -79,7 +79,7 @@
 
 0903 mvp 完成 尚缺
 
-1. ~~單字卡進度目前存在 local storage,DB 化 + 未登入純瀏覽模式 + 會員進度總覽頁面進行中~~ → 已完成(DB 化、未登入純瀏覽、`/progress` 假資料版學習紀錄頁面皆已完成,見 `plan.md`、`learningRecord.md`);`/progress` 統計列/長條圖/熱力圖改真資料還沒排
+1. ~~單字卡進度目前存在 local storage,DB 化 + 未登入純瀏覽模式 + 會員進度總覽頁面進行中~~ → 已完成(DB 化、未登入純瀏覽、`/progress` 假資料版學習紀錄頁面皆已完成,見 `plan.md`、`learningRecord.md`);`/progress` 統計列/長條圖/熱力圖改真資料,見下方「D. 完成 /progress 真資料串接」
 2. 單字卡沒有發音功能
 3. 單字卡顯示內容優化
 4. RWD
@@ -95,15 +95,24 @@
 
 ## C. 內容管理(Admin 後台)
 
-狀態:後端 CRUD API 全部完成;前端分類管理頁已完成;單字管理頁新增/編輯/刪除、分類篩選、關鍵字搜尋都已完成,**無限捲動分頁還沒接**
+狀態:後端 CRUD API 全部完成;前端分類管理頁已完成;單字管理頁新增/編輯/刪除、分類篩選、關鍵字搜尋都已完成,**分頁 component 還沒做**
 
 1. ~~分類(書)CRUD API + 後台 UI~~ → 已完成,見下方「已完成的基礎建設」
-2. 卡片(單字)CRUD API → 已完成;後台 UI 的新增/編輯/刪除、分類篩選(只顯示有單字的分類)、關鍵字搜尋(debounce 400ms)都已完成,`/admin/words` 列表目前還是固定抓第一頁 20 筆,沒做無限捲動載入下一頁
+2. 卡片(單字)CRUD API → 已完成;後台 UI 的新增/編輯/刪除、分類篩選(只顯示有單字的分類)、關鍵字搜尋(debounce 400ms)都已完成,`/admin/words` 列表分頁 UI(頁碼按鈕 + 總筆數)排到 MVP 結束後再做,目前先一次撈全部資料(前端 `pageSize` 調大、後端上限也調大)頂著,不做無限捲動
 3. ~~`/admin` middleware(限 `Admin` 角色)~~ → 已完成
 
 (未來)開放一般使用者自行建立卡片/卡片組;卡片加入「常用片語/慣用搭配詞」(collocation)欄位 — MVP 先用多筆例句(`Examples`)頂著,片語需人工 curate 內容成本高,暫不排入 MVP。
 
-## D. 學習紀錄(SM-2)
+## D. 完成 /progress 真資料串接
+
+狀態:未開始,細項待補(2026/10/13 新增,從 E 大項前插入,細節範圍見 `learningRecord.md`)
+
+1. 統計列(連續天數/已精熟/學習中/今天待複習)串真資料:前端直接把現有 `GET /api/progress/summary` 每本書的數字加總,不需要新增/修改後端 API
+2. 新增 `DailyActivity` 表(`UserId` + `Date` + `Mode`(choice/typing)+ 當天完成輪數),選擇題/打字拼寫「完整跑完一輪」(題目全部作答完,中途離開不算)時 +1,供近 14 天長條圖、全年熱力圖使用
+3. 連續練習天數(streak)計算邏輯,依賴 `DailyActivity` 判斷連續有活動的天數
+4. 跟 E 大項(SM-2)的差異:這裡只是「有沒有完成一輪練習」的活動日誌,不涉及 SM-2 的 ease factor/interval 計算,兩者互相獨立,不互相卡進度
+
+## E. 學習紀錄(SM-2)
 
 狀態:未開始,細項待補
 
@@ -111,7 +120,7 @@
 2. 複習排程呈現(非單純學過/沒學過二元標記)
 3. 常用查詢欄位索引規劃(如 `UserId + NextReviewDate`、`CategoryId`)
 
-## E. 介面(Landing + 書架殼)
+## F. 介面(Landing + 書架殼)
 
 狀態:landing page、書架頁改版已完成
 
@@ -120,7 +129,7 @@
 3. `design_handoff_velorah_hero/` 設計稿其餘頁面套用(待處理)
 4. 吉祥物狗狗(Nooka):全域浮動元件掛在 `app.vue` 根層,跨頁面持續存在;平常在畫面上亂跑(GSAP 隨機移動),進測驗頁(choice/typing)時切成待機不動(用全域狀態如 Pinia store 控制模式),待實作規劃
 
-## F. 測試與 CI/CD
+## G. 測試與 CI/CD
 
 1. 單元測試(Unit):後端用 xUnit 測商業邏輯(例如之後的 SM-2 計算),前端用 Vitest 測 utils/quiz.ts 這類純函式(buildQuizQuestions/buildTypingQuestions)
 2. 整合測試(Integration):後端 API 層,用 WebApplicationFactory 打真實/測試用 DB,驗證 Controller + EF Core + Repository 串起來對不對
@@ -128,7 +137,7 @@
 
 CI/CD 把關方式:GitHub Actions 在 PR 階段跑上述測試,擋合併進 main;Vercel(前端)、Cloud Run(後端,需另寫 build+deploy workflow)都只監聽 main 的 push 自動部署,等於用「擋合併」間接把關部署,不是讓 Vercel 自己跑測試。
 
-## G. 部署與基礎建設
+## H. 部署與基礎建設
 
 狀態:未開始
 
@@ -147,7 +156,7 @@ CI/CD 把關方式:GitHub Actions 在 PR 階段跑上述測試,擋合併進 main
 - 進入方式:比照選擇題/打字拼寫,點「單字卡」跳 UModal;跟選擇題/打字拼寫不同的是**沒有題數 slider**,改成「學習新單字」/「複習已學過的單字」二選一(依 `useFlashcardProgress` 算出的 new/due 數量顯示)
 - 切換下一張:按鈕 + 鍵盤方向鍵(跟 `choice.vue` 一致)
 - 翻牌動畫:GSAP(`rotateY` + `backface-visibility: hidden`,驗證於 `cardTest.vue` 原型頁,正式實作在 `flashcard.vue`)
-- 複習演算法:**不用 SM-2**——SM-2 留給 D 大項(學習紀錄)給選擇題/打字拼寫用,單字卡另外用一套自訂等級(Leitner 分級)系統,兩者並存、互不取代
+- 複習演算法:**不用 SM-2**——SM-2 留給 E 大項(學習紀錄)給選擇題/打字拼寫用,單字卡另外用一套自訂等級(Leitner 分級)系統,兩者並存、互不取代
 
 **實作現況**:
 

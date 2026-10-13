@@ -116,7 +116,13 @@ const monthLabels: string[] = heatmapColumns.map((col, i) => {
   return month !== prevMonth ? `${month + 1}月` : ""
 })
 
-const cellLevelClass = ["bg-paper-fg/8", "bg-paper-primary/28", "bg-paper-primary/52", "bg-paper-primary/78", "bg-paper-primary"]
+const cellLevelClass = [
+  "bg-paper-fg/8",
+  "bg-paper-primary/28",
+  "bg-paper-primary/52",
+  "bg-paper-primary/78",
+  "bg-paper-primary"
+]
 
 useHead({
   link: [
@@ -134,133 +140,154 @@ useHead({
     <AppNav />
 
     <div class="max-w-[1080px] mx-auto px-6 md:px-8 pt-11 pb-20">
-      <div class="flex items-end justify-between mb-7">
-        <div>
-          <h1 class="font-display font-normal text-[34px] m-0 mb-1.5">學習紀錄</h1>
-          <p class="text-paper-muted text-sm m-0">你的學習旅程,一眼看完</p>
-        </div>
-      </div>
-
       <div class="relative">
         <div
           class="transition-[filter,opacity] duration-200"
           :class="!isLoggedIn ? 'blur-[6px] opacity-70 pointer-events-none select-none' : ''"
         >
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-          <div class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
-            <div class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em] mb-2.5">連續練習</div>
-            <div class="font-display text-[32px] leading-none">
-              {{ streakDaysDisplay }}<span class="font-body text-[13px] text-paper-muted ml-1">天</span>
-            </div>
-            <div class="mt-2.5 text-xs text-paper-primary">▲ 最長紀錄 {{ streakBest }} 天</div>
-          </div>
-
-          <div class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
-            <div class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em] mb-2.5">已精熟單字</div>
-            <div class="font-display text-[32px] leading-none">
-              {{ familiarWordsDisplay }}<span class="font-body text-[13px] text-paper-muted ml-1">個字</span>
-            </div>
-            <div class="mt-2.5 text-xs text-paper-primary">▲ 本週 +{{ familiarWeeklyDelta }}</div>
-          </div>
-
-          <div class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
-            <div class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em] mb-2.5">學習中</div>
-            <div class="font-display text-[32px] leading-none">
-              {{ learningWordsDisplay }}<span class="font-body text-[13px] text-paper-muted ml-1">個字</span>
-            </div>
-            <div class="mt-2.5 text-xs text-paper-muted">跨 {{ learningBookCount }} 本書</div>
-          </div>
-
-          <div class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
-            <div class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em] mb-2.5">今天待複習</div>
-            <div class="font-display text-[32px] leading-none text-paper-accent">
-              {{ dueTodayDisplay }}<span class="font-body text-[13px] text-paper-muted ml-1">張</span>
-            </div>
-            <NuxtLink
-              to="/practice"
-              class="inline-block mt-3 rounded-[10px] bg-paper-primary text-paper-bg text-xs px-3.5 py-1.5 no-underline"
-            >
-              去複習
-            </NuxtLink>
-          </div>
-        </div>
-
-        <div class="bg-paper-bg rounded-[20px] p-6 mb-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
-          <div class="flex items-baseline justify-between mb-4.5">
-            <h2 class="font-display text-[19px] font-normal m-0">近 14 天練習量</h2>
-            <span class="text-xs text-paper-muted">總計 {{ totalRounds }} 輪</span>
-          </div>
-
-          <div class="flex gap-2 px-1">
-            <div v-for="day in barDays" :key="day.label" class="flex-1 flex flex-col items-center gap-2">
-              <div class="w-full h-40 flex items-end justify-center gap-1">
-                <div
-                  class="w-full max-w-[11px] rounded-t-[5px] rounded-b-[2px] bg-paper-primary/85"
-                  :style="{ height: `${(day.choice / barMax) * 100}%` }"
-                />
-                <div
-                  class="w-full max-w-[11px] rounded-t-[5px] rounded-b-[2px] bg-paper-accent"
-                  :style="{ height: `${(day.typing / barMax) * 100}%` }"
-                />
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+            <div class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
+              <div class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em] mb-2.5">連續練習</div>
+              <div class="font-display text-[32px] leading-none">
+                {{ streakDaysDisplay }}
+                <span class="font-body text-[13px] text-paper-muted ml-1">天</span>
               </div>
-              <span class="text-[10.5px] text-paper-muted" :class="{ 'text-paper-fg font-medium': day.label === '今天' }">
-                {{ day.label }}
+              <div class="mt-2.5 text-xs text-paper-primary">▲ 最長紀錄 {{ streakBest }} 天</div>
+            </div>
+
+            <div class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
+              <div class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em] mb-2.5">已熟悉</div>
+              <div class="font-display text-[32px] leading-none">
+                {{ familiarWordsDisplay }}
+                <span class="font-body text-[13px] text-paper-muted ml-1">個字</span>
+              </div>
+              <div class="mt-2.5 text-xs text-paper-primary">▲ 本週 +{{ familiarWeeklyDelta }}</div>
+            </div>
+
+            <div class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
+              <div class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em] mb-2.5">學習中</div>
+              <div class="font-display text-[32px] leading-none">
+                {{ learningWordsDisplay }}
+                <span class="font-body text-[13px] text-paper-muted ml-1">個字</span>
+              </div>
+              <div class="mt-2.5 text-xs text-paper-muted">你讀了 {{ learningBookCount }} 本書</div>
+            </div>
+
+            <div class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
+              <div class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em] mb-2.5">今天待複習</div>
+              <div class="font-display text-[32px] leading-none text-paper-accent">
+                {{ dueTodayDisplay }}
+                <span class="font-body text-[13px] text-paper-muted ml-1">張</span>
+              </div>
+              <NuxtLink
+                to="/practice"
+                class="inline-block mt-3 rounded-[10px] bg-paper-primary text-paper-bg text-xs px-3.5 py-1.5 no-underline"
+              >
+                去複習
+              </NuxtLink>
+            </div>
+          </div>
+
+          <div class="bg-paper-bg rounded-[20px] p-6 mb-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
+            <div class="flex items-baseline justify-between mb-4.5">
+              <h2 class="font-display text-[19px] font-normal m-0">近 14 天練習量</h2>
+              <span class="text-xs text-paper-muted">總計 {{ totalRounds }} 輪</span>
+            </div>
+
+            <div class="flex gap-2 px-1">
+              <div v-for="day in barDays" :key="day.label" class="flex-1 flex flex-col items-center gap-2">
+                <div class="w-full h-40 flex items-end justify-center gap-1">
+                  <div
+                    class="w-full max-w-[11px] rounded-t-[5px] rounded-b-[2px] bg-paper-primary/85"
+                    :style="{ height: `${(day.choice / barMax) * 100}%` }"
+                  />
+                  <div
+                    class="w-full max-w-[11px] rounded-t-[5px] rounded-b-[2px] bg-paper-accent"
+                    :style="{ height: `${(day.typing / barMax) * 100}%` }"
+                  />
+                </div>
+                <span
+                  class="text-[10.5px] text-paper-muted"
+                  :class="{ 'text-paper-fg font-medium': day.label === '今天' }"
+                >
+                  {{ day.label }}
+                </span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-5 mt-4 justify-end text-[11.5px] text-paper-muted">
+              <span class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-sm bg-paper-primary/85" />
+                選擇題
+              </span>
+              <span class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-sm bg-paper-accent" />
+                打字拼寫
               </span>
             </div>
           </div>
 
-          <div class="flex items-center gap-5 mt-4 justify-end text-[11.5px] text-paper-muted">
-            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-paper-primary/85" />選擇題</span>
-            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-paper-accent" />打字拼寫</span>
-          </div>
-        </div>
-
-        <div class="bg-paper-bg rounded-[20px] p-6 mb-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
-          <div class="flex items-baseline justify-between mb-4.5">
-            <h2 class="font-display text-[19px] font-normal m-0">全年練習熱力圖</h2>
-            <span class="text-xs text-paper-muted">過去 12 個月・選擇題 + 打字拼寫</span>
-          </div>
-
-          <div class="overflow-x-auto pb-1">
-            <div class="inline-flex flex-col">
-              <div class="grid ml-[26px] mb-1" :style="{ gridTemplateColumns: `repeat(${WEEKS}, 12px)`, gap: '3px' }">
-                <div v-for="(label, i) in monthLabels" :key="i" class="text-[10px] text-paper-muted whitespace-nowrap overflow-visible">{{ label }}</div>
-              </div>
-              <div class="flex">
-                <div class="grid mr-1 w-[22px]" :style="{ gridTemplateRows: 'repeat(7, 12px)', gap: '3px' }">
-                  <span
-                    v-for="(d, i) in ['', '一', '', '三', '', '五', '']"
-                    :key="i"
-                    class="flex items-center h-3 text-[10px] text-paper-muted"
-                  >{{ d }}</span>
-                </div>
-                <div class="grid" :style="{ gridTemplateColumns: `repeat(${WEEKS}, 12px)`, gridTemplateRows: 'repeat(7, 12px)', gridAutoFlow: 'column', gap: '3px' }">
+          <div class="bg-paper-bg rounded-[20px] p-6 mb-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
+            <div class="overflow-x-auto pb-1">
+              <div class="inline-flex flex-col">
+                <div class="grid ml-[26px] mb-1" :style="{ gridTemplateColumns: `repeat(${WEEKS}, 12px)`, gap: '3px' }">
                   <div
-                    v-for="(cell, i) in heatmapCells"
+                    v-for="(label, i) in monthLabels"
                     :key="i"
-                    class="w-3 h-3 rounded-[3px]"
-                    :class="cellLevelClass[cell.level]"
-                    :title="`${cell.date.getMonth() + 1}/${cell.date.getDate()}`"
-                  />
+                    class="text-[10px] text-paper-muted whitespace-nowrap overflow-visible"
+                  >
+                    {{ label }}
+                  </div>
+                </div>
+                <div class="flex">
+                  <div class="grid mr-1 w-[22px]" :style="{ gridTemplateRows: 'repeat(7, 12px)', gap: '3px' }">
+                    <span
+                      v-for="(d, i) in ['', '一', '', '三', '', '五', '']"
+                      :key="i"
+                      class="flex items-center h-3 text-[10px] text-paper-muted"
+                    >
+                      {{ d }}
+                    </span>
+                  </div>
+                  <div
+                    class="grid"
+                    :style="{
+                      gridTemplateColumns: `repeat(${WEEKS}, 12px)`,
+                      gridTemplateRows: 'repeat(7, 12px)',
+                      gridAutoFlow: 'column',
+                      gap: '3px'
+                    }"
+                  >
+                    <div
+                      v-for="(cell, i) in heatmapCells"
+                      :key="i"
+                      class="w-3 h-3 rounded-[3px]"
+                      :class="cellLevelClass[cell.level]"
+                      :title="`${cell.date.getMonth() + 1}/${cell.date.getDate()}`"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
+
+            <div class="flex items-center gap-1.5 mt-3 justify-end text-[11px] text-paper-muted">
+              少
+              <span v-for="(cls, i) in cellLevelClass" :key="i" class="w-[11px] h-[11px] rounded-[3px]" :class="cls" />
+              多
+            </div>
           </div>
 
-          <div class="flex items-center gap-1.5 mt-3 justify-end text-[11px] text-paper-muted">
-            少
-            <span v-for="(cls, i) in cellLevelClass" :key="i" class="w-[11px] h-[11px] rounded-[3px]" :class="cls" />
-            多
-          </div>
-        </div>
-
-        <p class="text-center text-sm text-paper-muted mt-6">
-          想看每本書各自的進度?去 <NuxtLink to="/practice" class="text-paper-primary">書架</NuxtLink> 看單字書上的標示。
-        </p>
+          <p class="text-center text-sm text-paper-muted mt-6">
+            想看每本書各自的進度?去
+            <NuxtLink to="/practice" class="text-paper-primary">書架</NuxtLink>
+            看單字書上的標示。
+          </p>
         </div>
 
         <div v-if="!isLoggedIn" class="absolute inset-0 flex items-center justify-center px-6">
-          <div class="bg-paper-bg rounded-[20px] px-10 py-8 text-center shadow-[0_25px_60px_-20px_rgba(43,42,37,0.45)] max-w-sm">
+          <div
+            class="bg-paper-bg rounded-[20px] px-10 py-8 text-center shadow-[0_25px_60px_-20px_rgba(43,42,37,0.45)] max-w-sm"
+          >
             <p class="font-display text-xl m-0 mb-2">登入後查看你的學習進度</p>
             <p class="text-paper-muted text-sm m-0 mb-5">練習紀錄會跟你的帳號綁在一起,登入後才會開始累積。</p>
             <NuxtLink
