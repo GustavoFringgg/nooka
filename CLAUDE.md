@@ -222,5 +222,5 @@ CI/CD 把關方式:GitHub Actions 在 PR 階段跑上述測試,擋合併進 main
 
 MVP 之後可優化方向
 
-1. 登入登出 SSR 閃爍問題
+1. ~~登入登出 SSR 閃爍問題~~ → 已完成(2026/09/24,見 commit `d9e1f1f`):新增 `frontend/app/plugins/auth.ts`,在 app 初始化時(SSR + client 都會跑)就呼叫 `fetchMe()`,不用等個別頁面各自觸發;`useApiFetch` 也改成伺服器端呼叫時用 `useRequestHeaders(["cookie"])` 把瀏覽器的 cookie 轉傳過去,不然 SSR 階段打 API 沒有 cookie 可用,會被當成未登入
 2. refresh token 實踐

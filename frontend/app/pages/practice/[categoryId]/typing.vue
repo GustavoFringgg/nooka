@@ -15,16 +15,26 @@ const posColors: Record<PartOfSpeech, { bg: string; text: string }> = {
   感嘆詞: { bg: "rgba(161,63,94,.16)", text: "#7a2f47" }
 }
 
+const route = useRoute()
+const categoryId = route.params.categoryId
+
+const { data: words, pending, error } = await useFetch<Word[]>(useApiUrl(`/api/words/category/${categoryId}`))
+
+const recordRoundComplete = async () => {
+  if (!isLoggedIn.value) return
+  await useApiFetch("/api/activity/round-complete", {
+    method: "POST",
+    body: { mode: "Typing" }
+  })
+}
+
 const defaultPosColor = { bg: "rgba(120,120,120,.16)", text: "#555555" }
 
 const posColor = (pos: string) => {
   return posColors[pos as PartOfSpeech] ?? defaultPosColor
 }
 
-const route = useRoute()
-const categoryId = route.params.categoryId
 const questionCount = Number(route.query.count) || undefined
-const { data: words, pending, error } = await useFetch<Word[]>(useApiUrl(`/api/words/category/${categoryId}`))
 
 const questions = ref<TypingQuestion[]>([])
 if (words.value?.length) questions.value = buildTypingQuestions(words.value, questionCount)
@@ -151,6 +161,10 @@ const skipQuestion = () => {
 const nextQuestion = () => {
   clearAutoAdvance()
   currentIndex.value++
+
+  if (currentIndex.value >= questions.value.length) {
+    recordRoundComplete()
+  }
 }
 
 const restartQuiz = () => {
