@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Nooka.Api.Data;
 using Nooka.Api.Models;
+using Nooka.Api.Models.Dtos.Response;
 
 public class EfActivityRepository : IActivityRepository
 {
@@ -10,13 +11,32 @@ public class EfActivityRepository : IActivityRepository
     {
         _context = context;
     }
-    public async Task<int> GetStreakAsync(int userId)
+    public async Task<ActivityStreakResponse> GetStreakSummaryAsync(int userId)
     {
         var activityDates = await _context.DailyActivities
         .Where(da => da.UserId == userId)
         .Select(da => da.ActivityDate)
         .Distinct()  // 去重
+        .OrderBy(d => d)
         .ToListAsync();
+
+        if (activityDates.Count == 0) return new ActivityStreakResponse(0, 0);
+
+        // 最長紀錄:逐一比對「這天」是不是「前一天 + 1」,是就延續這段連續區間,不是就重新起算
+        int longestStreak = 1;
+        int runLength = 1;
+        for (int i = 1; i < activityDates.Count; i++)
+        {
+            if (activityDates[i] == activityDates[i - 1].AddDays(1))
+            {
+                runLength++;
+            }
+            else
+            {
+                runLength = 1;
+            }
+            longestStreak = Math.Max(longestStreak, runLength);
+        }
 
         var dateSet = activityDates.ToHashSet();
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -33,16 +53,16 @@ public class EfActivityRepository : IActivityRepository
         }
         else
         {
-            return 0;
+            return new ActivityStreakResponse(0, longestStreak);
         }
 
-        int streak = 0;
+        int currentStreak = 0;
         while (dateSet.Contains(cursor))
         {
-            streak++;
+            currentStreak++;
             cursor = cursor.AddDays(-1);
         }
-        return streak;
+        return new ActivityStreakResponse(currentStreak, longestStreak);
     }
 
 

@@ -76,7 +76,6 @@ const barDays: BarDay[] = (() => {
 })()
 
 const barMax = Math.max(...barDays.flatMap((d) => [d.choice, d.typing]), 1)
-const totalRounds = barDays.reduce((sum, d) => sum + d.choice + d.typing, 0)
 
 // ---- 全年練習熱力圖:選擇題或打字拼寫,當天完整跑完一輪就 +1(假資料)----
 const WEEKS = 53
@@ -191,7 +190,6 @@ useHead({
           <div class="bg-paper-bg rounded-[20px] p-6 mb-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
             <div class="flex items-baseline justify-between mb-4.5">
               <h2 class="font-display text-[19px] font-normal m-0">近 14 天練習量</h2>
-              <span class="text-xs text-paper-muted">總計 {{ totalRounds }} 輪</span>
             </div>
 
             <div class="flex gap-2 px-1">

@@ -1,5 +1,7 @@
+using Nooka.Api.Models.Dtos.Response;
+
 public interface IActivityRepository
 {
     Task RecordRoundCompleteAsync(int userId, string mode);
-    Task<int> GetStreakAsync(int userId);
+    Task<ActivityStreakResponse> GetStreakSummaryAsync(int userId);
 }

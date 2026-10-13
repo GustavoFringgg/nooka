@@ -28,7 +28,7 @@ public class ActivityController : ControllerBase
     public async Task<IActionResult> GetStreak()
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var streakDays = await _activityRepository.GetStreakAsync(userId);
-        return Ok(new { streakDays });
+        var summary = await _activityRepository.GetStreakSummaryAsync(userId);
+        return Ok(summary);
     }
 }
