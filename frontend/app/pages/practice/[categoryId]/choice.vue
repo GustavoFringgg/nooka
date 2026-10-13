@@ -163,6 +163,14 @@ const letterClasses = (option: QuizOption, index: number) => {
   return "border-paper-fg/20 text-paper-muted"
 }
 
+const recordRoundComplete = async () => {
+  if (!isLoggedIn.value) return
+  await useApiFetch("/api/activity/round-complete", {
+    method: "POST",
+    body: { mode: "Choice" }
+  })
+}
+
 const nextQuestion = () => {
   clearAutoAdvance()
   isReviewOpen.value = false
@@ -171,6 +179,10 @@ const nextQuestion = () => {
   isAnswered.value = false
   showSparkBurst.value = false
   highlightedIndex.value = 0
+
+  if (currentIndex.value >= questions.value.length) {
+    recordRoundComplete()
+  }
 }
 
 const restartQuiz = () => {
