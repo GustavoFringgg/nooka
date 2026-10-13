@@ -43,7 +43,7 @@ const currentIndex = ref(0)
 const currentQuestion = computed(() => questions.value[currentIndex.value])
 const isLastQuestion = computed(() => currentIndex.value + 1 >= questions.value.length)
 const progressPercent = computed(() =>
-  questions.value.length ? (currentIndex.value / questions.value.length) * 100 : 0
+  questions.value.length ? ((currentIndex.value + 1) / questions.value.length) * 100 : 0
 )
 
 const score = ref(0)

@@ -107,8 +107,8 @@ const isChoiceModalOpen = ref(false)
 const direction = ref<QuizDirection>("enToCn")
 
 const directionOptions: { label: string; value: QuizDirection }[] = [
-  { label: "看英文,選中文答案", value: "enToCn" },
-  { label: "看中文,選英文答案", value: "cnToEn" }
+  { label: "看英文 選中文答案", value: "enToCn" },
+  { label: "看中文 選英文答案", value: "cnToEn" }
 ]
 
 const openChoiceModal = () => {
@@ -444,11 +444,7 @@ const goToFlashcard = () => {
       </div>
     </div>
 
-    <UModal
-      v-model:open="isChoiceModalOpen"
-      title="練習方向"
-      description="選擇練習方向與題數,設定好就可以開始測驗"
-    >
+    <UModal v-model:open="isChoiceModalOpen" title="選擇題數" description="選擇練習方向，設定好就可以開始測驗">
       <template #body>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-7">
           <div class="flex flex-col gap-2.5">
@@ -479,7 +475,6 @@ const goToFlashcard = () => {
               >
                 {{ direction === "enToCn" ? "word" : "中文" }}
               </div>
-              <span class="text-[10px] text-paper-muted">{{ direction === "enToCn" ? "EN" : "中" }}</span>
             </div>
             <div class="text-paper-accent text-xl preview-arrow">→</div>
             <div class="flex flex-col gap-1.5">
@@ -532,13 +527,31 @@ const goToFlashcard = () => {
       </template>
     </UModal>
 
-    <UModal
-      v-model:open="isTypingModalOpen"
-      title="練習題數"
-      description="選擇題數,設定好就可以開始測驗"
-    >
+    <UModal v-model:open="isTypingModalOpen" title="選擇題數" description="設定好就可以開始測驗">
       <template #body>
-        <div class="mt-7 pt-6">
+        <div class="bg-paper-bg-alt rounded-2xl p-5 min-h-[112px] flex items-center justify-center gap-2.5">
+          <div class="flex flex-col items-center gap-1.5 preview-pulse">
+            <div
+              class="flex w-[74px] h-14 items-center justify-center rounded-[10px] border-[1.5px] border-paper-primary bg-white font-display text-[15px] text-paper-fg px-1.5 text-center"
+            >
+              緊張的
+            </div>
+          </div>
+          <div class="text-paper-accent text-xl preview-arrow">→</div>
+          <div class="flex gap-1">
+            <div
+              class="w-6 h-8 rounded-[6px] border-[1.5px] border-paper-primary bg-white flex items-center justify-center font-display text-sm text-paper-fg"
+            >
+              n
+            </div>
+            <div class="w-6 h-8 rounded-[6px] border-[1.5px] border-paper-fg/20 bg-white" />
+            <div class="w-6 h-8 rounded-[6px] border-[1.5px] border-paper-fg/20 bg-white" />
+            <div class="w-6 h-8 rounded-[6px] border-[1.5px] border-paper-fg/20 bg-white" />
+            <div class="w-6 h-8 rounded-[6px] border-[1.5px] border-paper-fg/20 bg-white" />
+          </div>
+        </div>
+
+        <div class="mt-7 pt-6 border-t border-paper-fg/15">
           <div class="flex items-center justify-between">
             <span class="text-paper-fg text-[15px] font-medium">題目數量</span>
             <span class="text-paper-accent font-display text-[22px]">{{ questionCount }}</span>
