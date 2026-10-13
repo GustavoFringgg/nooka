@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Word, TypingQuestion } from "~/types/practice"
+const isLoggedIn = useIsLoggedIn()
 
 type PartOfSpeech = "形容詞" | "副詞" | "動詞" | "名詞" | "代名詞" | "介系詞" | "連接詞" | "感嘆詞"
 
@@ -16,7 +17,7 @@ const posColors: Record<PartOfSpeech, { bg: string; text: string }> = {
 
 const defaultPosColor = { bg: "rgba(120,120,120,.16)", text: "#555555" }
 
-function posColor(pos: string) {
+const posColor = (pos: string) => {
   return posColors[pos as PartOfSpeech] ?? defaultPosColor
 }
 
@@ -42,14 +43,14 @@ const reviewWordIds = ref(new Set<number>())
 const missedWords = computed(() => words.value?.filter((w) => reviewWordIds.value.has(w.id)) ?? [])
 
 const letterInputs = ref<(HTMLInputElement | null)[]>([])
-function setLetterRef(el: Element | null, idx: number) {
+const setLetterRef = (el: Element | null, idx: number) => {
   letterInputs.value[idx] = (el as HTMLInputElement) ?? null
 }
-function focusLetter(idx: number) {
+const focusLetter = (idx: number) => {
   nextTick(() => letterInputs.value[idx]?.focus())
 }
 
-function speak(text: string) {
+const speak = (text: string) => {
   if (typeof window === "undefined" || !window.speechSynthesis) return
   const utterance = new SpeechSynthesisUtterance(text)
   utterance.lang = "en-US"
@@ -61,14 +62,14 @@ const autoAdvanceCountdown = ref(0)
 let autoAdvanceTimer: ReturnType<typeof setInterval> | null = null
 let revealTimer: ReturnType<typeof setTimeout> | null = null
 
-function clearAutoAdvance() {
+const clearAutoAdvance = () => {
   if (autoAdvanceTimer === null) return
   clearInterval(autoAdvanceTimer)
   autoAdvanceTimer = null
   autoAdvanceCountdown.value = 0
 }
 
-function startAutoAdvance() {
+const startAutoAdvance = () => {
   clearAutoAdvance()
   autoAdvanceCountdown.value = AUTO_ADVANCE_SECONDS
   autoAdvanceTimer = setInterval(() => {
@@ -80,13 +81,13 @@ function startAutoAdvance() {
   }, 1000)
 }
 
-function clearRevealTimer() {
+const clearRevealTimer = () => {
   if (revealTimer === null) return
   clearTimeout(revealTimer)
   revealTimer = null
 }
 
-function resetLetters() {
+const resetLetters = () => {
   const term = currentQuestion.value?.word.term ?? ""
   letters.value = new Array(term.length).fill("")
   resultMode.value = null
@@ -106,7 +107,7 @@ watch(
   { immediate: true }
 )
 
-function handleLetterInput(e: Event, idx: number) {
+const handleLetterInput = (e: Event, idx: number) => {
   if (resultMode.value) return
   const value = (e.target as HTMLInputElement).value.slice(-1)
   letters.value[idx] = value
@@ -114,11 +115,11 @@ function handleLetterInput(e: Event, idx: number) {
   if (letters.value.every((l) => l)) checkAnswer()
 }
 
-function handleLetterKeydown(e: KeyboardEvent, idx: number) {
+const handleLetterKeydown = (e: KeyboardEvent, idx: number) => {
   if (e.key === "Backspace" && !letters.value[idx] && idx > 0) focusLetter(idx - 1)
 }
 
-function checkAnswer() {
+const checkAnswer = () => {
   if (!currentQuestion.value || resultMode.value) return
   const guess = letters.value.join("").trim().toLowerCase()
   const answer = currentQuestion.value.word.term.trim().toLowerCase()
@@ -139,7 +140,7 @@ function checkAnswer() {
   }, 2500)
 }
 
-function skipQuestion() {
+const skipQuestion = () => {
   if (!currentQuestion.value || resultMode.value) return
   reviewWordIds.value.add(currentQuestion.value.word.id)
   letters.value = currentQuestion.value.word.term.split("")
@@ -147,12 +148,12 @@ function skipQuestion() {
   speak(currentQuestion.value.word.term)
 }
 
-function nextQuestion() {
+const nextQuestion = () => {
   clearAutoAdvance()
   currentIndex.value++
 }
 
-function restartQuiz() {
+const restartQuiz = () => {
   clearAutoAdvance()
   clearRevealTimer()
   questions.value = buildTypingQuestions(words.value!, questionCount)
