@@ -183,7 +183,19 @@ const recordRoundComplete = async () => {
   })
 }
 
-const nextQuestion = () => {
+const recordSm2Answers = async () => {
+  if (!isLoggedIn.value) return
+  const answers = answerLog.value.map((al) => ({
+    wordId: al.question.word.id,
+    isCorrect: al.correct
+  }))
+  await useApiFetch("/api/wordSm2/answers", {
+    method: "POST",
+    body: { mode: "Choice", answers }
+  })
+}
+
+const nextQuestion = async () => {
   clearAutoAdvance()
   isReviewOpen.value = false
   currentIndex.value++
@@ -193,10 +205,9 @@ const nextQuestion = () => {
   highlightedIndex.value = 0
 
   if (currentIndex.value >= questions.value.length) {
-    recordRoundComplete()
+    await Promise.all([recordRoundComplete(), recordSm2Answers()])
   }
 }
-
 const restartQuiz = () => {
   clearAutoAdvance()
   questions.value = buildQuizQuestions(words.value!, direction, questionCount)
