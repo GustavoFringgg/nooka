@@ -383,15 +383,6 @@ namespace Nooka.Api.Migrations
                     b.Property<float>("EF")
                         .HasColumnType("real");
 
-                    b.Property<int>("Interval")
-                        .HasColumnType("integer");
-
-                    b.Property<DateOnly>("NextReviewDate")
-                        .HasColumnType("date");
-
-                    b.Property<int>("Repetitions")
-                        .HasColumnType("integer");
-
                     b.HasKey("UserId", "WordId", "Mode");
 
                     b.HasIndex("WordId");

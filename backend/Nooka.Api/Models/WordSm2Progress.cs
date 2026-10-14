@@ -6,7 +6,4 @@ public class WordSm2Progress
     public int WordId { get; set; }
     public string Mode { get; set; } = string.Empty;
     public float EF { get; set; }
-    public int Repetitions { get; set; }
-    public int Interval { get; set; }
-    public DateOnly NextReviewDate { get; set; }
 }
