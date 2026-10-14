@@ -17,6 +17,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
     public DbSet<WordCategory> WordCategories { get; set; }
     public DbSet<WordProgress> WordProgresses { get; set; }
     public DbSet<DailyActivity> DailyActivities { get; set; }
+    public DbSet<WordSm2Progress> WordSm2Progresses { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     // 微調欄位
     {
@@ -82,6 +83,20 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
             .Property(wp => wp.UpdatedAt)
             .HasDefaultValueSql("now()");
 
+        // WordSm2Progress
+        modelBuilder.Entity<WordSm2Progress>()
+            .HasKey(wsp => new { wsp.UserId, wsp.WordId, wsp.Mode });
+
+        modelBuilder.Entity<WordSm2Progress>()
+            .HasOne<AppUser>()
+            .WithMany()
+            .HasForeignKey(wsp => wsp.UserId);
+
+        modelBuilder.Entity<WordSm2Progress>()
+            .HasOne<Word>()
+            .WithMany()
+            .HasForeignKey(wsp => wsp.WordId);
+
         // DailyActivity
         modelBuilder.Entity<DailyActivity>()
             .HasKey(da => new { da.UserId, da.ActivityDate, da.Mode });
@@ -90,5 +105,7 @@ public class AppDbContext : IdentityDbContext<AppUser, AppRole, int>
             .HasOne<AppUser>()
             .WithMany()
             .HasForeignKey(da => da.UserId);
+
+
     }
 }

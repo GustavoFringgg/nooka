@@ -1,100 +1,76 @@
-# 學習紀錄真資料串接(D 大項)— /progress 統計列 + 長條圖 + 熱力圖
+# 選擇題/打字拼寫 SM-2 學習紀錄(E 大項)
 
-> 目標:把 `/progress` 頁面(目前是純前端假資料版,見 `learningRecord.md`)換成真資料。這是開發順序 **C → D → E → B → A → H**(見 `CLAUDE.md`)的第二步,排在 E(學習紀錄 SM-2)前面,因為統計列不需要等 SM-2 定案就能做完。
+> 目標:幫選擇題(`choice.vue`)、打字拼寫(`typing.vue`)加上 SM-2 間隔重複演算法,決定每個單字下次該在什麼時候被複習。這是開發順序 **D → E → B → A → H**(見 `CLAUDE.md`)的第三步。
 >
-> **狀態(2026/10/13):全部完成。** 實作過程中有兩處跟原規劃不同,細節見下方對應段落:① `GET /api/activity/streak`/`recent`/`heatmap` 三支 API 後來合併成一支 `GET /api/activity/summary`;② 未登入呈現方式從「blur + 疊加登入卡片」改成「直接不渲染,只顯示登入引導卡」(`learningRecord.md` 有詳細原因)。
+> **狀態(2026/10/14):設計討論中,尚未開始實作。** 以下是目前已經討論定案的內容。
 
 ## 為什麼另開這個任務(取代原本 plan.md 內容)
 
-`plan.md` 原本記錄的是「內容管理 Admin 後台」(C 大項)那個任務,已經全部完成並 commit(細節留在 git 歷史裡;無限捲動分頁後來改成延後到 MVP 後做,見 `CLAUDE.md`)。現在開始的是全新的一輪任務(D 大項:完成 `/progress` 真資料串接),plan.md 內容整個換掉。
+`plan.md` 原本記錄的是 D 大項(`/progress` 真資料串接)的任務,已經全部完成並 commit(細節留在 git 歷史裡)。現在開始的是全新的一輪任務(E 大項:選擇題/打字拼寫 SM-2),plan.md 內容整個換掉。
 
 ## 討論定案的內容
 
-### 範圍(依使用者角度,從上到下依序完成)
+### 範圍與適用對象
 
-`/progress` 頁面分三塊(版面定案見 `learningRecord.md`):
+- SM-2 只套用在**選擇題、打字拼寫**(`choice.vue`/`typing.vue`);**單字卡維持既有的 Leitner 分級系統**(`flashcard.vue`,見 `CLAUDE.md` A-1),兩套系統並存、互不取代
+- 選擇題(辨識單字意思)跟打字拼寫(主動拼出單字)是不同的技能,**不能共用同一套 SM-2 狀態**,否則簡單技能的表現會誤導困難技能的複習排程
+- 結論:同一個使用者、同一個單字,會有 **3 筆獨立進度紀錄**(跨 2 張表):
+  - `WordProgress`(既有表,單字卡 Leitner 用)1 筆
+  - 新表(選擇題/打字拼寫 SM-2 用)2 筆,用 `Mode` 欄位區分
 
-- **上(統計列)**:依序完成 ① 連續練習天數 ② 已熟悉 ③ 學習中 ④ 今天待複習
-- **中**:近 14 天練習量長條圖(選擇題/打字拼寫兩色柱狀)
-- **下**:全年練習熱力圖(GitHub 貢獻格樣式)
+### 新資料表(表名待 Stage 1 決定)
 
-長條圖/熱力圖/連續天數**只算選擇題 + 打字拼寫,不含單字卡**(單字卡沒有「一輪」的概念,`flashcard.vue` 不會呼叫任何活動紀錄 API)。
+- 跟 `WordProgress` **分開**,不共用,因為 Leitner 跟 SM-2 是兩套互相獨立的複習邏輯,共用會難以維護
+- 複合主鍵:`UserId` + `WordId` + `Mode`(`Mode`:`"Choice"` / `"Typing"`,同一個單字可以有兩筆,各自獨立複習排程)
+- 欄位:
+  - `EF`(ease factor,float,預設 2.5,下限 1.3,標準 SM-2 規則)
+  - `Repetitions`(int,連續答對次數,答錯歸零)
+  - `Interval`(int,目前複習間隔天數)
+  - `NextReviewDate`(DateOnly,下次該複習的日期)
 
-### 新資料表:`DailyActivity`
+### Quality 對照(答對/答錯二元輸入 → SM-2 quality 分數)
 
-- 欄位:`UserId`(int)、`ActivityDate`(DateOnly)、`Mode`(string:`"Choice"` / `"Typing"`)、`CompletedRounds`(int)
-- 複合主鍵:`UserId` + `ActivityDate` + `Mode`
-- 「完整跑完一輪」的定義(沿用 `learningRecord.md`):題目全部作答完才算 1 次,中途離開不算
-- 索引規劃:`UserId` + `ActivityDate`(方便查最近 N 天/算連續天數)
+- 使用者只有「答對/答錯」二元輸入(架構決策已定案,不做 0~5 自評 UI),所以不用使用者作答秒數去動態判斷 quality(討論過,秒數在選擇題/打字拼寫基準不同、閾值難訂,先不做,之後真的需要再疊加)
+- 固定對照:**答對 → quality = 5**(EF +0.1)、**答錯 → quality = 2**(EF -0.32)
+  - 原本考慮答對用 quality = 4(EF 持平),但這樣 EF 只會因為答錯下降、永遠無法回升,不符合 EF 本質上該雙向調整(反映「這個字現在對使用者來說多難」,應該能隨表現變好或變差)的設計——改成 5 之後,EF 下降(-0.32)比回升(+0.1)快,是「跌容易、爬難」的不對稱設計,視為合理
 
-### 已熟悉 / 學習中 / 今天待複習:不用新 API
+### Interval 計算規則
 
-直接用現有 `GET /api/progress/summary`(回傳每個分類的 `Familiar`/`Learning`/`NewWords`/`DueToday`),前端把所有分類加總即可,不用動後端。
+- **答對**(quality ≥ 3):`Repetitions` + 1,`Interval` 依公式成長(第 1 次 1 天、第 2 次 6 天、第 3 次以後「前一次 Interval × EF」),但**設上限 60 天**(考量使用者不會每天都使用系統,避免排到太遙遠的未來)
+- **答錯**(quality < 3):`Repetitions` 歸零、`Interval` 打回 1 天 —— 採用**標準 SM-2 的直接歸零行為**,不做「漸進縮短」的客製化版本(討論過漸進縮短的方案,因為比較難維護、且偏離標準演算法語意,決定不採用)
 
-### API 新增
+### 索引規劃(待 Stage 2 細化)
 
-- `POST /api/activity/round-complete`:body `{ mode: "Choice" | "Typing" }`,登入後依 JWT 的 UserId,把當天那筆 `DailyActivity` 的 `CompletedRounds` +1(沒有就新建)
-- ~~`GET /api/activity/streak`~~、~~`GET /api/activity/recent?days=14`~~、~~`GET /api/activity/heatmap`~~ → **實作時合併成一支 `GET /api/activity/summary`**,一次回傳 `{ streak, recent, heatmap }`。原因:這三支都只有 `/progress` 這頁在用、資料源都是 `DailyActivity`,原本三支各自 `await useAsyncData(...)` 會變成依序等待(waterfall),合併後這頁從 4 次網路來回(含 `GET /api/progress/summary`)降到 2 次。後端 `EfActivityRepository.GetActivitySummaryAsync` 只打一次資料庫撈這個使用者全部 `DailyActivity`,再用三個 private 方法(`CalculateStreak`/`CalculateRecent`/`CalculateHeatmap`)在記憶體裡分別算
+- 常用查詢:「某使用者在某 Mode 下,`NextReviewDate` ≤ 今天」的到期單字清單
+- 複合主鍵 `UserId + WordId + Mode` 的 leftmost prefix 是 `UserId`,但 `WordId` 夾在中間、`NextReviewDate` 不在鍵裡,這個查詢效率有限;單字量變大時可能要額外加 `(UserId, Mode, NextReviewDate)` 索引,實作時再評估是否需要
 
-## 分階段步驟(依「上 → 中 → 下」UI 區塊順序)
+## 分階段步驟
 
-### Stage 0 — 後端:`DailyActivity` 資料表 → 已完成
+### Stage 0 — 決策定案 → 已完成
 
-- 新增 `Models/DailyActivity.cs`,`AppDbContext` 設定複合鍵 + 索引
-- migration:`dotnet ef migrations add AddDailyActivity`
+本次討論出的所有設計決定,見上方「討論定案的內容」。
 
-### Stage 1 — 後端 + 前端:連續練習天數 → 已完成(含「最長紀錄」,原規劃沒有的額外欄位)
+### Stage 1 — 後端:新增 SM-2 複習狀態表
 
-- `IActivityRepository`/`EfActivityRepository`:`RecordRoundCompleteAsync(userId, mode)`(upsert +1)、`GetStreakAsync(userId)`
-- 新增 `ActivityController`:`POST /api/activity/round-complete`、`GET /api/activity/streak`,都要登入(從 JWT 拿 UserId)
-- 前端:`choice.vue`/`typing.vue` 在題目全部作答完的那一刻,打 `POST /api/activity/round-complete`(對應模式 `Choice`/`Typing`)
-- 前端:`progress.vue` 連續天數卡改打 `GET /api/activity/streak`,拔掉假資料
-- 驗證:選擇題/打字拼寫各跑完一輪,確認連續天數 +1;中途離開測驗不會誤記;隔天沒練習,確認連續天數斷掉歸零
+- 新增 Model + migration,`AppDbContext` 設定複合鍵
 
-### Stage 2 — 前端:已熟悉 / 學習中 / 今天待複習 → 已完成
+### Stage 2 — 後端:SM-2 計算邏輯 + API
 
-- `progress.vue` 這三張卡改打現有 `GET /api/progress/summary`,前端加總所有分類的 `Familiar`/`Learning`/`DueToday`,拔掉假資料
-- 驗證:在 `/admin/words` 或練習頁改變某個字的進度狀態,確認這三個數字會跟著變動
+- Repository:記錄答案(upsert,算 quality → 更新 EF/Repetitions/Interval/NextReviewDate)、查詢到期單字清單
+- Controller:對應的 API endpoint
 
-### Stage 3 — 後端 + 前端:近 14 天長條圖 → 已完成
+### Stage 3 — 前端:出題邏輯改成依複習排程選字
 
-- `EfActivityRepository` 加 `GetRecentAsync(userId, days)`
-- `ActivityController` 加 `GET /api/activity/recent?days=14`
-- 前端:`progress.vue` 長條圖改打這支 API,拔掉假資料
-- 驗證:選擇題跑完一輪,確認今天那根「選擇題」柱子 +1,「打字拼寫」柱子不動
+- `choice.vue`/`typing.vue` 原本的選字邏輯(目前隨機/全部撈)改成呼叫新 API 取得到期單字來出題
+- 作答完(答對/答錯)呼叫記錄 API
 
-### Stage 4 — 後端 + 前端:全年熱力圖 → 已完成
+### Stage 4 — 前端:複習排程呈現
 
-- `EfActivityRepository` 加 `GetHeatmapAsync(userId)`
-- `ActivityController` 加 `GET /api/activity/heatmap`
-- 前端:`progress.vue` 熱力圖改打這支 API,拔掉假資料
-- 驗證:今天格子的深淺(或是否點亮)隨完成輪數變化
+- 對應 `CLAUDE.md` E-2「複習排程呈現(非單純學過/沒學過二元標記)」,細節待討論
 
-## 涉及檔案(還沒動工,先列出預期會碰到的)
+## 涉及檔案(預期,待細化)
 
-**後端**
-
-- `backend/Nooka.Api/Models/DailyActivity.cs`(新增)
-- `backend/Nooka.Api/Controllers/ActivityController.cs`(新增)
-- `backend/Nooka.Api/Repositories/IActivityRepository.cs`、`EfActivityRepository.cs`(新增)
-- `backend/Nooka.Api/Models/Dtos/Request/ActivityRoundCompleteRequest.cs`(新增)
-- `backend/Nooka.Api/Models/Dtos/Response/ActivityStreakResponse.cs`、`ActivityRecentResponse.cs`、`ActivityHeatmapResponse.cs`(新增,視實作時要不要合併再調整)
-- `backend/Nooka.Api/Data/AppDbContext.cs`(修改,加 `DailyActivity` 設定)
-- `backend/Nooka.Api/Migrations/`(新增:`AddDailyActivity`)
-
-**前端**
-
-- `frontend/app/pages/practice/[categoryId]/choice.vue`(修改,跑完一輪打 round-complete)
-- `frontend/app/pages/practice/[categoryId]/typing.vue`(修改,同上)
-- `frontend/app/pages/progress.vue`(修改,四個區塊依序拔假資料換真資料)
-
-## 驗證方式
-
-- 選擇題/打字拼寫各完整跑完一輪(中途離開的不算),確認連續天數、長條圖對應柱子、熱力圖今天格子都正確更新
-- 已熟悉/學習中/今天待複習三個數字跟 `/practice` 書架書封上的進度數字(同一來源 `GET /api/progress/summary`)加總後對得起來
-- 未登入狀態下 `/progress` 維持原本的 blur + 登入卡片呈現,不受這次改動影響
-
-~~完成後回頭更新 `CLAUDE.md`:D 大項狀態改成完成,補上活動紀錄 API + `/progress` 真資料串接到「已完成的基礎建設」,並把開發順序往下推進到 E(SM-2)。~~ → 已完成(2026/10/13)。
+## 驗證方式(待細化)
 
 TODO: 待學習資訊
 

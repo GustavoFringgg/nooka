@@ -369,6 +369,36 @@ namespace Nooka.Api.Migrations
                     b.ToTable("WordProgresses");
                 });
 
+            modelBuilder.Entity("Nooka.Api.Models.WordSm2Progress", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("WordId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Mode")
+                        .HasColumnType("text");
+
+                    b.Property<float>("EF")
+                        .HasColumnType("real");
+
+                    b.Property<int>("Interval")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("NextReviewDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Repetitions")
+                        .HasColumnType("integer");
+
+                    b.HasKey("UserId", "WordId", "Mode");
+
+                    b.HasIndex("WordId");
+
+                    b.ToTable("WordSm2Progresses");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
                     b.HasOne("Nooka.Api.Models.AppRole", null)
@@ -445,6 +475,21 @@ namespace Nooka.Api.Migrations
                 });
 
             modelBuilder.Entity("Nooka.Api.Models.WordProgress", b =>
+                {
+                    b.HasOne("Nooka.Api.Models.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Nooka.Api.Models.Word", null)
+                        .WithMany()
+                        .HasForeignKey("WordId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Nooka.Api.Models.WordSm2Progress", b =>
                 {
                     b.HasOne("Nooka.Api.Models.AppUser", null)
                         .WithMany()
