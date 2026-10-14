@@ -56,15 +56,15 @@
 
 本次討論出的所有設計決定,見上方「討論定案的內容」與「重大設計轉向」。
 
-### Stage 1 — 後端:`WordSm2Progress` 表簡化 → 進行中
+### Stage 1 — 後端:`WordSm2Progress` 表簡化 → 已完成
 
-- 第一版 Model + migration(`AddWordSm2Progress`)已完成,建了複合鍵 + `EF`/`Repetitions`/`Interval`/`NextReviewDate` 四個欄位
-- **待辦**:把 Model 的 `Repetitions`/`Interval`/`NextReviewDate` 三個欄位刪掉,`AppDbContext` 對應設定也要清掉,再跑一個新 migration(例如 `SimplifyWordSm2Progress`)把這三個欄位從 DB 砍掉
+- Model 砍掉 `Repetitions`/`Interval`/`NextReviewDate`,只留 `EF`;`AppDbContext` 設定同步清掉;新 migration `SimplifyWordSm2Progress` 已套用
 
-### Stage 2 — 後端:EF 更新邏輯 + 加權抽選 API
+### Stage 2 — 後端:EF 更新邏輯 + 加權抽選 API → 已完成
 
-- Repository:記錄答案(upsert,算 quality → 更新 EF,套用下限 1.3)、依加權抽選回傳出題用的單字清單
-- Controller:對應的 API endpoint
+- `IWordSm2Repository`/`EfWordSm2Repository`:`RecordAnswersAsync`(批次更新 EF,比例式 ×1.05/×0.85,下限 1.3,N+1 查詢問題已用 Dictionary 解決)、`GetWeightedRandomWordsAsync`(依 `weight = 1/EF` 加權隨機抽選,不重複、不保證)
+- `WordSm2Controller`:`POST /api/WordSm2/answers`、`GET /api/WordSm2/words`(帶 `mode`/`count` 輸入驗證,回 400)
+- `Program.cs` 已註冊 DI
 
 ### Stage 3 — 前端:出題邏輯改成呼叫加權抽選 API
 
