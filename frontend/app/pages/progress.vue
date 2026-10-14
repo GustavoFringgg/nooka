@@ -23,8 +23,7 @@ const { data: activitySummary } = await useAsyncData(
   },
   {
     watch: [isLoggedIn],
-    default: () =>
-      ({ streak: { currentStreak: 0, longestStreak: 0 }, recent: [], heatmap: [] }) as ActivitySummaryResponse
+    default: () => ({ streak: { currentStreak: 0, longestStreak: 0 }, recent: [], heatmap: [] }) as ActivitySummaryResponse
   }
 )
 
@@ -117,13 +116,7 @@ const heatmapRows = computed<(HeatCell | null)[][]>(() =>
   Array.from({ length: DAYS_PER_WEEK }, (_, row) => heatmapColumns.value.map((col) => col[row] ?? null))
 )
 
-const cellLevelClass = [
-  "bg-paper-fg/8",
-  "bg-paper-primary/28",
-  "bg-paper-primary/52",
-  "bg-paper-primary/78",
-  "bg-paper-primary"
-]
+const cellLevelClass = ["bg-paper-fg/8", "bg-paper-primary/28", "bg-paper-primary/52", "bg-paper-primary/78", "bg-paper-primary"]
 
 useHead({
   link: [
@@ -158,9 +151,7 @@ onMounted(() => {
     <div class="max-w-[1080px] mx-auto px-6 md:px-8 pt-11 pb-20">
       <div v-if="isLoggedIn">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-          <div
-            class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)] flex flex-col justify-center"
-          >
+          <div class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)] flex flex-col justify-center">
             <div class="flex items-center justify-between mb-2.5">
               <span class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em]">連續練習</span>
               <span class="text-xs text-paper-primary">▲ 最長紀錄 {{ streakBest }} 天</span>
@@ -171,9 +162,7 @@ onMounted(() => {
             </div>
           </div>
 
-          <div
-            class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)] flex flex-col justify-center"
-          >
+          <div class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)] flex flex-col justify-center">
             <div class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em] mb-2.5">已熟悉</div>
             <div class="font-display text-[32px] leading-none">
               {{ familiarWordsDisplay }}
@@ -181,9 +170,7 @@ onMounted(() => {
             </div>
           </div>
 
-          <div
-            class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)] flex flex-col justify-center"
-          >
+          <div class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)] flex flex-col justify-center">
             <div class="flex items-center justify-between mb-2.5">
               <span class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em]">學習中</span>
               <span class="text-xs text-paper-muted">你讀了 {{ learningBookCount }} 本書</span>
@@ -194,14 +181,10 @@ onMounted(() => {
             </div>
           </div>
 
-          <div
-            class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)] flex flex-col justify-center"
-          >
+          <div class="bg-paper-bg rounded-[18px] p-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)] flex flex-col justify-center">
             <div class="flex items-center justify-between mb-2.5">
               <span class="text-[11.5px] text-paper-muted uppercase tracking-[0.08em]">今天待複習</span>
-              <NuxtLink to="/practice" class="text-xs text-paper-primary no-underline hover:text-paper-accent">
-                → 去練習
-              </NuxtLink>
+              <NuxtLink to="/practice" class="text-xs text-paper-primary no-underline hover:text-paper-accent"> → 去練習 </NuxtLink>
             </div>
             <div class="font-display text-[32px] leading-none text-paper-accent">
               {{ dueTodayDisplay }}
@@ -227,10 +210,7 @@ onMounted(() => {
                   :style="{ height: `${(day.typing / barMax) * 100}%` }"
                 />
               </div>
-              <span
-                class="text-[10.5px] text-paper-muted"
-                :class="{ 'text-paper-fg font-medium': day.label === '今天' }"
-              >
+              <span class="text-[10.5px] text-paper-muted" :class="{ 'text-paper-fg font-medium': day.label === '今天' }">
                 {{ day.label }}
               </span>
             </div>
@@ -251,11 +231,7 @@ onMounted(() => {
         <div class="bg-paper-bg rounded-[20px] p-6 mb-5 shadow-[0_20px_40px_-30px_rgba(43,42,37,0.35)]">
           <div class="flex flex-col gap-[3px]">
             <div class="flex gap-[3px] ml-[25px] mb-1">
-              <div
-                v-for="(label, i) in monthLabels"
-                :key="i"
-                class="flex-1 text-[10px] text-paper-muted whitespace-nowrap overflow-visible"
-              >
+              <div v-for="(label, i) in monthLabels" :key="i" class="flex-1 text-[10px] text-paper-muted whitespace-nowrap overflow-visible">
                 {{ label }}
               </div>
             </div>
@@ -289,9 +265,7 @@ onMounted(() => {
       </div>
 
       <div v-else class="flex items-center justify-center px-6 py-24">
-        <div
-          class="bg-paper-bg rounded-[20px] px-10 py-8 text-center shadow-[0_25px_60px_-20px_rgba(43,42,37,0.45)] max-w-sm"
-        >
+        <div class="bg-paper-bg rounded-[20px] px-10 py-8 text-center shadow-[0_25px_60px_-20px_rgba(43,42,37,0.45)] max-w-sm">
           <p class="font-display text-xl m-0 mb-2">登入後查看你的學習進度</p>
           <p class="text-paper-muted text-sm m-0 mb-5">練習紀錄會跟你的帳號綁在一起,登入後才會開始累積。</p>
           <NuxtLink

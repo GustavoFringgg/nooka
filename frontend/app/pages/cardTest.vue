@@ -41,10 +41,7 @@ onMounted(() => {
     <!-- ============ motion-v 版本 ============ -->
     <div style="text-align: center">
       <h3 style="color: white; margin-bottom: 16px">motion-v</h3>
-      <div
-        @click="flippedMotion = !flippedMotion"
-        style="width: 200px; height: 280px; position: relative; cursor: pointer"
-      >
+      <div @click="flippedMotion = !flippedMotion" style="width: 200px; height: 280px; position: relative; cursor: pointer">
         <motion.div
           :animate="{ rotateY: flippedMotion ? 180 : 0 }"
           :transition="{ duration: 0.6, type: 'spring' }"
@@ -90,11 +87,7 @@ onMounted(() => {
     <!-- ============ gsap 版本 ============ -->
     <div style="text-align: center">
       <h3 style="color: white; margin-bottom: 16px">gsap</h3>
-      <div
-        ref="gsapCardRef"
-        @click="flipGsap"
-        style="width: 200px; height: 280px; position: relative; transform-style: preserve-3d; cursor: pointer"
-      >
+      <div ref="gsapCardRef" @click="flipGsap" style="width: 200px; height: 280px; position: relative; transform-style: preserve-3d; cursor: pointer">
         <div
           style="
             position: absolute;

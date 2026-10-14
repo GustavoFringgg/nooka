@@ -83,8 +83,7 @@ export const useFlashcardProgress = (categoryId: number | string) => {
   const upsertProgress = (wordId: number, patch: Partial<FlashcardProgress>) => {
     const list = progressList.value
     const index = list.findIndex((p) => p.wordId === wordId)
-    const base: FlashcardProgress =
-      index >= 0 ? list[index]! : { wordId, level: null, isArchived: false, nextReviewAt: null }
+    const base: FlashcardProgress = index >= 0 ? list[index]! : { wordId, level: null, isArchived: false, nextReviewAt: null }
     const next = { ...base, ...patch }
 
     if (index >= 0) list[index] = next

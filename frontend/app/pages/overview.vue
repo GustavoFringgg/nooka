@@ -58,9 +58,7 @@ const weakWords = [
       </div>
 
       <div class="bento-grid grid gap-4">
-        <div
-          class="area-words relative overflow-hidden rounded-[32px] p-6.5 bg-[#fff2eb] shadow-[0_3px_10px_rgba(46,43,37,.16)]"
-        >
+        <div class="area-words relative overflow-hidden rounded-[32px] p-6.5 bg-[#fff2eb] shadow-[0_3px_10px_rgba(46,43,37,.16)]">
           <div class="absolute -right-10 -top-10 w-[140px] h-[140px] rounded-full bg-[#ffe1d0] pointer-events-none" />
           <div class="relative">
             <div class="text-[10px] uppercase tracking-[.1em] text-[#c67139]">單字庫總數</div>
@@ -74,18 +72,14 @@ const weakWords = [
         <div
           class="area-books rounded-[32px] p-6.5 flex flex-col items-center justify-center text-center bg-[#f0fae1] shadow-[0_1px_2px_rgba(46,43,37,.14)]"
         >
-          <div
-            class="w-16 h-16 rounded-full bg-[#8fa073] text-[#f5ead8] flex items-center justify-center font-heading-organic text-[28px] mb-3"
-          >
+          <div class="w-16 h-16 rounded-full bg-[#8fa073] text-[#f5ead8] flex items-center justify-center font-heading-organic text-[28px] mb-3">
             {{ totalBooks }}
           </div>
           <div class="text-[10px] uppercase tracking-[.1em] text-[#c67139]">主題書架</div>
           <div class="text-[13px] text-[#201e1d]/80 mt-1">多益、航空、工程、資安…</div>
         </div>
 
-        <div
-          class="area-wordcard rounded-[32px] p-6.5 bg-[#2e2b25] text-[#f5ead8] shadow-[0_3px_10px_rgba(46,43,37,.16)]"
-        >
+        <div class="area-wordcard rounded-[32px] p-6.5 bg-[#2e2b25] text-[#f5ead8] shadow-[0_3px_10px_rgba(46,43,37,.16)]">
           <div class="text-[11px] uppercase tracking-[.1em] text-[#ffc6a5]">每日一字</div>
           <div class="font-heading-organic text-[38px] mt-2.5">{{ dailyWord }}</div>
           <div class="text-[#ffe1d0] text-[15px] mt-1.5">
@@ -94,9 +88,7 @@ const weakWords = [
           </div>
         </div>
 
-        <div
-          class="area-quote rounded-[32px] p-6.5 flex flex-col justify-center bg-[#ebddc5] shadow-[0_1px_2px_rgba(46,43,37,.14)]"
-        >
+        <div class="area-quote rounded-[32px] p-6.5 flex flex-col justify-center bg-[#ebddc5] shadow-[0_1px_2px_rgba(46,43,37,.14)]">
           <div class="text-[10px] uppercase tracking-[.1em] text-[#c67139]">每日一句</div>
           <p class="font-heading-organic text-[22px] leading-[1.4] mt-2.5 mb-0">"{{ dailyQuoteEn }}"</p>
           <p class="text-[#645c50] text-sm mt-2.5">{{ dailyQuoteZh }}</p>
@@ -148,9 +140,7 @@ const weakWords = [
               <div class="flex-1 h-1.5 rounded-full bg-[#eee7db]">
                 <div class="h-full rounded-full bg-[#c67139]" :style="{ width: w.pct + '%' }" />
               </div>
-              <span class="px-2.5 py-0.5 rounded-full border border-[#c67139] text-[#c67139] text-xs shrink-0">
-                錯 {{ w.misses }} 次
-              </span>
+              <span class="px-2.5 py-0.5 rounded-full border border-[#c67139] text-[#c67139] text-xs shrink-0"> 錯 {{ w.misses }} 次 </span>
             </div>
           </div>
         </div>

@@ -57,16 +57,12 @@ const goPractice = () => navigateTo("/practice")
 
       <div class="relative max-w-7xl mx-auto grid md:grid-cols-[1.1fr_.9fr] gap-16 items-center">
         <div class="animate-fade-rise">
-          <div
-            class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-paper-primary/35 text-paper-primary text-[13px] mb-7"
-          >
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-paper-primary/35 text-paper-primary text-[13px] mb-7">
             <span class="w-1.5 h-1.5 rounded-full bg-paper-primary inline-block" />
             間隔重複排程,記了就不容易忘
           </div>
 
-          <h1
-            class="m-0 font-display font-normal text-[clamp(40px,6vw,76px)] leading-[1.08] tracking-[-1px] text-paper-fg"
-          >
+          <h1 class="m-0 font-display font-normal text-[clamp(40px,6vw,76px)] leading-[1.08] tracking-[-1px] text-paper-fg">
             一天十分鐘,
             <br />
             把單字
@@ -75,8 +71,7 @@ const goPractice = () => navigateTo("/practice")
           </h1>
 
           <p class="mt-6 max-w-[440px] text-paper-muted text-[17px] leading-[1.75]">
-            挑一本你需要的單字書 — 多益、航空、資安 —
-            用選擇題快速練過一輪。答錯的會被排到更近的時間再問你一次,答對的就往後放。
+            挑一本你需要的單字書 — 多益、航空、資安 — 用選擇題快速練過一輪。答錯的會被排到更近的時間再問你一次,答對的就往後放。
           </p>
 
           <div class="flex flex-wrap gap-3.5 mt-9">
@@ -127,17 +122,13 @@ const goPractice = () => navigateTo("/practice")
     <section class="bg-paper-bg-alt overflow-hidden py-20">
       <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-0 items-center px-6 md:pl-12">
         <div class="md:pr-16">
-          <h2 class="m-0 font-display font-normal text-[clamp(32px,4.5vw,52px)] text-paper-fg">
-            先選書,不用先想從哪開始
-          </h2>
+          <h2 class="m-0 font-display font-normal text-[clamp(32px,4.5vw,52px)] text-paper-fg">先選書,不用先想從哪開始</h2>
           <p class="mt-5 max-w-[440px] text-paper-muted text-base leading-[1.8]">
             單字依主題整理成一本一本的書。要考多益就開多益,工作上要看資安文件就開資安 — 你只要挑一本,剩下的順序我們排。
           </p>
         </div>
 
-        <div
-          class="relative h-[260px] overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_12%,black_88%,transparent)]"
-        >
+        <div class="relative h-[260px] overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_12%,black_88%,transparent)]">
           <div class="absolute top-1/2 left-0 flex items-end gap-5.5 animate-shelf-scroll">
             <div
               v-for="(book, i) in shelfLoop"
@@ -149,10 +140,7 @@ const goPractice = () => navigateTo("/practice")
                 background: `linear-gradient(90deg, ${book.from}, ${book.to} 12%, ${book.to} 88%, ${book.from})`
               }"
             >
-              <span
-                class="[writing-mode:vertical-rl] font-medium tracking-[.16em] text-[15px]"
-                :style="{ color: book.fg }"
-              >
+              <span class="[writing-mode:vertical-rl] font-medium tracking-[.16em] text-[15px]" :style="{ color: book.fg }">
                 {{ book.label }}
               </span>
             </div>
@@ -191,28 +179,14 @@ const goPractice = () => navigateTo("/practice")
             class="relative p-7 rounded-[22px] border-[1.5px] border-paper-primary bg-white/70 backdrop-blur-[4px] transition-transform duration-250 ease-out hover:-translate-y-1.5 cursor-pointer"
             @click="goPractice"
           >
-            <span
-              class="absolute top-4.5 right-4.5 px-3 py-1 rounded-full bg-paper-primary text-paper-bg text-[11.5px]"
-            >
-              推薦先玩這個
-            </span>
+            <span class="absolute top-4.5 right-4.5 px-3 py-1 rounded-full bg-paper-primary text-paper-bg text-[11.5px]"> 推薦先玩這個 </span>
             <div class="w-[220px] h-[120px] mx-auto mt-8.5 mb-6 flex flex-col gap-1.5 justify-center">
-              <div
-                class="px-3.5 py-2 rounded-[10px] border border-paper-fg/15 bg-paper-bg text-paper-muted text-[13px]"
-              >
-                忙亂的
-              </div>
-              <div
-                class="px-3.5 py-2 rounded-[10px] border border-paper-accent/55 bg-paper-accent/14 text-paper-fg text-[13px] flex justify-between"
-              >
+              <div class="px-3.5 py-2 rounded-[10px] border border-paper-fg/15 bg-paper-bg text-paper-muted text-[13px]">忙亂的</div>
+              <div class="px-3.5 py-2 rounded-[10px] border border-paper-accent/55 bg-paper-accent/14 text-paper-fg text-[13px] flex justify-between">
                 <span>吞吞吐吐地</span>
                 <span class="text-paper-accent">✓</span>
               </div>
-              <div
-                class="px-3.5 py-2 rounded-[10px] border border-paper-fg/15 bg-paper-bg text-paper-muted text-[13px]"
-              >
-                中心樞紐
-              </div>
+              <div class="px-3.5 py-2 rounded-[10px] border border-paper-fg/15 bg-paper-bg text-paper-muted text-[13px]">中心樞紐</div>
             </div>
             <h3 class="m-0 font-display font-normal text-2xl text-paper-fg text-center">選擇題</h3>
             <p class="mt-2.5 text-paper-muted text-sm leading-[1.7] text-center">四選一,答錯馬上看正解和例句。</p>
@@ -255,12 +229,8 @@ const goPractice = () => navigateTo("/practice")
               <span class="font-body text-[15px] text-paper-muted">adj.</span>
             </div>
             <div class="text-paper-fg text-[15px] mt-1.5">忙亂的</div>
-            <div class="text-paper-muted text-[13.5px] mt-2.5 leading-[1.7]">
-              Full of incessant or frantic activity.
-            </div>
-            <div class="text-paper-muted text-[13px] mt-2 italic leading-[1.6]">
-              "It's been a hectic week at the office."
-            </div>
+            <div class="text-paper-muted text-[13.5px] mt-2.5 leading-[1.7]">Full of incessant or frantic activity.</div>
+            <div class="text-paper-muted text-[13px] mt-2 italic leading-[1.6]">"It's been a hectic week at the office."</div>
           </div>
 
           <div class="p-6 rounded-[18px] border border-paper-primary/45 bg-paper-primary/10">
@@ -273,29 +243,20 @@ const goPractice = () => navigateTo("/practice")
               <span class="font-body text-[15px] text-paper-muted">adv.</span>
             </div>
             <div class="text-paper-fg text-[15px] mt-1.5">吞吞吐吐地</div>
-            <div class="text-paper-muted text-[13.5px] mt-2.5 leading-[1.7]">
-              In a hesitant or faltering way, pausing often.
-            </div>
-            <div class="text-paper-muted text-[13px] mt-2 italic leading-[1.6]">
-              "He explained the accident haltingly, still shaken."
-            </div>
+            <div class="text-paper-muted text-[13.5px] mt-2.5 leading-[1.7]">In a hesitant or faltering way, pausing often.</div>
+            <div class="text-paper-muted text-[13px] mt-2 italic leading-[1.6]">"He explained the accident haltingly, still shaken."</div>
           </div>
         </div>
 
         <div>
           <h2 class="m-0 font-display font-normal text-[clamp(32px,4.5vw,52px)] text-paper-fg">答錯的時候,才是重點</h2>
           <p class="mt-5 max-w-[460px] text-paper-muted text-base leading-[1.8]">
-            選錯不會只給你一個叉。我們會把你選的那個字和正確答案並排攤開 — 詞性、英文定義、例句都在 —
-            讓你當場看懂差在哪,而不是回頭再猜一次。
+            選錯不會只給你一個叉。我們會把你選的那個字和正確答案並排攤開 — 詞性、英文定義、例句都在 — 讓你當場看懂差在哪,而不是回頭再猜一次。
           </p>
           <div class="flex flex-wrap gap-2.5 mt-7">
             <span class="px-4 py-2 rounded-full border border-paper-fg/20 text-paper-fg text-sm">選擇題</span>
-            <span class="px-4 py-2 rounded-full border border-paper-fg/12 text-paper-muted text-sm">
-              消消樂 · 即將推出
-            </span>
-            <span class="px-4 py-2 rounded-full border border-paper-fg/12 text-paper-muted text-sm">
-              打字拼寫 · 即將推出
-            </span>
+            <span class="px-4 py-2 rounded-full border border-paper-fg/12 text-paper-muted text-sm"> 消消樂 · 即將推出 </span>
+            <span class="px-4 py-2 rounded-full border border-paper-fg/12 text-paper-muted text-sm"> 打字拼寫 · 即將推出 </span>
           </div>
         </div>
       </div>
@@ -340,15 +301,9 @@ const goPractice = () => navigateTo("/practice")
               <circle cx="420" cy="15" r="6" fill="#3C5A44" />
             </g>
             <text x="70" y="252" text-anchor="middle" fill="#6B6558" font-size="13" font-family="Work Sans">明天</text>
-            <text x="160" y="252" text-anchor="middle" fill="#6B6558" font-size="13" font-family="Work Sans">
-              4 天後
-            </text>
-            <text x="270" y="252" text-anchor="middle" fill="#6B6558" font-size="13" font-family="Work Sans">
-              2 週後
-            </text>
-            <text x="420" y="252" text-anchor="middle" fill="#6B6558" font-size="13" font-family="Work Sans">
-              1 個月後
-            </text>
+            <text x="160" y="252" text-anchor="middle" fill="#6B6558" font-size="13" font-family="Work Sans">4 天後</text>
+            <text x="270" y="252" text-anchor="middle" fill="#6B6558" font-size="13" font-family="Work Sans">2 週後</text>
+            <text x="420" y="252" text-anchor="middle" fill="#6B6558" font-size="13" font-family="Work Sans">1 個月後</text>
           </svg>
           <div class="mt-4.5 flex flex-wrap items-center gap-2.5 text-paper-muted text-[13px]">
             <span class="w-4 h-0.5 bg-paper-accent inline-block" />
@@ -362,9 +317,7 @@ const goPractice = () => navigateTo("/practice")
 
     <!-- 6. CTA + footer -->
     <section class="bg-paper-bg-alt py-20 px-6 md:px-12 pb-14 text-center">
-      <h2
-        class="mx-auto max-w-[600px] m-0 font-display font-normal text-[clamp(28px,4vw,42px)] text-paper-fg leading-[1.25]"
-      >
+      <h2 class="mx-auto max-w-[600px] m-0 font-display font-normal text-[clamp(28px,4vw,42px)] text-paper-fg leading-[1.25]">
         先練六個字,看看有沒有感覺
       </h2>
       <button
