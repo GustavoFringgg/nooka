@@ -17,7 +17,11 @@ const direction = (route.query.direction as QuizDirection) || "enToCn"
 const questionCount = Number(route.query.count) || undefined
 const categoryId = route.params.categoryId
 
-const { data: words } = await useAsyncData(
+const {
+  data: words,
+  pending,
+  error
+} = await useAsyncData(
   "choice-words",
   async () => {
     if (!isLoggedIn.value) {

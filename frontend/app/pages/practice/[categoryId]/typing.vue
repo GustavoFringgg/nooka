@@ -17,8 +17,23 @@ const posColors: Record<PartOfSpeech, { bg: string; text: string }> = {
 
 const route = useRoute()
 const categoryId = route.params.categoryId
+const questionCount = Number(route.query.count) || undefined
 
-const { data: words, pending, error } = await useFetch<Word[]>(useApiUrl(`/api/words/category/${categoryId}`))
+const {
+  data: words,
+  pending,
+  error
+} = await useAsyncData(
+  "type-words",
+  async () => {
+    if (!isLoggedIn.value) {
+      return await $fetch<Word[]>(useApiUrl(`/api/words/category/${categoryId}`))
+    } else {
+      return await useApiFetch<Word[]>(`/api/WordSm2/words?mode=Typing&categoryId=${categoryId}&count=${questionCount}`)
+    }
+  },
+  { watch: [isLoggedIn], default: () => [] as Word[] }
+)
 
 const recordRoundComplete = async () => {
   if (!isLoggedIn.value) return
@@ -33,8 +48,6 @@ const defaultPosColor = { bg: "rgba(120,120,120,.16)", text: "#555555" }
 const posColor = (pos: string) => {
   return posColors[pos as PartOfSpeech] ?? defaultPosColor
 }
-
-const questionCount = Number(route.query.count) || undefined
 
 const questions = ref<TypingQuestion[]>([])
 if (words.value?.length) questions.value = buildTypingQuestions(words.value, questionCount)
