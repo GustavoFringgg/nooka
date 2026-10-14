@@ -27,6 +27,7 @@ builder.Services.AddScoped<IWordRepository, EfWordRepository>();
 builder.Services.AddScoped<ICategoryRepository, EfCategoryRepository>();
 builder.Services.AddScoped<IWordProgressRepository, EfWordProgressRepository>();
 builder.Services.AddScoped<IActivityRepository, EfActivityRepository>();
+builder.Services.AddScoped<IWordSm2Repository, EfWordSm2Repository>();
 
 
 builder.Services.AddOpenApi();

@@ -47,9 +47,7 @@ const { data: sessionWords } = await useAsyncData(
 const currentIndex = ref(0)
 const currentWord = computed(() => sessionWords.value[currentIndex.value])
 const currentLevel = computed(() => (currentWord.value ? (progress.getProgress(currentWord.value.id)?.level ?? 1) : 1))
-const progressPercent = computed(() =>
-  sessionWords.value.length ? ((currentIndex.value + 1) / sessionWords.value.length) * 100 : 0
-)
+const progressPercent = computed(() => (sessionWords.value.length ? ((currentIndex.value + 1) / sessionWords.value.length) * 100 : 0))
 
 const advanceCard = () => {
   currentIndex.value++
@@ -173,18 +171,12 @@ const resolveLevel5 = (action: "graduate" | "restart") => {
             </span>
           </div>
           <div class="h-1.5 rounded-full bg-paper-fg/10 overflow-hidden">
-            <div
-              class="h-full rounded-full bg-paper-primary transition-[width] duration-500 ease-out"
-              :style="{ width: `${progressPercent}%` }"
-            />
+            <div class="h-full rounded-full bg-paper-primary transition-[width] duration-500 ease-out" :style="{ width: `${progressPercent}%` }" />
           </div>
         </div>
 
         <div style="perspective: 1400px" class="mb-8" @click="flipCard">
-          <div
-            ref="cardRef"
-            style="position: relative; width: 100%; height: 320px; transform-style: preserve-3d; cursor: pointer"
-          >
+          <div ref="cardRef" style="position: relative; width: 100%; height: 320px; transform-style: preserve-3d; cursor: pointer">
             <div
               class="rounded-3xl bg-paper-bg-alt border-2 border-paper-fg/25 shadow-[0_18px_40px_-20px_rgba(43,42,37,0.3)] flex flex-col items-center justify-center gap-2 px-8 text-center"
               style="position: absolute; inset: 0; backface-visibility: hidden"
@@ -211,9 +203,7 @@ const resolveLevel5 = (action: "graduate" | "restart") => {
             >
               <div class="font-display text-3xl text-paper-primary">{{ currentWord.definitionCN }}</div>
               <div class="text-sm text-paper-fg max-w-sm">{{ currentWord.definitionEN }}</div>
-              <div v-if="currentWord.examples?.length" class="text-xs text-paper-muted italic">
-                "{{ currentWord.examples[0] }}"
-              </div>
+              <div v-if="currentWord.examples?.length" class="text-xs text-paper-muted italic">"{{ currentWord.examples[0] }}"</div>
             </div>
           </div>
         </div>
@@ -292,11 +282,7 @@ const resolveLevel5 = (action: "graduate" | "restart") => {
               <path d="M20 6 9 17l-5-5" />
             </svg>
           </div>
-          <SparkBurst
-            v-if="showCompletionBurst"
-            size="xl"
-            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-          />
+          <SparkBurst v-if="showCompletionBurst" size="xl" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
         </div>
         <h1 class="completion-heading font-display font-normal text-4xl mb-2 text-paper-fg">
           {{ mode === "review" ? "今天的複習都完成了" : "這批新字都學完了" }}

@@ -44,10 +44,9 @@ watch(
   },
   { immediate: true } // immediate 設定 watch 當下先跑一次
 )
-const { data: words, pending: wordsPending } = await useFetch<Word[]>(
-  () => useApiUrl(`/api/words/category/${selectedId.value}`),
-  { watch: [selectedId] }
-)
+const { data: words, pending: wordsPending } = await useFetch<Word[]>(() => useApiUrl(`/api/words/category/${selectedId.value}`), {
+  watch: [selectedId]
+})
 
 const selectBook = (id: number) => {
   selectedId.value = id
@@ -153,8 +152,7 @@ const { data: flashcardCounts } = await useAsyncData(
   "flashcard-counts", // key:唯一的名字，Nuxt 用它做 SSR/CSR 之間的快取比對
   async () => {
     // 執行非同步
-    if (!selectedBook.value || !words.value || !flashcardProgress.value || !isLoggedIn.value)
-      return { newCount: 0, dueCount: 0 }
+    if (!selectedBook.value || !words.value || !flashcardProgress.value || !isLoggedIn.value) return { newCount: 0, dueCount: 0 }
     await flashcardProgress.value.loadProgressList()
     return flashcardProgress.value.getCounts(words.value)
   },
@@ -203,11 +201,7 @@ const flipIntroDemo = () => {
     if (prefersReducedMotion()) {
       gsap.set(choices, { opacity: 1, y: 0 })
     } else {
-      gsap.fromTo(
-        choices,
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.35, stagger: 0.12, ease: "power2.out" }
-      )
+      gsap.fromTo(choices, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.12, ease: "power2.out" })
     }
   }
 }
@@ -327,15 +321,8 @@ const goToFlashcard = () => {
         </div>
 
         <div class="flex-1 min-h-0 pb-8 flex flex-col lg:flex-row gap-12">
-          <div
-            class="styled-scrollbar lg:flex-[1.15] h-full min-h-0 grid grid-cols-2 gap-6 content-start box-border overflow-y-auto pt-7 pr-1"
-          >
-            <div
-              v-for="{ book, stats } in booksWithStats"
-              :key="book.id"
-              class="cursor-pointer"
-              @click="selectBook(book.id)"
-            >
+          <div class="styled-scrollbar lg:flex-[1.15] h-full min-h-0 grid grid-cols-2 gap-6 content-start box-border overflow-y-auto pt-7 pr-1">
+            <div v-for="{ book, stats } in booksWithStats" :key="book.id" class="cursor-pointer" @click="selectBook(book.id)">
               <div
                 class="flex rounded-l-[3px] rounded-r-[10px] transition-transform duration-250 ease-out hover:-translate-y-2.5 hover:-rotate-[1.5deg] hover:shadow-[0_26px_34px_-18px_rgba(43,42,37,0.4)]"
                 :class="
@@ -375,10 +362,7 @@ const goToFlashcard = () => {
                     </span>
                   </div>
                   <div>
-                    <div
-                      class="font-display text-[26px] text-white leading-tight"
-                      style="text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15)"
-                    >
+                    <div class="font-display text-[26px] text-white leading-tight" style="text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15)">
                       {{ book.name }}
                     </div>
                     <template v-if="stats">
@@ -405,9 +389,7 @@ const goToFlashcard = () => {
             </div>
             <!-- <p v-if="selectedBook" class="mb-5 text-paper-muted text-[13.5px]">{{ selectedBook.count }} 個單字</p> -->
             <!-- TODO: 之後改用api  words.value.length 來補資料 -->
-            <div
-              class="styled-scrollbar grid grid-cols-2 gap-2 flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1.5 content-start"
-            >
+            <div class="styled-scrollbar grid grid-cols-2 gap-2 flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1.5 content-start">
               <div v-for="w in words" :key="w.id" class="py-3 px-1 border-b border-paper-fg/12 box-border">
                 <div class="flex items-baseline justify-between gap-2">
                   <span class="font-display text-[17px] text-paper-fg">{{ w.term }}</span>
@@ -415,10 +397,7 @@ const goToFlashcard = () => {
                 </div>
                 <div class="flex items-center justify-between gap-2 mt-1">
                   <div class="flex items-center gap-1.5">
-                    <span
-                      class="text-[#9c9384] text-[11.5px]"
-                      style="font-family: ui-monospace, &quot;SF Mono&quot;, monospace"
-                    >
+                    <span class="text-[#9c9384] text-[11.5px]" style="font-family: ui-monospace, &quot;SF Mono&quot;, monospace">
                       /{{ w.ipa ?? "" }}/
                     </span>
                     <span
@@ -456,13 +435,8 @@ const goToFlashcard = () => {
               :class="direction === opt.value ? 'border-paper-primary bg-paper-primary/8' : 'border-paper-fg/15'"
               @click="direction = opt.value"
             >
-              <span
-                class="flex w-4.5 h-4.5 shrink-0 items-center justify-center rounded-full border-2 border-paper-primary"
-              >
-                <span
-                  class="w-2 h-2 rounded-full"
-                  :class="direction === opt.value ? 'bg-paper-primary' : 'bg-transparent'"
-                />
+              <span class="flex w-4.5 h-4.5 shrink-0 items-center justify-center rounded-full border-2 border-paper-primary">
+                <span class="w-2 h-2 rounded-full" :class="direction === opt.value ? 'bg-paper-primary' : 'bg-transparent'" />
               </span>
               <span class="text-paper-fg text-[15px]">{{ opt.label }}</span>
             </button>
@@ -518,11 +492,7 @@ const goToFlashcard = () => {
             class="flex-1 justify-center bg-transparent border-paper-fg/25 text-paper-fg hover:bg-paper-fg/5"
             @click="isChoiceModalOpen = false"
           />
-          <UButton
-            label="開始練習"
-            class="flex-[2] justify-center bg-paper-primary text-paper-bg hover:bg-paper-accent"
-            @click="startChoiceQuiz"
-          />
+          <UButton label="開始練習" class="flex-[2] justify-center bg-paper-primary text-paper-bg hover:bg-paper-accent" @click="startChoiceQuiz" />
         </div>
       </template>
     </UModal>
@@ -584,26 +554,15 @@ const goToFlashcard = () => {
             class="flex-1 justify-center bg-transparent border-paper-fg/25 text-paper-fg hover:bg-paper-fg/5"
             @click="isTypingModalOpen = false"
           />
-          <UButton
-            label="開始練習"
-            class="flex-[2] justify-center bg-paper-primary text-paper-bg hover:bg-paper-accent"
-            @click="startTypingQuiz"
-          />
+          <UButton label="開始練習" class="flex-[2] justify-center bg-paper-primary text-paper-bg hover:bg-paper-accent" @click="startTypingQuiz" />
         </div>
       </template>
     </UModal>
 
-    <UModal
-      v-model:open="isFlashcardModalOpen"
-      :title="flashcardModalTitle"
-      :description="flashcardModalDescription"
-      :ui="flashcardModalUi"
-    >
+    <UModal v-model:open="isFlashcardModalOpen" :title="flashcardModalTitle" :description="flashcardModalDescription" :ui="flashcardModalUi">
       <template #body>
         <div v-if="!isLoggedIn" class="text-center py-4">
-          <p class="text-paper-muted text-sm m-0">
-            登入後就能標記熟悉度、追蹤學習進度,現在可以先翻牌看看這本書的單字。
-          </p>
+          <p class="text-paper-muted text-sm m-0">登入後就能標記熟悉度、追蹤學習進度,現在可以先翻牌看看這本書的單字。</p>
         </div>
 
         <div v-else-if="flashcardStep === 'choose'" class="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -651,23 +610,16 @@ const goToFlashcard = () => {
         </div>
 
         <div v-else ref="introDemoRef" class="flex flex-col items-center gap-6 py-2">
-          <p class="text-paper-fg text-[15px] leading-relaxed text-center max-w-sm">
-            每張卡片點一下會翻面看意思,看完誠實選你有多熟悉這個字
-          </p>
+          <p class="text-paper-fg text-[15px] leading-relaxed text-center max-w-sm">每張卡片點一下會翻面看意思,看完誠實選你有多熟悉這個字</p>
 
           <div style="perspective: 1200px; cursor: pointer" @click="flipIntroDemo">
-            <div
-              class="intro-demo-card"
-              style="position: relative; width: 220px; height: 160px; transform-style: preserve-3d"
-            >
+            <div class="intro-demo-card" style="position: relative; width: 220px; height: 160px; transform-style: preserve-3d">
               <div
                 class="rounded-2xl bg-paper-bg-alt border-2 border-paper-fg/25 shadow-[0_14px_30px_-18px_rgba(43,42,37,0.3)] flex flex-col items-center justify-center gap-1.5"
                 style="position: absolute; inset: 0; backface-visibility: hidden"
               >
                 <div class="font-display text-2xl text-paper-fg">nostalgia</div>
-                <div class="text-paper-muted text-xs" style="font-family: ui-monospace, &quot;SF Mono&quot;, monospace">
-                  /nɒˈstældʒə/
-                </div>
+                <div class="text-paper-muted text-xs" style="font-family: ui-monospace, &quot;SF Mono&quot;, monospace">/nɒˈstældʒə/</div>
                 <p class="text-[11px] text-paper-muted mt-1 m-0">點卡片看意思</p>
               </div>
               <div
@@ -681,24 +633,14 @@ const goToFlashcard = () => {
           </div>
 
           <div class="grid grid-cols-3 gap-2 w-full max-w-sm">
-            <div
-              class="intro-choice rounded-xl border-1.5 border-paper-fg/20 text-paper-fg text-[11.5px] py-2.5 text-center"
-            >
-              不認識
-            </div>
-            <div
-              class="intro-choice rounded-xl border-1.5 border-paper-primary/50 text-paper-primary text-[11.5px] py-2.5 text-center"
-            >
+            <div class="intro-choice rounded-xl border-1.5 border-paper-fg/20 text-paper-fg text-[11.5px] py-2.5 text-center">不認識</div>
+            <div class="intro-choice rounded-xl border-1.5 border-paper-primary/50 text-paper-primary text-[11.5px] py-2.5 text-center">
               認識但不熟
             </div>
-            <div class="intro-choice rounded-xl bg-paper-primary text-paper-bg text-[11.5px] py-2.5 text-center">
-              非常熟悉
-            </div>
+            <div class="intro-choice rounded-xl bg-paper-primary text-paper-bg text-[11.5px] py-2.5 text-center">非常熟悉</div>
           </div>
 
-          <p class="text-paper-muted text-xs text-center max-w-sm">
-            之後複習只要點「今天已複習」,系統會自動安排下次什麼時候再看到這張卡
-          </p>
+          <p class="text-paper-muted text-xs text-center max-w-sm">之後複習只要點「今天已複習」,系統會自動安排下次什麼時候再看到這張卡</p>
         </div>
       </template>
 

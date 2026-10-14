@@ -37,9 +37,7 @@ const handleCtaClick = async () => {
 </script>
 
 <template>
-  <nav
-    class="relative z-10 flex items-center justify-between px-8 py-5 font-body bg-paper-bg border-b border-paper-fg/15"
-  >
+  <nav class="relative z-10 flex items-center justify-between px-8 py-5 font-body bg-paper-bg border-b border-paper-fg/15">
     <div class="font-display italic text-2xl tracking-tight text-paper-fg">
       Nooka
       <sup class="text-xs not-italic">&reg;</sup>
@@ -65,15 +63,10 @@ const handleCtaClick = async () => {
     </button>
   </nav>
 
-  <UModal
-    v-model:open="isLogoutModalOpen"
-    title="要先離開了嗎？"
-  >
+  <UModal v-model:open="isLogoutModalOpen" title="要先離開了嗎？">
     <template #body>
       <div class="flex items-start gap-4">
-        <span
-          class="flex w-11 h-11 shrink-0 items-center justify-center rounded-full bg-paper-accent/12 text-paper-accent"
-        >
+        <span class="flex w-11 h-11 shrink-0 items-center justify-center rounded-full bg-paper-accent/12 text-paper-accent">
           <svg
             width="20"
             height="20"
@@ -87,9 +80,7 @@ const handleCtaClick = async () => {
             <path d="M6 3h12a1 1 0 0 1 1 1v16l-7-4-7 4V4a1 1 0 0 1 1-1Z" />
           </svg>
         </span>
-        <p class="text-paper-muted text-[15px] leading-relaxed pt-1.5">
-          登出後, 你的學習進度都會好好留著, 下次用 Google 帳號登入就能繼續
-        </p>
+        <p class="text-paper-muted text-[15px] leading-relaxed pt-1.5">登出後, 你的學習進度都會好好留著, 下次用 Google 帳號登入就能繼續</p>
       </div>
     </template>
     <template #footer>
@@ -101,11 +92,7 @@ const handleCtaClick = async () => {
           class="flex-1 justify-center text-paper-muted hover:bg-paper-fg/5 hover:text-paper-fg"
           @click="isLogoutModalOpen = false"
         />
-        <UButton
-          label="登出"
-          class="flex-1 justify-center bg-paper-accent text-paper-bg hover:bg-[#a8552f]"
-          @click="confirmLogout"
-        />
+        <UButton label="登出" class="flex-1 justify-center bg-paper-accent text-paper-bg hover:bg-[#a8552f]" @click="confirmLogout" />
       </div>
     </template>
   </UModal>

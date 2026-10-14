@@ -16,14 +16,27 @@ const questions = ref<QuizQuestion[]>([])
 const direction = (route.query.direction as QuizDirection) || "enToCn"
 const questionCount = Number(route.query.count) || undefined
 const categoryId = route.params.categoryId
-const { data: words, pending, error } = await useFetch<Word[]>(useApiUrl(`/api/words/category/${categoryId}`))
+
+const {
+  data: words,
+  pending,
+  error
+} = await useAsyncData(
+  "choice-words",
+  async () => {
+    if (!isLoggedIn.value) {
+      return await $fetch<Word[]>(useApiUrl(`/api/words/category/${categoryId}`))
+    } else {
+      return await useApiFetch<Word[]>(`/api/WordSm2/words?mode=Choice&categoryId=${categoryId}&count=${questionCount}`)
+    }
+  },
+  { watch: [isLoggedIn], default: () => [] as Word[] }
+)
 
 if (words.value?.length) questions.value = buildQuizQuestions(words.value, direction, questionCount)
 
 const currentQuestion = computed(() => questions.value[currentIndex.value])
-const progressPercent = computed(() =>
-  questions.value.length ? ((currentIndex.value + 1) / questions.value.length) * 100 : 0
-)
+const progressPercent = computed(() => (questions.value.length ? ((currentIndex.value + 1) / questions.value.length) * 100 : 0))
 
 const score = ref(0)
 const selectedOption = ref<QuizOption | null>(null)
@@ -158,8 +171,7 @@ const optionClasses = (option: QuizOption, index: number) => {
 const letterClasses = (option: QuizOption, index: number) => {
   if (isAnswered.value && isCorrectOption(option)) return "border-emerald-500/60 text-emerald-600"
   if (isAnswered.value && option === selectedOption.value) return "border-rose-500/60 text-rose-600"
-  if (!isAnswered.value && index === highlightedIndex.value)
-    return "border-paper-primary/60 bg-paper-primary/10 text-paper-primary"
+  if (!isAnswered.value && index === highlightedIndex.value) return "border-paper-primary/60 bg-paper-primary/10 text-paper-primary"
   return "border-paper-fg/20 text-paper-muted"
 }
 
@@ -171,7 +183,19 @@ const recordRoundComplete = async () => {
   })
 }
 
-const nextQuestion = () => {
+const recordSm2Answers = async () => {
+  if (!isLoggedIn.value) return
+  const answers = answerLog.value.map((al) => ({
+    wordId: al.question.word.id,
+    isCorrect: al.correct
+  }))
+  await useApiFetch("/api/wordSm2/answers", {
+    method: "POST",
+    body: { mode: "Choice", answers }
+  })
+}
+
+const nextQuestion = async () => {
   clearAutoAdvance()
   isReviewOpen.value = false
   currentIndex.value++
@@ -181,10 +205,9 @@ const nextQuestion = () => {
   highlightedIndex.value = 0
 
   if (currentIndex.value >= questions.value.length) {
-    recordRoundComplete()
+    await Promise.all([recordRoundComplete(), recordSm2Answers()])
   }
 }
-
 const restartQuiz = () => {
   clearAutoAdvance()
   questions.value = buildQuizQuestions(words.value!, direction, questionCount)
@@ -214,10 +237,7 @@ const restartQuiz = () => {
             <span class="text-paper-accent">{{ score }} 分</span>
           </div>
           <div class="h-1.5 rounded-full bg-paper-fg/10 overflow-hidden">
-            <div
-              class="h-full rounded-full bg-paper-primary transition-[width] duration-500 ease-out"
-              :style="{ width: `${progressPercent}%` }"
-            />
+            <div class="h-full rounded-full bg-paper-primary transition-[width] duration-500 ease-out" :style="{ width: `${progressPercent}%` }" />
           </div>
         </div>
 
@@ -270,10 +290,7 @@ const restartQuiz = () => {
               </svg>
               <template v-else>{{ ["A", "B", "C", "D"][i] }}</template>
             </span>
-            <SparkBurst
-              v-if="showSparkBurst && isCorrectOption(option)"
-              class="absolute top-1/2 left-5 -translate-y-1/2"
-            />
+            <SparkBurst v-if="showSparkBurst && isCorrectOption(option)" class="absolute top-1/2 left-5 -translate-y-1/2" />
             <span class="block text-base leading-relaxed">{{ option.text }}</span>
           </button>
         </div>
@@ -310,13 +327,11 @@ const restartQuiz = () => {
         <div v-if="missed.length" class="text-left mb-12">
           <h2 class="font-display font-normal text-xl mb-4 text-paper-fg">這幾個單字再複習一下</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <article
-              v-for="entry in missed"
-              :key="entry.question.word.id"
-              class="rounded-2xl p-5 bg-paper-bg-alt border border-paper-fg/10"
-            >
+            <article v-for="entry in missed" :key="entry.question.word.id" class="rounded-2xl p-5 bg-paper-bg-alt border border-paper-fg/10">
               <div class="flex items-baseline justify-between mb-1.5">
-                <h3 class="font-display font-normal text-lg m-0 text-paper-fg">{{ entry.question.word.term }}</h3>
+                <h3 class="font-display font-normal text-lg m-0 text-paper-fg">
+                  {{ entry.question.word.term }}
+                </h3>
                 <span class="text-xs text-paper-accent shrink-0">{{ entry.question.word.partOfSpeech }}</span>
               </div>
               <p class="text-sm text-paper-muted m-0">{{ entry.question.word.definitionCN }}</p>
@@ -325,11 +340,7 @@ const restartQuiz = () => {
         </div>
 
         <div class="flex justify-center gap-4">
-          <UButton
-            label="再練習一次"
-            class="bg-paper-primary text-paper-bg hover:bg-paper-accent"
-            @click="restartQuiz"
-          />
+          <UButton label="再練習一次" class="bg-paper-primary text-paper-bg hover:bg-paper-accent" @click="restartQuiz" />
           <UButton
             label="返回選擇分類"
             color="neutral"
@@ -348,17 +359,11 @@ const restartQuiz = () => {
             v-for="card in reviewCards"
             :key="card.key"
             class="rounded-2xl border p-5"
-            :class="
-              card.tone === 'correct'
-                ? 'bg-paper-primary/6 border-paper-primary/25'
-                : 'bg-rose-500/6 border-rose-500/20'
-            "
+            :class="card.tone === 'correct' ? 'bg-paper-primary/6 border-paper-primary/25' : 'bg-rose-500/6 border-rose-500/20'"
           >
             <div
               class="inline-flex items-center gap-1.5 mb-3 rounded-full px-2.5 py-1 text-xs"
-              :class="
-                card.tone === 'correct' ? 'bg-paper-primary/15 text-paper-primary' : 'bg-rose-500/15 text-rose-600'
-              "
+              :class="card.tone === 'correct' ? 'bg-paper-primary/15 text-paper-primary' : 'bg-rose-500/15 text-rose-600'"
             >
               <svg
                 v-if="card.tone === 'correct'"
@@ -387,15 +392,14 @@ const restartQuiz = () => {
               {{ card.label }}
             </div>
             <div class="flex items-baseline justify-between gap-3 mb-1.5">
-              <h3 class="font-display font-normal text-xl m-0 text-paper-fg">{{ card.word.term }}</h3>
+              <h3 class="font-display font-normal text-xl m-0 text-paper-fg">
+                {{ card.word.term }}
+              </h3>
               <span class="text-xs text-paper-muted shrink-0">{{ card.word.partOfSpeech }}</span>
             </div>
             <p class="text-[15px] mb-1 text-paper-fg">{{ card.word.definitionCN }}</p>
             <p class="text-[13px] text-paper-muted mb-2">{{ card.word.definitionEN }}</p>
-            <ul
-              v-if="card.word.examples?.length"
-              class="m-0 pl-[18px] text-xs text-paper-muted leading-relaxed space-y-0.5"
-            >
+            <ul v-if="card.word.examples?.length" class="m-0 pl-[18px] text-xs text-paper-muted leading-relaxed space-y-0.5">
               <li v-for="(example, i) in card.word.examples" :key="i">{{ example }}</li>
             </ul>
           </div>
@@ -403,12 +407,7 @@ const restartQuiz = () => {
       </template>
 
       <template #footer>
-        <UButton
-          label="繼續下一題"
-          block
-          class="bg-paper-primary text-paper-bg hover:bg-paper-accent"
-          @click="nextQuestion"
-        />
+        <UButton label="繼續下一題" block class="bg-paper-primary text-paper-bg hover:bg-paper-accent" @click="nextQuestion" />
       </template>
     </UModal>
   </div>

@@ -17,8 +17,23 @@ const posColors: Record<PartOfSpeech, { bg: string; text: string }> = {
 
 const route = useRoute()
 const categoryId = route.params.categoryId
+const questionCount = Number(route.query.count) || undefined
 
-const { data: words, pending, error } = await useFetch<Word[]>(useApiUrl(`/api/words/category/${categoryId}`))
+const {
+  data: words,
+  pending,
+  error
+} = await useAsyncData(
+  "type-words",
+  async () => {
+    if (!isLoggedIn.value) {
+      return await $fetch<Word[]>(useApiUrl(`/api/words/category/${categoryId}`))
+    } else {
+      return await useApiFetch<Word[]>(`/api/WordSm2/words?mode=Typing&categoryId=${categoryId}&count=${questionCount}`)
+    }
+  },
+  { watch: [isLoggedIn], default: () => [] as Word[] }
+)
 
 const recordRoundComplete = async () => {
   if (!isLoggedIn.value) return
@@ -34,17 +49,13 @@ const posColor = (pos: string) => {
   return posColors[pos as PartOfSpeech] ?? defaultPosColor
 }
 
-const questionCount = Number(route.query.count) || undefined
-
 const questions = ref<TypingQuestion[]>([])
 if (words.value?.length) questions.value = buildTypingQuestions(words.value, questionCount)
 
 const currentIndex = ref(0)
 const currentQuestion = computed(() => questions.value[currentIndex.value])
 const isLastQuestion = computed(() => currentIndex.value + 1 >= questions.value.length)
-const progressPercent = computed(() =>
-  questions.value.length ? ((currentIndex.value + 1) / questions.value.length) * 100 : 0
-)
+const progressPercent = computed(() => (questions.value.length ? ((currentIndex.value + 1) / questions.value.length) * 100 : 0))
 
 const score = ref(0)
 const letters = ref<string[]>([])
@@ -184,8 +195,7 @@ onUnmounted(() => {
 
 const letterBoxClasses = computed(() => {
   if (resultMode.value === "correct") return "border-paper-primary bg-paper-primary/8 text-paper-primary"
-  if (resultMode.value === "wrongRetry" || resultMode.value === "skipped")
-    return "border-rose-500/50 bg-rose-500/8 text-rose-600"
+  if (resultMode.value === "wrongRetry" || resultMode.value === "skipped") return "border-rose-500/50 bg-rose-500/8 text-rose-600"
   return "border-paper-fg/20 focus:border-paper-primary"
 })
 </script>
@@ -205,10 +215,7 @@ const letterBoxClasses = computed(() => {
             <span class="text-paper-accent">{{ score }} 分</span>
           </div>
           <div class="h-1.5 rounded-full bg-paper-fg/10 overflow-hidden">
-            <div
-              class="h-full rounded-full bg-paper-primary transition-[width] duration-500 ease-out"
-              :style="{ width: `${progressPercent}%` }"
-            />
+            <div class="h-full rounded-full bg-paper-primary transition-[width] duration-500 ease-out" :style="{ width: `${progressPercent}%` }" />
           </div>
         </div>
 
@@ -242,19 +249,13 @@ const letterBoxClasses = computed(() => {
             >
               {{ currentQuestion.word.partOfSpeech }}
             </span>
-            <span
-              class="text-[#9c9384] text-[12.5px]"
-              style="font-family: ui-monospace, &quot;SF Mono&quot;, monospace"
-            >
+            <span class="text-[#9c9384] text-[12.5px]" style="font-family: ui-monospace, &quot;SF Mono&quot;, monospace">
               /{{ currentQuestion.word.ipa ?? "" }}/
             </span>
           </div>
 
           <div class="relative flex justify-center">
-            <SparkBurst
-              v-if="resultMode === 'correct'"
-              class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-            />
+            <SparkBurst v-if="resultMode === 'correct'" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
             <div class="flex justify-center gap-2 flex-wrap">
               <input
                 v-for="(letter, idx) in letters"
@@ -321,11 +322,7 @@ const letterBoxClasses = computed(() => {
         <div v-if="missedWords.length" class="text-left mb-12">
           <h2 class="font-display font-normal text-xl mb-4 text-paper-fg">這幾個單字再複習一下</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <article
-              v-for="w in missedWords"
-              :key="w.id"
-              class="rounded-2xl p-5 bg-paper-bg-alt border border-paper-fg/10"
-            >
+            <article v-for="w in missedWords" :key="w.id" class="rounded-2xl p-5 bg-paper-bg-alt border border-paper-fg/10">
               <div class="flex items-baseline justify-between mb-1.5">
                 <h3 class="font-display font-normal text-lg m-0 text-paper-fg">{{ w.term }}</h3>
                 <span class="text-xs text-paper-accent shrink-0">{{ w.partOfSpeech }}</span>
@@ -336,11 +333,7 @@ const letterBoxClasses = computed(() => {
         </div>
 
         <div class="flex justify-center gap-4">
-          <UButton
-            label="再練習一次"
-            class="bg-paper-primary text-paper-bg hover:bg-paper-accent"
-            @click="restartQuiz"
-          />
+          <UButton label="再練習一次" class="bg-paper-primary text-paper-bg hover:bg-paper-accent" @click="restartQuiz" />
           <UButton
             label="返回選擇分類"
             color="neutral"
