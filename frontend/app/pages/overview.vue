@@ -10,8 +10,6 @@ interface DailyWordEntry {
   quoteZh: string
 }
 
-// 版面規格取自設計稿(Organic 設計系統:Caprasimo/Figtree + 暖橘/sage 綠色票),數值已直接寫死在下方,
-// 僅供這頁的儀表板內容使用;nav 沿用首頁那份 Newreader/paper 色票
 useHead({
   link: [
     { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -83,7 +81,7 @@ onMounted(() => {
 })
 
 // 未登入時的模糊預覽用假資料,不是真實數據
-const weakWordsPreview = [
+const weakWordsMockDataPreview = [
   { word: "haltingly", meaning: "吞吞吐吐地", pct: 90 },
   { word: "vicarious", meaning: "替代的感受", pct: 74 },
   { word: "hectic", meaning: "忙亂的", pct: 60 },
@@ -169,7 +167,7 @@ const weakWordsPreview = [
         >
           <div class="text-[10px] uppercase tracking-[.1em] text-[#c67139]">最容易忘記的 5 個字</div>
           <div class="flex flex-col gap-2.5 mt-3">
-            <div v-for="w in weakWordsPreview" :key="w.word" class="flex items-center gap-3.5">
+            <div v-for="w in weakWordsMockDataPreview" :key="w.word" class="flex items-center gap-3.5">
               <span class="font-heading-organic text-lg w-[110px]">{{ w.word }}</span>
               <span class="text-[#645c50] text-sm w-[90px]">{{ w.meaning }}</span>
               <div class="flex-1 h-1.5 rounded-full bg-[#eee7db]">
