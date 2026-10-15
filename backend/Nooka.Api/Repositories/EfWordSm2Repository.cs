@@ -91,4 +91,17 @@ public class EfWordSm2Repository : IWordSm2Repository
         }
         return selected;
     }
+
+    public async Task<List<Word>> GetWeakestWordsAsync(int userId, string mode, int count)
+    {
+        return await _context.WordSm2Progresses
+            .Where(wsp => wsp.UserId == userId && wsp.Mode == mode && wsp.EF < InitialEF)
+            .Join(_context.Words, wsp => wsp.WordId, w => w.Id, (wsp, w) => new { Word = w, EF = wsp.EF })
+            .OrderBy(x => x.EF)
+            .ThenBy(x => x.Word.Term)
+            .Take(count)
+            .Select(x => x.Word)
+            .ToListAsync();
+    }
+
 }

@@ -49,9 +49,11 @@
 - 新增 `frontend/app/data/dailyWords.json`(30 筆,單字/中文意思/詞性/英文例句/中文例句)
 - `overview.vue` `onMounted` 用 `Math.random()` 從 JSON 挑一筆存進 `dailyWord` ref,template 改用 `dailyWord?.word` 等 optional chaining,取代原本寫死的 5 個 const
 
-### Stage 5 — 最容易忘記的 5 個字 → 未開始
+### Stage 5 — 最容易忘記的 5 個字 → 後端已完成,前端進行中
 
-- 後端:新增一支 API(例如 `GET /api/WordSm2/weakest?mode=Choice&count=5`),依 `EF` 升冪 + 字母排序取前 N 個
-- 前端:`overview.vue` 串接,取代寫死的 `weakWords` 陣列
+- **篩選邏輯確認(2026/10/15)**:只從有 `WordSm2Progress` 紀錄、且 `EF < 2.5`(初始值)的字裡面取,不到 5 個就顯示實際數量;從沒練過、或 EF 已經回升到 ≥2.5 的字都不列入
+- 後端:`IWordSm2Repository`/`EfWordSm2Repository` 新增 `GetWeakestWordsAsync(userId, mode, count)`,用 `WordSm2Progresses` join `Words`,篩 `EF < InitialEF`,`OrderBy(EF).ThenBy(Term)`,`Take(count)`
+- `WordSm2Controller` 新增 `GET /api/WordSm2/weakest?mode=Choice&count=5`(`[Authorize]`,`mode`/`count` 驗證跟 `GetWeightedRandomWords` 同款,**沒有** `categoryId` 參數,因為是跨全部書統計),build 成功
+- 前端:`overview.vue` 還沒串接,待取代寫死的 `weakWords` 陣列
 
-Stage 1-3 互不依賴,Stage 4 純前端獨立,Stage 5 需要後端新增 API、工作量最大。
+Stage 1-4 都已完成。
