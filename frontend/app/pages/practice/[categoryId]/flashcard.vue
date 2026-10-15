@@ -194,7 +194,6 @@ const resolveLevel5 = (action: "graduate" | "restart") => {
               >
                 {{ currentWord.partOfSpeech }}
               </span>
-              <p class="text-xs text-paper-muted mt-4 m-0">點卡片看意思</p>
             </div>
 
             <div

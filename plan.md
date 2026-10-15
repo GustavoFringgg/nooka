@@ -1,89 +1,57 @@
-# 選擇題/打字拼寫 SM-2 學習紀錄(E 大項)
+# /overview 總覽頁開發
 
-> 目標:幫選擇題(`choice.vue`)、打字拼寫(`typing.vue`)加上 SM-2 啟發的學習紀錄機制,決定出題時哪些單字比較需要被複習。這是開發順序 **D → E → B → A → H**(見 `CLAUDE.md`)的第三步。
+> 目標:把 `frontend/app/pages/overview.vue` 從純假資料的設計稿,改成真的串接後端資料、反映使用者實際狀態的總覽頁。
 >
-> **狀態(2026/10/15):全部完成。** 中途有一次重大設計轉向(天數排程 → EF 加權抽選),細節見下方說明。
+> **狀態(2026/10/15):Stage 1-4 已完成,Stage 5 尚未開始。**
 
 ## 為什麼另開這個任務(取代原本 plan.md 內容)
 
-`plan.md` 原本記錄的是 D 大項(`/progress` 真資料串接)的任務,已經全部完成並 commit(細節留在 git 歷史裡)。現在開始的是全新的一輪任務(E 大項:選擇題/打字拼寫 SM-2),plan.md 內容整個換掉。
+`plan.md` 原本記錄的是 E 大項(選擇題/打字拼寫 SM-2 加權抽選)的任務,已經全部完成並 commit(細節留在 git 歷史裡)。現在開始的是全新的一輪任務(`/overview` 總覽頁),plan.md 內容整個換掉。
 
-## 重大設計轉向(2026/10/14)
+## 現況
 
-一開始規劃走**標準 SM-2 的天數排程**(`EF` + `Repetitions` + `Interval` + `NextReviewDate`,答對推遲複習日、答錯打回 1 天重算、interval 設 60 天上限),`WordSm2Progress` 表也依此設計建了第一版。
-
-討論到 Stage 2(出題邏輯)時發現問題:**天數排程會導致「今天到期單字複習完,這個分類就沒題目可以練了」**,例如 20 個單字的書複習完就只能等明天。這跟產品想鼓勵一天多輪練習(`/progress` 熱力圖設計,練越多輪格子越深)直接衝突。而且天數制的「一天一輪、複習完就結束」的使用情境,其實**單字卡(Leitner 分級)已經在做了**,選擇題/打字拼寫再做一次是重複。
-
-**改版決定:放棄天數排程,改成「EF 加權隨機抽選」**——不維護 `Interval`/`NextReviewDate`,每個單字只維護一個 `EF` 值,每輪出題時依 `weight = 1/EF` 做加權隨機抽選(EF 越低/越常答錯,抽中機率越高;EF 越高/越常答對,機率越低但不會變 0)。這樣使用者可以無限多輪練習,每輪都是有意義的(不會出現「沒題目」的情況)。
-
-中途也討論過「答錯的字保證下一輪一定出現」的混合式做法(保證 + 隨機補齊),最後決定**不做保證、用純機率版**——因為如果答錯一定會在下一輪出現,會失去隨機性帶來的樂趣,玩起來像在硬背答案而不是自然複習。
+`overview.vue` 六個 bento 格全部是寫死的假資料,登入狀態也是用假的 `useDemoLoggedIn()`(`frontend/app/composables/useDemoAuth.ts`),跟真實登入系統(`useAuthUser()`)沒串接。
 
 ## 討論定案的內容
 
-### 範圍與適用對象
-
-- 加權抽選只套用在**選擇題、打字拼寫**(`choice.vue`/`typing.vue`);**單字卡維持既有的 Leitner 分級系統**(`flashcard.vue`,見 `CLAUDE.md` A-1,是天數制),兩套系統並存、互不取代
-- 選擇題(辨識單字意思)跟打字拼寫(主動拼出單字)是不同的技能,**不能共用同一套 EF 狀態**,否則簡單技能的表現會誤導困難技能的複習排程
-- 結論:同一個使用者、同一個單字,會有 **3 筆獨立進度紀錄**(跨 2 張表):
-  - `WordProgress`(既有表,單字卡 Leitner 用)1 筆
-  - `WordSm2Progress`(選擇題/打字拼寫用)2 筆,用 `Mode` 欄位區分
-
-### 資料表:`WordSm2Progress`(需要簡化,見下方 Stage 1)
-
-- 複合主鍵:`UserId` + `WordId` + `Mode`(`Mode`:`"Choice"` / `"Typing"`)
-- 欄位:**只需要 `EF`**(float,預設 2.5,下限 1.3)
-- ~~`Repetitions`、`Interval`、`NextReviewDate`~~ → 天數排程版的殘留欄位,已改方向不需要,第一版 migration 已經建了這幾欄,Stage 1 要補一個 migration 移除
-
-### EF 更新規則(2026/10/14 再調整:從固定加減量改成比例)
-
-- 使用者只有「答對/答錯」二元輸入(架構決策已定案,不做 0~5 自評 UI),不用作答秒數動態判斷 quality(秒數在選擇題/打字拼寫基準不同、閾值難訂,先不做,之後真的需要再疊加,可以考慮疊加進加權抽選的 weight 公式)
-- 一開始沿用 SM-2 的 quality 分數概念去推導增減量(答對→quality=5→EF+0.1、答錯→quality=2→EF-0.32),但**實作時發現沒必要保留 quality 這個中間值**——程式只有「對/錯」兩種輸入,quality 只是原始 SM-2 給 0~5 自評用的通用設計,我們用不到那個彈性,所以直接拿掉 quality,改成直接寫死「答對/答錯分別對應的調整量」
-- 固定加減量(+0.1/-0.32)又發現一個問題:單字量一多,很多字的作答歷史不同、卻會算出一樣的 EF(因為增減量是定值),差異化不夠——所以再改成**比例(乘法)**,讓不同起點的 EF 比較不容易撞到完全一樣的數字:
-  - **答對 → `EF × 1.05`**(漲 5%)
-  - **答錯 → `EF × 0.85`**(跌 15%)
-  - 跌的比例比漲的比例大,維持「跌容易、爬難」的不對稱設計
-  - (補充:這個差異化問題其實不算嚴重,因為我們是加權隨機抽選不是排序,EF 一樣代表「這兩個字對使用者來說難度差不多」,機率相等本來就合理;改比例純粹是想要更細的區分度)
-
-### 出題抽選規則
-
-- `weight = 1 / EF`,對分類底下所有單字(含完全沒練過的,視為 `EF = 2.5` 預設值去算 weight)算出各自的 weight
-- 依 weight **加權隨機抽選**(不是排序取前 N 個),抽出使用者選擇的題數
-- **不保證**EF 最低的字一定被抽到,純機率、保留隨機性
+- **登入狀態**:`useDemoLoggedIn()` 換成真的 `useAuthUser()`
+- **單字庫總數 / 主題書架數**:直接打現成的 `GET /api/words`、`GET /api/categories` 算,不需要新 API
+- **已學字數** → 討論後改成**連續學習天數**(見 Stage 3):跟「已精熟/學習中」統計跟 `/progress` 頁重複,改打 `GET /api/activity/summary` 的 `streak.currentStreak`,視覺上做成「數字包在火焰 emoji 裡」
+- **每日一字 / 每日一句**:純前端靜態 JSON(放 `frontend/app/data/`),跟 `Words` 資料表完全無關,`onMounted` 用 `Math.random()` 亂數選一筆 —— 同一時間 A 使用者跟 B 使用者看到的可能不一樣(各自獨立亂數,不是全站同步的「今日單字」)。完全不碰後端。內容先隨便帶幾筆意思到就好,之後再補。
+- **最容易忘記的 5 個字**:抓**選擇題(Choice 模式)** 的 `WordSm2Progress`,依 `EF` 升冪排序取前 5,EF 相同時按字母排序。目前 `GET /api/WordSm2/words`(`WordSm2Controller.cs`)是依 `categoryId` 加權隨機抽題用的,沒有「跨全部書、依 EF 排序取最低 N 個」這支,**這塊需要後端新增一支 API**。
 
 ## 分階段步驟
 
 ### Stage 0 — 決策定案 → 已完成
 
-本次討論出的所有設計決定,見上方「討論定案的內容」與「重大設計轉向」。
+本次討論出的所有設計決定,見上方「討論定案的內容」。
 
-### Stage 1 — 後端:`WordSm2Progress` 表簡化 → 已完成
+### Stage 1 — 登入狀態串接真實 auth → 已完成
 
-- Model 砍掉 `Repetitions`/`Interval`/`NextReviewDate`,只留 `EF`;`AppDbContext` 設定同步清掉;新 migration `SimplifyWordSm2Progress` 已套用
+- `overview.vue` 改用 `useIsLoggedIn()`,template 3 處 `loggedIn` 改名 `isLoggedIn`
+- 登入按鈕改成 `router.push("/login")`,對齊 `AppNav.vue` 的 `handleCtaClick` 行為
+- `useDemoAuth.ts`(`useDemoLoggedIn()`)已刪除
 
-### Stage 2 — 後端:EF 更新邏輯 + 加權抽選 API → 已完成
+### Stage 2 — 單字庫總數 / 主題書架數 → 已完成
 
-- `IWordSm2Repository`/`EfWordSm2Repository`:`RecordAnswersAsync`(批次更新 EF,比例式 ×1.05/×0.85,下限 1.3,N+1 查詢問題已用 Dictionary 解決)、`GetWeightedRandomWordsAsync`(依 `weight = 1/EF` 加權隨機抽選,不重複、不保證)
-- `WordSm2Controller`:`POST /api/WordSm2/answers`、`GET /api/WordSm2/words`(帶 `mode`/`count` 輸入驗證,回 400)
-- `Program.cs` 已註冊 DI
+- `overview.vue` 加 `useFetch<Category[]>`/`useFetch<Word[]>` 打 `/api/categories`、`/api/words`,取 `.length`,取代寫死的 `1240`/`6`
+- count-up 動畫 target 改成 `words.value?.length ?? 0`
 
-### Stage 3 — 前端:出題邏輯改成呼叫加權抽選 API → 已完成
+### Stage 3 — 已學字數 → 改方向,已完成
 
-- `choice.vue`/`typing.vue` 登入時改打 `/api/WordSm2/words` 加權抽選,未登入維持原本公開 API
-- 作答完(答對/答錯)呼叫 `recordSm2Answers` 批次記錄,跟 `recordRoundComplete` 用 `Promise.all` 同時打,避免序列等待
-- `typing.vue` 額外加了「錯滿 3 次才算 `isCorrect: false`」的容錯規則(`wrongAttemptCounts`),跳過視為錯 3 次
-- `restartQuiz` 登入時會 `await refreshWords()` 重新打加權抽選 API,反映剛更新的 EF;`typing.vue` 另外重置 `wrongAttemptCounts`
+- **改方向**:討論後發現「已學字數(familiar+learning)」跟 `/progress` 頁的統計列重複,改成顯示**連續學習天數(streak)**,跟右邊「最容易忘記的字」形成「鼓勵 + 提醒」互補
+- 串現成的 `GET /api/activity/summary`(`/progress` 頁同一支 API),取 `streak.currentStreak`,取代寫死的 `182`
+- 視覺上做了「數字包在火焰裡」的效果:🔥 emoji 放大當背景,數字疊在火焰中間偏下(用 CSS,不額外引入圖片/icon 套件),加 `drop-shadow` 光暈 + `keyframes` 閃爍動畫
+- 卡片背景色跟著火焰主題調整(淺綠 → 深紅棕 `#3a1310` + 淺色文字),「每日一字」卡的背景也順手從純黑(`#2e2b25`)換成亮橘金(`#ffcb8a` + 深色文字),都是這次討論中順手調的視覺微調
 
-### Stage 4 — 前端:學習狀態呈現 → 決定不做
+### Stage 4 — 每日一字 / 每日一句 → 已完成
 
-- 原規劃的「複習排程呈現」因為不再有日期排程概念,已不適用;討論後決定**不額外呈現 EF/熟悉度相關資訊**,因為 `/progress` 學習紀錄頁(D 大項)已經有已熟悉/學習中/今天待複習等統計,足夠覆蓋使用者需要看到的學習狀態,不需要額外曝露 EF 這個內部數字
+- 新增 `frontend/app/data/dailyWords.json`(30 筆,單字/中文意思/詞性/英文例句/中文例句)
+- `overview.vue` `onMounted` 用 `Math.random()` 從 JSON 挑一筆存進 `dailyWord` ref,template 改用 `dailyWord?.word` 等 optional chaining,取代原本寫死的 5 個 const
 
-完成後回頭更新 `CLAUDE.md`:E 大項狀態改成完成,補上 SM-2/EF 加權抽選相關實作到「已完成的基礎建設」,並把開發順序往下推進到 B(會員系統補 refresh token)。→ 已完成(2026/10/15)。
+### Stage 5 — 最容易忘記的 5 個字 → 未開始
 
-TODO: 待學習資訊
+- 後端:新增一支 API(例如 `GET /api/WordSm2/weakest?mode=Choice&count=5`),依 `EF` 升冪 + 字母排序取前 N 個
+- 前端:`overview.vue` 串接,取代寫死的 `weakWords` 陣列
 
-ASP.NET Identity + JWT 登入/登出
-
-1. 為什麼是在 Nooka.Api.http 測試 為什麼是在這裡測試 Nooka.Api.http 在這個專案扮演什麼樣的角色
-2. http第二個 應該只是測試api 還沒有帶token進去 去驗證
-3. 登出 要怎麼判斷這個 token 過期
-4. 那這樣我 httpOnly 我實際是把 token 存在哪裡? 機制是什麼 檢查token的機制是怎麼看得
+Stage 1-3 互不依賴,Stage 4 純前端獨立,Stage 5 需要後端新增 API、工作量最大。

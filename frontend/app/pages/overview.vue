@@ -1,4 +1,15 @@
 <script setup lang="ts">
+import type { ActivitySummaryResponse, Category, Word } from "~/types/practice"
+import dailyWordsData from "~/data/dailyWords.json"
+
+interface DailyWordEntry {
+  word: string
+  meaning: string
+  pos: string
+  quoteEn: string
+  quoteZh: string
+}
+
 // 版面規格取自設計稿(Organic 設計系統:Caprasimo/Figtree + 暖橘/sage 綠色票),數值已直接寫死在下方,
 // 僅供這頁的儀表板內容使用;nav 沿用首頁那份 Newreader/paper 色票
 useHead({
@@ -11,12 +22,29 @@ useHead({
   ]
 })
 
-const loggedIn = useDemoLoggedIn()
+const { data: categories } = await useFetch<Category[]>(useApiUrl("/api/categories"))
+const { data: words } = await useFetch<Word[]>(useApiUrl("/api/words"))
 
-const totalWordsTarget = 1240
+const isLoggedIn = useIsLoggedIn()
+const router = useRouter()
 const totalWordsDisplay = ref(0)
 
+const { data: activitySummary } = await useAsyncData(
+  "overview-activity-summary",
+  async () => {
+    if (!isLoggedIn.value) return { streak: { currentStreak: 0, longestStreak: 0 }, recent: [], heatmap: [] }
+    return await useApiFetch<ActivitySummaryResponse>("/api/activity/summary")
+  },
+  {
+    watch: [isLoggedIn],
+    default: () => ({ streak: { currentStreak: 0, longestStreak: 0 }, recent: [], heatmap: [] }) as ActivitySummaryResponse
+  }
+)
+
+const currentStreak = computed(() => activitySummary.value.streak.currentStreak)
+
 onMounted(() => {
+  const totalWordsTarget = words.value?.length ?? 0
   const duration = 1400
   const start = performance.now()
   const step = (now: number) => {
@@ -28,15 +56,12 @@ onMounted(() => {
   requestAnimationFrame(step)
 })
 
-const totalBooks = 6
+const dailyWord = ref<DailyWordEntry | null>(null)
 
-const dailyWord = "haltingly"
-const dailyMeaning = "吞吞吐吐地"
-const dailyPos = "adv."
-const dailyQuoteEn = "He explained the accident haltingly, still shaken."
-const dailyQuoteZh = "他吞吞吐吐地說明了這場事故,還處於驚嚇中。"
-
-const userLearned = 182
+onMounted(() => {
+  const list = dailyWordsData as DailyWordEntry[]
+  dailyWord.value = list[Math.floor(Math.random() * list.length)] ?? null
+})
 
 const weakWords = [
   { word: "haltingly", meaning: "吞吞吐吐地", misses: 6, pct: 90 },
@@ -60,11 +85,11 @@ const weakWords = [
         <div class="area-words relative overflow-hidden rounded-[32px] p-6.5 bg-[#fff2eb] shadow-[0_3px_10px_rgba(46,43,37,.16)]">
           <div class="absolute -right-10 -top-10 w-[140px] h-[140px] rounded-full bg-[#ffe1d0] pointer-events-none" />
           <div class="relative">
-            <div class="text-[10px] uppercase tracking-[.1em] text-[#c67139]">單字庫總數</div>
+            <div class="text-[10px] uppercase tracking-[.1em] text-[#c67139]">目前 Nooka 收錄了</div>
             <div class="font-heading-organic text-[64px] leading-none text-[#8c491a] mt-2">
               {{ totalWordsDisplay.toLocaleString() }}
             </div>
-            <div class="text-[13px] text-[#201e1d]/80 mt-2">收錄在所有主題書架裡的單字</div>
+            <div class="text-[13px] text-[#201e1d]/80 mt-2">個在所有主題書架裡的單字</div>
           </div>
         </div>
 
@@ -72,51 +97,54 @@ const weakWords = [
           class="area-books rounded-[32px] p-6.5 flex flex-col items-center justify-center text-center bg-[#f0fae1] shadow-[0_1px_2px_rgba(46,43,37,.14)]"
         >
           <div class="w-16 h-16 rounded-full bg-[#8fa073] text-[#f5ead8] flex items-center justify-center font-heading-organic text-[28px] mb-3">
-            {{ totalBooks }}
+            {{ categories?.length ?? 0 }}
           </div>
           <div class="text-[10px] uppercase tracking-[.1em] text-[#c67139]">主題書架</div>
-          <div class="text-[13px] text-[#201e1d]/80 mt-1">多益、航空、工程、資安…</div>
+          <div class="text-[13px] text-[#201e1d]/80 mt-1">多益</div>
         </div>
 
-        <div class="area-wordcard rounded-[32px] p-6.5 bg-[#2e2b25] text-[#f5ead8] shadow-[0_3px_10px_rgba(46,43,37,.16)]">
-          <div class="text-[11px] uppercase tracking-[.1em] text-[#ffc6a5]">每日一字</div>
-          <div class="font-heading-organic text-[38px] mt-2.5">{{ dailyWord }}</div>
-          <div class="text-[#ffe1d0] text-[15px] mt-1.5">
-            {{ dailyMeaning }}
-            <span class="opacity-60 text-[13px]">· {{ dailyPos }}</span>
+        <div class="area-wordcard rounded-[32px] p-6.5 bg-[#ffcb8a] text-[#201e1d] shadow-[0_3px_10px_rgba(46,43,37,.16)]">
+          <div class="text-[11px] uppercase tracking-[.1em] text-[#8c491a]">每日一字</div>
+          <div class="font-heading-organic text-[38px] mt-2.5">{{ dailyWord?.word }}</div>
+          <div class="text-[#201e1d]/80 text-[15px] mt-1.5">
+            {{ dailyWord?.meaning }}
+            <span class="opacity-60 text-[13px]">· {{ dailyWord?.pos }}</span>
           </div>
         </div>
 
         <div class="area-quote rounded-[32px] p-6.5 flex flex-col justify-center bg-[#ebddc5] shadow-[0_1px_2px_rgba(46,43,37,.14)]">
           <div class="text-[10px] uppercase tracking-[.1em] text-[#c67139]">每日一句</div>
-          <p class="font-heading-organic text-[22px] leading-[1.4] mt-2.5 mb-0">"{{ dailyQuoteEn }}"</p>
-          <p class="text-[#645c50] text-sm mt-2.5">{{ dailyQuoteZh }}</p>
+          <p class="font-heading-organic text-[22px] leading-[1.4] mt-2.5 mb-0">"{{ dailyWord?.quoteEn }}"</p>
+          <p class="text-[#645c50] text-sm mt-2.5">{{ dailyWord?.quoteZh }}</p>
         </div>
 
         <div
-          v-if="!loggedIn"
+          v-if="!isLoggedIn"
           class="area-status rounded-[32px] p-6.5 flex flex-col items-center justify-center text-center bg-[#ebddc5] shadow-[0_1px_2px_rgba(46,43,37,.14)]"
         >
           <h3 class="font-heading-organic text-[22px] m-0">看看你的學習狀況</h3>
           <p class="text-[13px] text-[#201e1d]/80 mt-2 mb-4">登入後可看已學單字量與最容易忘記的字。</p>
           <button
             class="font-heading-organic px-4 py-2 rounded-full bg-[#c67139] text-[#f5ead8] text-sm cursor-pointer transition-colors duration-200 ease-out hover:bg-[#b2622d]"
-            @click="loggedIn = true"
+            @click="router.push('/login')"
           >
             登入 / 註冊
           </button>
         </div>
         <div
           v-else
-          class="area-status rounded-[32px] p-6.5 flex flex-col items-center justify-center text-center bg-[#f0fae1] shadow-[0_1px_2px_rgba(46,43,37,.14)]"
+          class="area-status rounded-[32px] p-6.5 flex flex-col items-center justify-center text-center bg-[#3a1310] shadow-[0_3px_10px_rgba(46,43,37,.16)]"
         >
-          <div class="text-[10px] uppercase tracking-[.1em] text-[#c67139]">你已經學了</div>
-          <div class="font-heading-organic text-[52px] leading-none text-[#56633f] mt-1.5">{{ userLearned }}</div>
-          <div class="text-[13px] text-[#201e1d]/80 mt-1.5">個單字,持續累積中</div>
+          <div class="text-[20px] uppercase tracking-[.1em] text-[#ffb27a]">連續學習</div>
+          <div class="streak-flame relative mt-1.5">
+            <span class="streak-flame-glyph" aria-hidden="true">🔥</span>
+            <span class="font-heading-organic streak-flame-number">{{ currentStreak }}</span>
+          </div>
+          <div class="text-[20px] text-[#ffe1d0]/80 mt-1.5">天,保持下去</div>
         </div>
 
         <div
-          v-if="!loggedIn"
+          v-if="!isLoggedIn"
           class="area-weak rounded-[32px] p-6.5 bg-[#ebddc5] shadow-[0_1px_2px_rgba(46,43,37,.14)] opacity-50 blur-[1.5px] pointer-events-none"
         >
           <div class="text-[10px] uppercase tracking-[.1em] text-[#c67139]">最容易忘記的 5 個字</div>
@@ -181,6 +209,44 @@ const weakWords = [
 }
 .area-weak {
   grid-area: weak;
+}
+
+.streak-flame {
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.streak-flame-glyph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 92px;
+  line-height: 1;
+  filter: drop-shadow(0 0 12px rgba(255, 123, 56, 0.65));
+  animation: streak-flicker 1.8s ease-in-out infinite;
+}
+.streak-flame-number {
+  position: relative;
+  margin-top: 30px;
+  font-size: 30px;
+  line-height: 1;
+  color: #fff6ec;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+@keyframes streak-flicker {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
 }
 
 @media (max-width: 760px) {
