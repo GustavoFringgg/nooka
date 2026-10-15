@@ -20,7 +20,8 @@ const categoryId = route.params.categoryId
 const {
   data: words,
   pending,
-  error
+  error,
+  refresh: refreshWords
 } = await useAsyncData(
   "choice-words",
   async () => {
@@ -208,8 +209,9 @@ const nextQuestion = async () => {
     await Promise.all([recordRoundComplete(), recordSm2Answers()])
   }
 }
-const restartQuiz = () => {
+const restartQuiz = async () => {
   clearAutoAdvance()
+  if (isLoggedIn.value) await refreshWords()
   questions.value = buildQuizQuestions(words.value!, direction, questionCount)
   currentIndex.value = 0
   score.value = 0
