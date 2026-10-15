@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ActivitySummaryResponse, Category, Word } from "~/types/practice"
+import type { ActivitySummaryResponse, Category, Word, WeakestWordResponse } from "~/types/practice"
 import dailyWordsData from "~/data/dailyWords.json"
 
 interface DailyWordEntry {
@@ -43,6 +43,25 @@ const { data: activitySummary } = await useAsyncData(
 
 const currentStreak = computed(() => activitySummary.value.streak.currentStreak)
 
+const EF_INITIAL = 2.5
+const EF_MIN = 1.3
+
+const { data: weakestWords } = await useAsyncData(
+  "overview-weakest-words",
+  async () => {
+    if (!isLoggedIn.value) return []
+    return await useApiFetch<WeakestWordResponse[]>("/api/WordSm2/weakest?mode=Choice&count=5")
+  },
+  { watch: [isLoggedIn], default: () => [] as WeakestWordResponse[] }
+)
+
+const weakestWordBars = computed(() =>
+  weakestWords.value.map((w) => ({
+    ...w,
+    pct: ((EF_INITIAL - w.ef) / (EF_INITIAL - EF_MIN)) * 100
+  }))
+)
+
 onMounted(() => {
   const totalWordsTarget = words.value?.length ?? 0
   const duration = 1400
@@ -63,12 +82,13 @@ onMounted(() => {
   dailyWord.value = list[Math.floor(Math.random() * list.length)] ?? null
 })
 
-const weakWords = [
-  { word: "haltingly", meaning: "吞吞吐吐地", misses: 6, pct: 90 },
-  { word: "vicarious", meaning: "替代的感受", misses: 5, pct: 74 },
-  { word: "hectic", meaning: "忙亂的", misses: 4, pct: 60 },
-  { word: "hub", meaning: "中心樞紐", misses: 3, pct: 44 },
-  { word: "handout", meaning: "講義;施捨", misses: 2, pct: 28 }
+// 未登入時的模糊預覽用假資料,不是真實數據
+const weakWordsPreview = [
+  { word: "haltingly", meaning: "吞吞吐吐地", pct: 90 },
+  { word: "vicarious", meaning: "替代的感受", pct: 74 },
+  { word: "hectic", meaning: "忙亂的", pct: 60 },
+  { word: "hub", meaning: "中心樞紐", pct: 44 },
+  { word: "handout", meaning: "講義;施捨", pct: 28 }
 ]
 </script>
 
@@ -149,7 +169,7 @@ const weakWords = [
         >
           <div class="text-[10px] uppercase tracking-[.1em] text-[#c67139]">最容易忘記的 5 個字</div>
           <div class="flex flex-col gap-2.5 mt-3">
-            <div v-for="w in weakWords" :key="w.word" class="flex items-center gap-3.5">
+            <div v-for="w in weakWordsPreview" :key="w.word" class="flex items-center gap-3.5">
               <span class="font-heading-organic text-lg w-[110px]">{{ w.word }}</span>
               <span class="text-[#645c50] text-sm w-[90px]">{{ w.meaning }}</span>
               <div class="flex-1 h-1.5 rounded-full bg-[#eee7db]">
@@ -160,14 +180,14 @@ const weakWords = [
         </div>
         <div v-else class="area-weak rounded-[32px] p-6.5 bg-[#ebddc5] shadow-[0_1px_2px_rgba(46,43,37,.14)]">
           <div class="text-[10px] uppercase tracking-[.1em] text-[#c67139]">最容易忘記的 5 個字</div>
-          <div class="flex flex-col gap-2.5 mt-3">
-            <div v-for="w in weakWords" :key="w.word" class="flex items-center gap-3.5">
-              <span class="font-heading-organic text-lg w-[110px]">{{ w.word }}</span>
-              <span class="text-[#645c50] text-sm w-[90px]">{{ w.meaning }}</span>
+          <div v-if="weakestWordBars.length === 0" class="text-[13px] text-[#201e1d]/60 mt-3">還沒有足夠的作答紀錄</div>
+          <div v-else class="flex flex-col gap-2.5 mt-3">
+            <div v-for="w in weakestWordBars" :key="w.wordId" class="flex items-center gap-3.5">
+              <span class="font-heading-organic text-lg w-[110px]">{{ w.term }}</span>
+              <span class="text-[#645c50] text-[13px] w-[90px]">{{ w.definitionCN }}</span>
               <div class="flex-1 h-1.5 rounded-full bg-[#eee7db]">
                 <div class="h-full rounded-full bg-[#c67139]" :style="{ width: w.pct + '%' }" />
               </div>
-              <span class="px-2.5 py-0.5 rounded-full border border-[#c67139] text-[#c67139] text-xs shrink-0"> 錯 {{ w.misses }} 次 </span>
             </div>
           </div>
         </div>
