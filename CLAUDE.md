@@ -38,6 +38,7 @@
   - **接下來的開發順序(2026/09/28 定案,2026/10/13 調整)**:**C(內容管理 Admin 後台)→ D(完成 /progress 真資料串接)→ E(學習紀錄 SM-2)→ B(會員系統補 refresh token)→ A(學習核心收尾:發音/RWD/loading 畫面等)→ H(部署)**。C 排在 D 前面雖然不算 MVP 範圍,但原因是先有 Admin 後台才能好好管理單字內容,不用手動戳 Supabase,之後開發/測試 SM-2 演算法時比較方便新增調整單字。2026/10/13 在原本的 D(SM-2)前面插入新的 D(完成 /progress 真資料串接),原 D 往後推成 E,原 E/F/G(介面/測試/部署)依序推成 F/G/H——原因是 `/progress` 統計列可以直接用現有 `GET /api/progress/summary` 加總,不需要等 SM-2 定案就能做完,順手先把這塊收掉。
   - **AI 功能方向(2026/08/20 討論)**:鎖定以下兩個,都是「後台/演算法輔助,使用者無感」性質
     1. **AI 輔助產生卡片內容**:AI 讀 DB 現有分類/單字(避免重複、抓上下文)生成新單字的中英釋義、例句、詞性,存 DB 標記「待審核」,審核管道兩個都要保留:(a)內容管理 Admin 後台 UI(見下方 C 大項),(b)LINE Messaging API 推播通知 + 按鈕核准(用 postback 夾帶單字 ID,不 parse 純文字回覆,避免多筆待審時對不上),核准後才正式發布
+       - **現成資料源(2026/10/15 調查)**,減少 AI 瞎生、降低人工 curate 成本:釋義用 **Free Dictionary API**(`dictionaryapi.dev`,包裝自 Wiktionary);分級單字表用 **Oxford 3000/5000** 或 **CEFR-J wordlist**(對應 JLPT N5~N1 分級的概念);例句用 **Tatoeba**(本身就有英中例句對);詞頻/常用度用 **COCA** 或 **SUBTLEX** 詞頻清單;音標(`ipa` 欄位)用 **CMU Pronouncing Dictionary** 或開源 `ipa-dict`,不用手動輸入;發音朗讀已用瀏覽器內建 Web Speech API(`typing.vue` 已實作),不用額外找工具
     2. **語意向量(embedding)挑選干擾項**:每個單字的釋義預先算好 embedding 存 DB,出題時用 cosine similarity 挑語意相近的單字當選擇題干擾項,取代目前隨機挑同分類單字的做法;這步是一次性預計算 + 純數學比對,不用每次出題都即時呼叫 AI API
     - **刻意不做**:AI 造句批改(使用者直接跟 AI 互動的功能)— 這種會被大量呼叫、目前沒有收費計畫,先不考慮
 - **Word ↔ Category 關聯**:已改為方案 B(多對多,`WordCategories` 中介表,複合主鍵 `WordId`+`CategoryId`,2026/09/17 完成遷移),`Word` 不再有 `CategoryId` 外鍵
@@ -66,6 +67,7 @@
 - `/practice` 書架書封進度標示已完成:左上角橘色圓形角標顯示今日待複習張數(>0 才顯示,跟右上角選中書籤角標分開避免重疊)、書名下方進度條(白底 + 螢光綠填色,已學/總字數比例)+ 文字數字;直接沿用既有 `GET /api/progress/summary`(回傳每本書的 Familiar/Learning/NewWords/DueToday),不用等後端補新 API
 - Admin 後台 API 全部完成,合併在單一 `AdminController`(跟 `plan.md` 原規劃的兩個獨立 controller 不同,功能等價):分類 CRUD(`GET/POST/PUT/DELETE /api/admin/categories`)、單字 CRUD + 分頁查詢(`GET/POST/PUT/DELETE /api/admin/words`,`PUT` 在同一個 transaction 裡 diff 增減 `WordCategories` 關聯)、`Word.Term`/`Category.Name` 都有 DB unique index,違反時回傳 409;全部 `[Authorize(Roles = "Admin")]`
 - Admin 後台前端:`/admin` middleware + `AppNav.vue`「資料管理」條件式連結已完成;`/admin/categories` 分類管理頁已完成串 API(列表/新增/編輯/刪除);`/admin/words` 單字管理頁已完成新增/編輯/刪除串 API,列表可展開看例句,分類篩選(只顯示有單字的分類)、關鍵字搜尋(400ms debounce)都已接上 `GET /api/admin/words` 查詢,**分頁 UI 還沒做**(2026/10/12 定案:管理後台用傳統分頁 component,不做無限捲動——無限捲動對瀏覽內容才有意義,管理後台需要看到總筆數;分頁 component 排到 MVP 結束後再做,目前先把前端 `pageSize` 跟後端上限都調大,一次撈全部頂著)
+- 選擇題/打字拼寫 SM-2 啟發的 EF 加權抽選**全部完成(2026/10/15)**:`WordSm2Progress` 表(`UserId`+`WordId`+`Mode` 複合鍵,只存 `EF`)、`POST /api/WordSm2/answers`(批次更新 EF)、`GET /api/WordSm2/words`(依 `weight = 1/EF` 加權隨機抽選出題);`choice.vue`/`typing.vue` 登入時改打這兩支 API,未登入維持原本公開 API 跟隨機出題;`typing.vue` 額外加了「同一字錯滿 3 次(含跳過)才算不熟悉」的容錯規則;細節見 `plan.md`
 
 ---
 
@@ -116,12 +118,13 @@
 
 ## E. 學習紀錄(SM-2 啟發的 EF 加權抽選)
 
-狀態:設計討論完成,實作中(詳見 `plan.md`)
+狀態:**已完成**
 
-1. 新增 `WordSm2Progress` 表(`UserId`+`WordId`+`Mode` 複合鍵,只存 `EF`)→ 已建表,欄位待依最新設計簡化(移除 `Interval`/`NextReviewDate`/`Repetitions`,這幾個是天數排程版的殘留,已改方向不需要)
-2. 答對/答錯 → quality 分數(5/2)→ EF 更新 API
-3. 出題邏輯:選擇題/打字拼寫改成依 `weight = 1/EF` 加權隨機抽選,取代原本隨機/全部撈
-4. ~~複習排程呈現~~、~~NextReviewDate 索引規劃~~ → 已不適用(改成 EF 加權抽選後不再有日期排程概念),改呈現方式待討論
+1. ~~新增 `WordSm2Progress` 表~~ → 已完成:`UserId`+`WordId`+`Mode` 複合鍵,只存 `EF`(天數排程版的 `Interval`/`NextReviewDate`/`Repetitions` 已拿掉)
+2. ~~答對/答錯 → quality 分數(5/2)→ EF 更新 API~~ → 已完成:實作時發現不需要保留 quality 這個中間值,直接寫死答對 `EF×1.05`、答錯 `EF×0.85`(比例式,下限 1.3);`POST /api/WordSm2/answers` 批次更新
+3. ~~出題邏輯~~ → 已完成:`choice.vue`/`typing.vue` 登入時改打 `GET /api/WordSm2/words`,依 `weight = 1/EF` 加權隨機抽選,取代原本隨機/全部撈;未登入維持原本公開 API;`restartQuiz` 登入時會重新打 API 反映最新 EF
+4. ~~複習排程呈現~~、~~NextReviewDate 索引規劃~~ → 已不適用(改成 EF 加權抽選後不再有日期排程概念);討論後決定**不額外呈現 EF/熟悉度資訊**,因為 `/progress` 學習紀錄頁(D 大項)已足夠覆蓋
+5. `typing.vue` 額外加了容錯規則:同一字錯滿 3 次(含跳過)才算 `isCorrect: false`,避免打字手誤被過度懲罰,細節見 `plan.md`
 
 ## F. 介面(Landing + 書架殼)
 

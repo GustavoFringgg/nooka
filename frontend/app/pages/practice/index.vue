@@ -321,7 +321,7 @@ const goToFlashcard = () => {
         </div>
 
         <div class="flex-1 min-h-0 pb-8 flex flex-col lg:flex-row gap-12">
-          <div class="styled-scrollbar lg:flex-[1.15] h-full min-h-0 grid grid-cols-2 gap-6 content-start box-border overflow-y-auto pt-7 pr-1">
+          <div class="styled-scrollbar lg:flex-[1.15] h-full min-h-0 grid grid-cols-5 gap-6 content-start box-border overflow-y-auto pt-7 pr-1">
             <div v-for="{ book, stats } in booksWithStats" :key="book.id" class="cursor-pointer" @click="selectBook(book.id)">
               <div
                 class="flex rounded-l-[3px] rounded-r-[10px] transition-transform duration-250 ease-out hover:-translate-y-2.5 hover:-rotate-[1.5deg] hover:shadow-[0_26px_34px_-18px_rgba(43,42,37,0.4)]"
@@ -333,7 +333,7 @@ const goToFlashcard = () => {
               >
                 <div class="w-3.5 rounded-l-[3px]" :style="{ background: darken(book.color ?? '#8a7a3e') }" />
                 <div
-                  class="relative flex-1 flex flex-col justify-between px-5 py-5.5 min-h-[190px] shadow-[inset_-10px_0_14px_-12px_rgba(0,0,0,0.35)]"
+                  class="relative flex-1 flex flex-col justify-end px-5 py-5.5 aspect-[2/3] shadow-[inset_-10px_0_14px_-12px_rgba(0,0,0,0.35)]"
                   :style="{ background: book.color ?? '#8a7a3e' }"
                 >
                   <div
@@ -353,27 +353,15 @@ const goToFlashcard = () => {
                     class="absolute -top-0.5 right-4.5 w-6.5 h-9.5 bg-paper-primary shadow-[0_4px_8px_rgba(43,42,37,0.3)] z-10"
                     style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%)"
                   />
-                  <div class="flex items-center gap-2">
-                    <span
-                      v-if="stats && stats.due > 0"
-                      class="w-6.5 h-6.5 rounded-full bg-paper-accent text-white text-[11px] font-semibold flex items-center justify-center shadow-[0_2px_6px_rgba(0,0,0,0.25)]"
-                    >
-                      {{ stats.due }}
-                    </span>
-                  </div>
                   <div>
                     <div class="font-display text-[26px] text-white leading-tight" style="text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15)">
                       {{ book.name }}
                     </div>
+                    <!-- 進度數字呈現方式還在想,先註解掉
                     <template v-if="stats">
-                      <div class="mt-2 h-2 rounded-[3px] bg-white border border-black/20 overflow-hidden">
-                        <div
-                          class="h-full rounded-[2px] bg-[#8CFF00] shadow-[inset_0_-2px_0_rgba(0,0,0,0.28),0_0_6px_rgba(140,255,0,0.7)]"
-                          :style="{ width: `${stats.pct}%` }"
-                        />
-                      </div>
-                      <div class="text-white/85 text-[12px] mt-1">{{ stats.learned }} / {{ stats.total }}</div>
+                      <div class="text-white/85 text-[12px] mt-2">{{ stats.learned }} / {{ stats.total }}</div>
                     </template>
+                    -->
                   </div>
                 </div>
               </div>

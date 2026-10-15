@@ -18,11 +18,13 @@ const posColors: Record<PartOfSpeech, { bg: string; text: string }> = {
 const route = useRoute()
 const categoryId = route.params.categoryId
 const questionCount = Number(route.query.count) || undefined
+const wrongAttemptCounts = ref(new Map<number, number>())
 
 const {
   data: words,
   pending,
-  error
+  error,
+  refresh: refreshWords
 } = await useAsyncData(
   "type-words",
   async () => {
@@ -144,6 +146,7 @@ const checkAnswer = () => {
   if (!currentQuestion.value || resultMode.value) return
   const guess = letters.value.join("").trim().toLowerCase()
   const answer = currentQuestion.value.word.term.trim().toLowerCase()
+  const wordId = currentQuestion.value.word.id
 
   if (guess === answer) {
     score.value++
@@ -151,6 +154,9 @@ const checkAnswer = () => {
     startAutoAdvance()
     return
   }
+
+  const current = wrongAttemptCounts.value.get(wordId) ?? 0
+  wrongAttemptCounts.value.set(wordId, current + 1)
 
   reviewWordIds.value.add(currentQuestion.value.word.id)
   resultMode.value = "wrongRetry"
@@ -164,27 +170,42 @@ const checkAnswer = () => {
 const skipQuestion = () => {
   if (!currentQuestion.value || resultMode.value) return
   reviewWordIds.value.add(currentQuestion.value.word.id)
+  wrongAttemptCounts.value.set(currentQuestion.value.word.id, 3)
   letters.value = currentQuestion.value.word.term.split("")
   resultMode.value = "skipped"
   speak(currentQuestion.value.word.term)
 }
 
-const nextQuestion = () => {
+const nextQuestion = async () => {
   clearAutoAdvance()
   currentIndex.value++
 
   if (currentIndex.value >= questions.value.length) {
-    recordRoundComplete()
+    await Promise.all([recordRoundComplete(), recordSm2Answers()])
   }
 }
 
-const restartQuiz = () => {
+const recordSm2Answers = async () => {
+  if (!isLoggedIn.value) return
+  const answers = questions.value.map((q) => ({
+    wordId: q.word.id,
+    isCorrect: (wrongAttemptCounts.value.get(q.word.id) ?? 0) < 3
+  }))
+  await useApiFetch("/api/wordSm2/answers", {
+    method: "POST",
+    body: { mode: "Typing", answers }
+  })
+}
+
+const restartQuiz = async () => {
   clearAutoAdvance()
   clearRevealTimer()
+  if (isLoggedIn.value) await refreshWords()
   questions.value = buildTypingQuestions(words.value!, questionCount)
   currentIndex.value = 0
   score.value = 0
   reviewWordIds.value = new Set()
+  wrongAttemptCounts.value = new Map()
 }
 
 onUnmounted(() => {

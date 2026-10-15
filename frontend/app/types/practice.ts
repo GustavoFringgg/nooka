@@ -73,3 +73,10 @@ export interface ActivitySummaryResponse {
   recent: ActivityRecentDay[]
   heatmap: ActivityHeatmapDay[]
 }
+
+export interface WeakestWordResponse {
+  wordId: number
+  term: string
+  definitionCN: string
+  ef: number
+}
