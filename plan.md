@@ -2,7 +2,7 @@
 
 > 目標:幫選擇題(`choice.vue`)、打字拼寫(`typing.vue`)加上 SM-2 啟發的學習紀錄機制,決定出題時哪些單字比較需要被複習。這是開發順序 **D → E → B → A → H**(見 `CLAUDE.md`)的第三步。
 >
-> **狀態(2026/10/14):設計討論完成,進入 Stage 1 schema 調整。** 以下是目前已經討論定案的內容(中途有一次重大設計轉向,見下方說明)。
+> **狀態(2026/10/15):全部完成。** 中途有一次重大設計轉向(天數排程 → EF 加權抽選),細節見下方說明。
 
 ## 為什麼另開這個任務(取代原本 plan.md 內容)
 
@@ -66,18 +66,18 @@
 - `WordSm2Controller`:`POST /api/WordSm2/answers`、`GET /api/WordSm2/words`(帶 `mode`/`count` 輸入驗證,回 400)
 - `Program.cs` 已註冊 DI
 
-### Stage 3 — 前端:出題邏輯改成呼叫加權抽選 API
+### Stage 3 — 前端:出題邏輯改成呼叫加權抽選 API → 已完成
 
-- `choice.vue`/`typing.vue` 原本的選字邏輯(目前隨機/全部撈)改成呼叫新 API 取得加權抽選後的單字來出題
-- 作答完(答對/答錯)呼叫記錄 API
+- `choice.vue`/`typing.vue` 登入時改打 `/api/WordSm2/words` 加權抽選,未登入維持原本公開 API
+- 作答完(答對/答錯)呼叫 `recordSm2Answers` 批次記錄,跟 `recordRoundComplete` 用 `Promise.all` 同時打,避免序列等待
+- `typing.vue` 額外加了「錯滿 3 次才算 `isCorrect: false`」的容錯規則(`wrongAttemptCounts`),跳過視為錯 3 次
+- `restartQuiz` 登入時會 `await refreshWords()` 重新打加權抽選 API,反映剛更新的 EF;`typing.vue` 另外重置 `wrongAttemptCounts`
 
-### Stage 4 — 前端:學習狀態呈現(細節待討論)
+### Stage 4 — 前端:學習狀態呈現 → 決定不做
 
-- 原規劃的「複習排程呈現」因為不再有日期排程概念,已不適用;要不要呈現 EF/熟悉度相關資訊(如果要,呈現方式是什麼),待討論
+- 原規劃的「複習排程呈現」因為不再有日期排程概念,已不適用;討論後決定**不額外呈現 EF/熟悉度相關資訊**,因為 `/progress` 學習紀錄頁(D 大項)已經有已熟悉/學習中/今天待複習等統計,足夠覆蓋使用者需要看到的學習狀態,不需要額外曝露 EF 這個內部數字
 
-## 涉及檔案(預期,待細化)
-
-## 驗證方式(待細化)
+完成後回頭更新 `CLAUDE.md`:E 大項狀態改成完成,補上 SM-2/EF 加權抽選相關實作到「已完成的基礎建設」,並把開發順序往下推進到 B(會員系統補 refresh token)。→ 已完成(2026/10/15)。
 
 TODO: 待學習資訊
 

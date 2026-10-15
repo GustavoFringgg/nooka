@@ -52,8 +52,7 @@ const weakWords = [
     <AppNav />
 
     <div class="overview-content max-w-6xl mx-auto px-6 md:px-12 text-[#201e1d]">
-      <div class="mt-8 mb-10">
-        <span class="block text-[13px] tracking-[.06em] uppercase font-semibold text-[#8c491a] mb-2">學習儀表板</span>
+      <div class="mt-5 mb-7">
         <h1 class="font-heading-organic m-0 text-[clamp(32px,4vw,48px)] text-[#201e1d]">今天也背一點單字吧</h1>
       </div>
 
