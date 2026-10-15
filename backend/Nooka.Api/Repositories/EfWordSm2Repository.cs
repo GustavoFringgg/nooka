@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Nooka.Api.Data;
 using Nooka.Api.Models;
 using Nooka.Api.Models.Dtos.Request;
+using Nooka.Api.Models.Dtos.Response;
 
 public class EfWordSm2Repository : IWordSm2Repository
 {
@@ -92,7 +93,7 @@ public class EfWordSm2Repository : IWordSm2Repository
         return selected;
     }
 
-    public async Task<List<Word>> GetWeakestWordsAsync(int userId, string mode, int count)
+    public async Task<List<WeakestWordResponse>> GetWeakestWordsAsync(int userId, string mode, int count)
     {
         return await _context.WordSm2Progresses
             .Where(wsp => wsp.UserId == userId && wsp.Mode == mode && wsp.EF < InitialEF)
@@ -100,8 +101,12 @@ public class EfWordSm2Repository : IWordSm2Repository
             .OrderBy(x => x.EF)
             .ThenBy(x => x.Word.Term)
             .Take(count)
-            .Select(x => x.Word)
-            .ToListAsync();
+            .Select(x => new WeakestWordResponse
+            {
+                WordId = x.Word.Id,
+                Term = x.Word.Term,
+                DefinitionCN = x.Word.DefinitionCN,
+                EF = x.EF
+            }).ToListAsync();
     }
-
 }
