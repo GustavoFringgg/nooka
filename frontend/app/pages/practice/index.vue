@@ -31,6 +31,12 @@ const darken = (hex: string, amount = 0.25) => {
   return `rgb(${r}, ${g}, ${b})`
 }
 
+const speak = (text: string) => {
+  if (typeof window === "undefined" || !window.speechSynthesis) return
+  const utterance = new SpeechSynthesisUtterance(text)
+  utterance.lang = "en-US"
+  speechSynthesis.speak(utterance)
+}
 // ========== 書架/選書 ==========
 const selectedId = ref<number | null>(null)
 const selectedBook = computed(() => categories.value?.find((c) => c.id === selectedId.value) ?? null)
@@ -52,9 +58,7 @@ const selectBook = (id: number) => {
   selectedId.value = id
 }
 
-// ========== 書封進度標示(總字數/已學數/今日待複習數)==========
-// 直接沿用現有的 GET /api/progress/summary(已回傳每本書各自的 Familiar/Learning/NewWords/DueToday),不用等後端補新 API
-const { data: categorySummaries } = await useAsyncData(
+const { data: categorySummaries } = useAsyncData(
   "category-progress-summary",
   async () => {
     if (!isLoggedIn.value) return []
@@ -353,15 +357,18 @@ const goToFlashcard = () => {
                     class="absolute -top-0.5 right-4.5 w-6.5 h-9.5 bg-paper-primary shadow-[0_4px_8px_rgba(43,42,37,0.3)] z-10"
                     style="clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%)"
                   />
+                  <div v-if="stats" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div
+                      class="w-13 h-13 rounded-full border-2 border-white flex items-center justify-center text-[12px] font-semibold text-white shadow-[0_2px_6px_rgba(0,0,0,0.25)]"
+                      style="text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35)"
+                    >
+                      {{ stats.learned }}/{{ stats.total }}
+                    </div>
+                  </div>
                   <div>
-                    <div class="font-display text-[26px] text-white leading-tight" style="text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15)">
+                    <div class="font-display text-[20px] text-white leading-tight" style="text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15)">
                       {{ book.name }}
                     </div>
-                    <!-- 進度數字呈現方式還在想,先註解掉
-                    <template v-if="stats">
-                      <div class="text-white/85 text-[12px] mt-2">{{ stats.learned }} / {{ stats.total }}</div>
-                    </template>
-                    -->
                   </div>
                 </div>
               </div>
@@ -390,6 +397,7 @@ const goToFlashcard = () => {
                     </span>
                     <span
                       class="w-6.5 h-6.5 rounded-full flex items-center justify-center text-[#9c9384] cursor-pointer transition-colors duration-150 hover:bg-paper-fg/8 hover:text-paper-primary"
+                      @click="speak(w.term)"
                     >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M3 9v6h4l5 5V4L7 9H3z" />
