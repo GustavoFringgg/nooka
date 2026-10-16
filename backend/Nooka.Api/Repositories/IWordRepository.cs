@@ -9,6 +9,7 @@ public interface IWordRepository
     // 加? 是代表有可能會找無 所以告訴系統可能會 null
 
     Task<Word> CreateAsync(Word word, List<int> categoryIds);
+    Task<List<Word>> CreateManyAsync(List<(Word Word, List<int> CategoryIds)> items);
     Task<Word?> UpdateAsync(int id, Word word, List<int> categoryIds);
     Task<bool> DeleteAsync(int id);
     Task<PagedResponse<AdminWordResponse>> GetPagedAsync(int page, int pageSize, int? categoryId, string? keyword);

@@ -112,6 +112,30 @@ public class AdminController : ControllerBase
         }
     }
 
+    [HttpPost("words/batch")]
+    public async Task<IActionResult> CreateWordsBatch(List<WordUpsertRequest> requests)
+    {
+        foreach (var request in requests)
+        {
+            if (string.IsNullOrWhiteSpace(request.Word.Term))
+                return BadRequest("名稱不能空白");
+        }
+        try
+        {
+            var items = requests.Select(r => (r.Word, r.CategoryIds)).ToList();
+            var newWords = await _wordRepository.CreateManyAsync(items);
+            return Ok(newWords);
+        }
+        catch (DbUpdateException ex)
+        {
+            if (ex.InnerException is PostgresException { SqlState: "23505" })
+            {
+                return Conflict("其中有單字已存在,整批都沒有新增");
+            }
+            throw;
+        }
+    }
+
     [HttpPut("words/{id}")]
     public async Task<IActionResult> UpdateWord(int id, WordUpsertRequest request)
     {

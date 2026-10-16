@@ -46,6 +46,27 @@ public class EfWordRepository : IWordRepository
         return word;
     }
 
+    public async Task<List<Word>> CreateManyAsync(List<(Word Word, List<int> CategoryIds)> items)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
+        foreach (var item in items)
+        {
+            _context.Words.Add(item.Word);
+        }
+        await _context.SaveChangesAsync();
+
+        var wordCategories = items
+            .SelectMany(item => item.CategoryIds.Select(cId => new WordCategory { WordId = item.Word.Id, CategoryId = cId }))
+            .ToList();
+
+        _context.WordCategories.AddRange(wordCategories);
+        await _context.SaveChangesAsync();
+
+        await transaction.CommitAsync();
+        return items.Select(item => item.Word).ToList();
+    }
+
     public async Task<Word?> UpdateAsync(int id, Word word, List<int> categoryIds)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
