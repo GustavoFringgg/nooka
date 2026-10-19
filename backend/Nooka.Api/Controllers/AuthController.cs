@@ -29,11 +29,13 @@ public class AuthController : ControllerBase
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IConfiguration _configuration;
+    private readonly IWebHostEnvironment _env;
 
-    public AuthController(UserManager<AppUser> userManager, IConfiguration configuration)
+    public AuthController(UserManager<AppUser> userManager, IConfiguration configuration, IWebHostEnvironment env)
     {
         _userManager = userManager;
         _configuration = configuration;
+        _env = env;
     }
     [HttpPost("google-login")]
     public async Task<IActionResult> GoogleLogin(GoogleLoginRequest request)
@@ -79,8 +81,9 @@ public class AuthController : ControllerBase
             HttpOnly = true,
             // 這個 cookie 瀏覽器會保管,但前端 JavaScript(比如 document.cookie)讀不到它
             // 只有瀏覽器本身在發送 HTTP 請求時會自動把它夾帶上去
-            Secure = false,
-            SameSite = SameSiteMode.Lax,
+            // 本機開發(http://localhost)用 Secure=false/Lax,正式環境前後端不同網域,跨站 cookie 必須是 Secure=true/SameSite=None 瀏覽器才會送
+            Secure = !_env.IsDevelopment(),
+            SameSite = _env.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.None,
             Expires = DateTimeOffset.UtcNow.AddHours(7)
         });
 
@@ -90,7 +93,11 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public IActionResult Logout()
     {
-        Response.Cookies.Delete("access_token");
+        Response.Cookies.Delete("access_token", new CookieOptions
+        {
+            Secure = !_env.IsDevelopment(),
+            SameSite = _env.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.None
+        });
         // Cookies.Delete 會送一個過期的 Set-Cookie 回去,瀏覽器收到後就會清掉這個 cookie
         return Ok();
     }
