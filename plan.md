@@ -2,7 +2,7 @@
 
 > 目標:把 `frontend/app/pages/overview.vue` 從純假資料的設計稿,改成真的串接後端資料、反映使用者實際狀態的總覽頁。
 >
-> **狀態(2026/10/15):Stage 1-4 已完成,Stage 5 尚未開始。**
+> **狀態(2026/10/16):Stage 0-5 全部完成。** /overview 五個 bento 格都已串真實資料。
 
 ## 為什麼另開這個任務(取代原本 plan.md 內容)
 
@@ -49,11 +49,16 @@
 - 新增 `frontend/app/data/dailyWords.json`(30 筆,單字/中文意思/詞性/英文例句/中文例句)
 - `overview.vue` `onMounted` 用 `Math.random()` 從 JSON 挑一筆存進 `dailyWord` ref,template 改用 `dailyWord?.word` 等 optional chaining,取代原本寫死的 5 個 const
 
-### Stage 5 — 最容易忘記的 5 個字 → 後端已完成,前端進行中
+### Stage 5 — 最容易忘記的 5 個字 → 已完成
 
 - **篩選邏輯確認(2026/10/15)**:只從有 `WordSm2Progress` 紀錄、且 `EF < 2.5`(初始值)的字裡面取,不到 5 個就顯示實際數量;從沒練過、或 EF 已經回升到 ≥2.5 的字都不列入
-- 後端:`IWordSm2Repository`/`EfWordSm2Repository` 新增 `GetWeakestWordsAsync(userId, mode, count)`,用 `WordSm2Progresses` join `Words`,篩 `EF < InitialEF`,`OrderBy(EF).ThenBy(Term)`,`Take(count)`
-- `WordSm2Controller` 新增 `GET /api/WordSm2/weakest?mode=Choice&count=5`(`[Authorize]`,`mode`/`count` 驗證跟 `GetWeightedRandomWords` 同款,**沒有** `categoryId` 參數,因為是跨全部書統計),build 成功
-- 前端:`overview.vue` 還沒串接,待取代寫死的 `weakWords` 陣列
+- 後端:`IWordSm2Repository`/`EfWordSm2Repository` 新增 `GetWeakestWordsAsync`,用 `WordSm2Progresses` join `Words`,篩 `EF < InitialEF`,`OrderBy(EF).ThenBy(Term)`,`Take(count)`;回傳型別改成新增的 `WeakestWordResponse` DTO(帶 `WordId`/`Term`/`DefinitionCN`/`EF`),因為前端要用 `EF` 換算進度條百分比,單純回傳 `Word` 會把 `EF` 丟掉
+- `WordSm2Controller` 新增 `GET /api/WordSm2/weakest?mode=Choice&count=5`(`[Authorize]`,`mode`/`count` 驗證跟 `GetWeightedRandomWords` 同款,**沒有** `categoryId` 參數,因為是跨全部書統計)
+- 前端:`overview.vue` 新增 `weakestWords`/`weakestWordBars`,打這支 API,用 `(2.5 - EF) / (2.5 - 1.3) * 100` 算進度條 `pct`(EF 範圍已經被篩選邏輯鎖在 1.3~2.5 之間,直接拿這個區間反推最合理);「錯 N 次」文字拿掉(系統沒存這個數字);未登入模糊預覽改用獨立假資料 `weakWordsMockDataPreview`,不跟真實資料混用;沒有作答紀錄時顯示「還沒有足夠的作答紀錄」
 
-Stage 1-4 都已完成。
+/overview 開發到此全部完成。
+
+## 這次 session 順手做的額外工作(跟 /overview 本身無直接關係)
+
+- `/practice` 書架:書封改直立比例(`aspect-[2/3]`)、一行排 5 本(`grid-cols-5`)而不是 2 本;拿掉左上角「今天待複習」橘色角標跟螢光綠進度條(進度數字呈現方式還在想,先註解掉);書名改貼齊卡片底部
+- Admin 後台:新增 `POST /api/admin/words/batch` 批次新增單字 API(整批失敗/整批回滾,不是部分成功),方便手動塞測試單字資料時不用一筆一筆打 Postman

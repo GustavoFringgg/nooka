@@ -1,0 +1,1009 @@
+[
+  {
+    "word": {
+      "term": "conviction",
+      "definitionCN": "定罪、判罪、堅定的信念",
+      "definitionEN": "a firm belief, or the act of being found guilty of a crime",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "He spoke with conviction about the importance of honesty.",
+        "Her conviction that education can change lives inspired many people in the community."
+      ],
+      "ipa": "kənˈvɪkʃən"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "competitiveness",
+      "definitionCN": "競爭力",
+      "definitionEN": "the quality of being able to compete successfully with others",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "Their competitiveness helps them succeed in business.",
+        "The country's competitiveness in the global economy depends on factors such as innovation, education, and infrastructure."
+      ],
+      "ipa": "kəmˈpɛtətɪvnɪs"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "correspondence",
+      "definitionCN": "信件、商業信函",
+      "definitionEN": "letters sent or received; a close similarity or connection",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "She keeps all her old correspondence in a box.",
+        "They maintained regular correspondence during the war.",
+        "There is a clear correspondence between the two sets of data, indicating a strong correlation."
+      ],
+      "ipa": "ˌkɔrəˈspɑndəns"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "contain",
+      "definitionCN": "包含、容納、盛裝",
+      "definitionEN": "to hold or include something within itself",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "The box contains old photographs.",
+        "The report contains detailed information about the project."
+      ],
+      "ipa": "kənˈten"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "cite",
+      "definitionCN": "舉例、引證",
+      "definitionEN": "to quote or refer to something as evidence or example",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "She cited a famous quote in her speech.",
+        "The professor asked the students to cite their sources in the research paper.",
+        "The lawyer cited a previous court ruling to strengthen her argument in the case."
+      ],
+      "ipa": "saɪt"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "convey",
+      "definitionCN": "表達、傳達（思想、感情或想法）",
+      "definitionEN": "to communicate or make known an idea or feeling",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "The report conveys important information about the project.",
+        "He effectively conveyed his ideas during the meeting.",
+        "Please convey the instructions to the team as soon as possible."
+      ],
+      "ipa": "kənˈve"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "clarify",
+      "definitionCN": "澄清、闡明、更清晰易懂",
+      "definitionEN": "to make something clearer or easier to understand",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "Please clarify the terms of the agreement before we proceed.",
+        "The manager will clarify any questions about the new policy in the meeting."
+      ],
+      "ipa": "ˈklærəˌfaɪ"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "congestion",
+      "definitionCN": "堵車、塞車、擁塞",
+      "definitionEN": "overcrowding that causes blockage or slow movement",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "The city is implementing new measures to reduce traffic congestion.",
+        "High network congestion during peak hours can affect internet speeds.",
+        "To address congestion problems, the company is upgrading its infrastructure."
+      ],
+      "ipa": "kənˈdʒɛstʃən"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "crucial",
+      "definitionCN": "至關重要的、關鍵的、決定性的",
+      "definitionEN": "extremely important or necessary",
+      "partOfSpeech": "形容詞",
+      "examples": [
+        "Her work has been crucial to the project's success."
+      ],
+      "ipa": "ˈkruʃəl"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "consecutive",
+      "definitionCN": "連續的、連貫的、無間斷的",
+      "definitionEN": "following one after another without interruption",
+      "partOfSpeech": "形容詞",
+      "examples": [
+        "This is the fifth consecutive weekend that I've spent working."
+      ],
+      "ipa": "kənˈsɛkjətɪv"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "category",
+      "definitionCN": "種類、類別、範疇",
+      "definitionEN": "a group of things sharing common characteristics",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "The company launched a new product in the electronics category.",
+        "They are analyzing the expenses in different categories to reduce costs."
+      ],
+      "ipa": "ˈkætəˌgɔri"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "committee",
+      "definitionCN": "委員",
+      "definitionEN": "a group of people appointed to perform a particular function",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "Each member of the finance committee is considered an expert in his or her field."
+      ],
+      "ipa": "kəˈmɪti"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "conduct",
+      "definitionCN": "進行、主持、實施",
+      "definitionEN": "to organize and carry out a particular activity",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "The company will conduct a survey to gather customer feedback.",
+        "He is responsible for conducting the meeting this afternoon."
+      ],
+      "ipa": "kənˈdʌkt"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "caterer",
+      "definitionCN": "餐飲供應商或外燴業者",
+      "definitionEN": "a person or company that provides food for events",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "We hired a caterer for the office party.",
+        "The caterer provided a variety of food options for the conference."
+      ],
+      "ipa": "ˈketərɚ"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "cartridge",
+      "definitionCN": "碳粉夾",
+      "definitionEN": "a container holding ink, toner, or other material for a device",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "The printer needs a new ink cartridge.",
+        "They ran out of toner cartridges in the office."
+      ],
+      "ipa": "ˈkɑrtrɪdʒ"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "currency",
+      "definitionCN": "貨幣",
+      "definitionEN": "the money used in a particular country",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "Currency fluctuations can impact international trade.",
+        "Make sure to check the currency exchange rate before traveling."
+      ],
+      "ipa": "ˈkɝənsi"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "commensurate",
+      "definitionCN": "相符的、相稱的",
+      "definitionEN": "corresponding in size or degree to something else",
+      "partOfSpeech": "形容詞",
+      "examples": [
+        "His new role comes with a salary commensurate with his skills.",
+        "The compensation was not commensurate with the amount of work required."
+      ],
+      "ipa": "kəˈmɛnsərɪt"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "compatible",
+      "definitionCN": "相容的",
+      "definitionEN": "able to exist or work together without conflict",
+      "partOfSpeech": "形容詞",
+      "examples": [
+        "This charger is compatible with most smartphones.",
+        "The new system is fully compatible with older versions of the software."
+      ],
+      "ipa": "kəmˈpætəbl"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "contractor",
+      "definitionCN": "承包商",
+      "definitionEN": "a person or company that undertakes work for others",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "The contractor completed the renovation on time.",
+        "They hired a contractor to manage the installation of new equipment."
+      ],
+      "ipa": "ˈkɑntræktɚ"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "cushion",
+      "definitionCN": "坐墊、靠墊、緩衝、減少影響",
+      "definitionEN": "a soft pad used for sitting or leaning on, or something that softens an impact",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "A cushion was added to each chair to improve comfort.",
+        "They have a financial cushion to handle unexpected expenses."
+      ],
+      "ipa": "ˈkʊʃən"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "ceremony",
+      "definitionCN": "典禮",
+      "definitionEN": "a formal event held to mark an occasion",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "The company hosted an award ceremony to honor high-performing employees."
+      ],
+      "ipa": "ˈsɛrəˌmoni"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "collateral",
+      "definitionCN": "抵押品、擔保品",
+      "definitionEN": "an asset offered as security for a loan",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "To secure the loan, the borrower must provide collateral such as real estate or vehicles.",
+        "The bank assessed the collateral value before approving the loan application."
+      ],
+      "ipa": "kəˈlætərəl"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "conservative",
+      "definitionCN": "保守的",
+      "definitionEN": "holding traditional values and resistant to change",
+      "partOfSpeech": "形容詞",
+      "examples": [
+        "Older people tend to be more conservative and a bit suspicious of anything new."
+      ],
+      "ipa": "kənˈsɝvətɪv"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "claim",
+      "definitionCN": "聲明、索賠、申請、認領",
+      "definitionEN": "to state something as true, or to formally request something owed",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "You need to fill out a claim form to receive your refund.",
+        "The company denied his claim for damages."
+      ],
+      "ipa": "klem"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "contend",
+      "definitionCN": "爭辯、爭奪、聲稱、主張",
+      "definitionEN": "to compete for something, or to assert as true",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "The athlete will contend for the championship title this year.",
+        "Many experts contend that the new policy will improve productivity."
+      ],
+      "ipa": "kənˈtɛnd"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "corridor",
+      "definitionCN": "房間走廊、走道",
+      "definitionEN": "a long passage in a building connecting rooms",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "Please follow the corridor to reach the meeting room.",
+        "The new office space includes a wide corridor for easy access."
+      ],
+      "ipa": "ˈkɔrɪdɚ"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "correlation",
+      "definitionCN": "關聯性",
+      "definitionEN": "a mutual relationship between two or more things",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "There's a correlation between smoking and cancer."
+      ],
+      "ipa": "ˌkɔrəˈleʃən"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "clerical",
+      "definitionCN": "文書工作的、辦公室工作的",
+      "definitionEN": "relating to office work such as filing and typing",
+      "partOfSpeech": "形容詞",
+      "examples": [
+        "The job requires strong clerical skills and attention to detail.",
+        "She applied for a clerical position at the local bank."
+      ],
+      "ipa": "ˈklɛrɪkl"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "comply",
+      "definitionCN": "服從、遵守",
+      "definitionEN": "to act in accordance with a rule or request",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "All employees must comply with the company's dress code.",
+        "The contractor was asked to comply with environmental regulations."
+      ],
+      "ipa": "kəmˈplaɪ"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "cease",
+      "definitionCN": "停止、中止",
+      "definitionEN": "to stop doing something or to come to an end",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "The factory will cease operations at the end of the month.",
+        "The company decided to cease production of the outdated model."
+      ],
+      "ipa": "sis"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "concourse",
+      "definitionCN": "機場/車站大廳",
+      "definitionEN": "a large open area in a public building where people gather",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "The passengers gathered in the airport concourse before boarding."
+      ],
+      "ipa": "ˈkɑnkɔrs"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "cajole",
+      "definitionCN": "哄騙、勸誘",
+      "definitionEN": "to persuade someone through flattery or gentle urging",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "The sales manager tried to cajole the client into signing the contract by highlighting all the benefits."
+      ],
+      "ipa": "kəˈdʒol"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "conclude",
+      "definitionCN": "會議結束、表示結束某事或做出判斷或決定",
+      "definitionEN": "to bring something to an end, or to decide something after consideration",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "After analyzing the data, the team concluded that the project was feasible."
+      ],
+      "ipa": "kənˈklud"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "constraint",
+      "definitionCN": "限制、束縛、約束",
+      "definitionEN": "a limitation or restriction on action",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "Due to time constraints, we had to complete the report earlier than expected.",
+        "The company operates within strict regulatory constraints to ensure compliance."
+      ],
+      "ipa": "kənˈstrent"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "commence",
+      "definitionCN": "開始、著手進行",
+      "definitionEN": "to begin or start",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "The project will commence next month after all approvals are finalized."
+      ],
+      "ipa": "kəˈmɛns"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "commend",
+      "definitionCN": "表揚、讚揚",
+      "definitionEN": "to praise formally or officially",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "The manager commended the team for their hard work on the project."
+      ],
+      "ipa": "kəˈmɛnd"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "coverage",
+      "definitionCN": "範圍、範疇、報導",
+      "definitionEN": "the extent to which something is reported or included",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "The media coverage of the event was extensive, reaching millions of viewers.",
+        "The company offers health coverage to all its employees."
+      ],
+      "ipa": "ˈkʌvərɪdʒ"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "courier",
+      "definitionCN": "快遞",
+      "definitionEN": "a person or company that delivers messages or packages",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "I want to have this package delivered by motorcycle courier."
+      ],
+      "ipa": "ˈkɝiɚ"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "carnival",
+      "definitionCN": "嘉年華",
+      "definitionEN": "a public festival with parades and entertainment",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "The city organized a carnival to celebrate the holiday season."
+      ],
+      "ipa": "ˈkɑrnəvl"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "criterion",
+      "definitionCN": "標準",
+      "definitionEN": "a standard used to judge or decide something",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "The primary criterion for the promotion is performance rather than seniority."
+      ],
+      "ipa": "kraɪˈtɪriən"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "committed",
+      "definitionCN": "忠誠的、堅定的、投入的、全心投入的、承諾的",
+      "definitionEN": "dedicated to a cause, activity, or relationship",
+      "partOfSpeech": "形容詞",
+      "examples": [
+        "The company is committed to providing high-quality services to its clients."
+      ],
+      "ipa": "kəˈmɪtɪd"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "competent",
+      "definitionCN": "有能力的、能幹的、稱職的",
+      "definitionEN": "having the necessary skill or ability to do something well",
+      "partOfSpeech": "形容詞",
+      "examples": [
+        "She is a competent manager who handles her team effectively."
+      ],
+      "ipa": "ˈkɑmpətənt"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "collision",
+      "definitionCN": "碰撞：兩個或多個物體相撞的行為",
+      "definitionEN": "an instance of two or more things crashing into each other",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "The two vehicles were involved in a head-on collision due to slippery roads."
+      ],
+      "ipa": "kəˈlɪʒən"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "cordially",
+      "definitionCN": "友好而莊重地、熱誠但禮貌地",
+      "definitionEN": "in a warm and friendly but polite manner",
+      "partOfSpeech": "副詞",
+      "examples": [
+        "We cordially invite you to attend the annual conference next month."
+      ],
+      "ipa": "ˈkɔrdʒəli"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "controversial",
+      "definitionCN": "有爭議的、引起爭議的",
+      "definitionEN": "causing disagreement or dispute",
+      "partOfSpeech": "形容詞",
+      "examples": [
+        "She avoided answering the controversial question directly."
+      ],
+      "ipa": "ˌkɑntrəˈvɝʃəl"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "commentary",
+      "definitionCN": "（廣播或電視所播事件的）評論、解說、實況報道",
+      "definitionEN": "a spoken or written description of events as they happen",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "The sports commentator gave live commentary during the game."
+      ],
+      "ipa": "ˈkɑmənˌtɛri"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "commit",
+      "definitionCN": "做（違法或錯誤的事）、犯罪、錯、承諾、投入",
+      "definitionEN": "to carry out an act, or to pledge oneself to something",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "He decided to commit to his job and give it his full attention."
+      ],
+      "ipa": "kəˈmɪt"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "consolidate",
+      "definitionCN": "鞏固、合併、使強化",
+      "definitionEN": "to make something stronger or combine into a single whole",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "He worked hard to consolidate his reputation in the industry."
+      ],
+      "ipa": "kənˈsɑləˌdet"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "cultivate",
+      "definitionCN": "耕作、栽培、培養、培育",
+      "definitionEN": "to prepare land for crops, or to develop a skill or relationship",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "The company aims to cultivate strong relationships with its clients."
+      ],
+      "ipa": "ˈkʌltəˌvet"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "collective",
+      "definitionCN": "集體的、共同的",
+      "definitionEN": "done or shared by all members of a group",
+      "partOfSpeech": "形容詞",
+      "examples": [
+        "The team's collective effort resulted in the successful launch of the product."
+      ],
+      "ipa": "kəˈlɛktɪv"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "coarse",
+      "definitionCN": "粗糙的、粗魯的",
+      "definitionEN": "rough in texture, or crude in manner",
+      "partOfSpeech": "形容詞",
+      "examples": [
+        "The fabric feels coarse and uncomfortable against the skin."
+      ],
+      "ipa": "kɔrs"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "capable",
+      "definitionCN": "有能力的、熟練的、能幹的",
+      "definitionEN": "having the ability or skill to do something",
+      "partOfSpeech": "形容詞",
+      "examples": [
+        "The manager capably handled the customer complaints, resolving them quickly."
+      ],
+      "ipa": "ˈkepəbl"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "contaminate",
+      "definitionCN": "「污染」、「弄髒」或「使受不良影響」",
+      "definitionEN": "to make something impure or harmful by adding a polluting substance",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "The food was contaminated by bacteria due to improper storage."
+      ],
+      "ipa": "kənˈtæməˌnet"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "craft",
+      "definitionCN": "工藝",
+      "definitionEN": "skilled work, especially making things by hand",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "The craftsman demonstrated his skill in creating intricate designs."
+      ],
+      "ipa": "kræft"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "cellar",
+      "definitionCN": "地下室、儲藏室",
+      "definitionEN": "a room below ground level used for storage",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "They keep their wine collection in the cellar."
+      ],
+      "ipa": "ˈsɛlɚ"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "cautious",
+      "definitionCN": "謹慎的、細心的、小心翼翼的",
+      "definitionEN": "careful to avoid risk or danger",
+      "partOfSpeech": "形容詞",
+      "examples": [
+        "He's a cautious driver."
+      ],
+      "ipa": "ˈkɔʃəs"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "cater",
+      "definitionCN": "提供飲食、迎合、滿足（需求或喜好）",
+      "definitionEN": "to provide food and service, or to meet someone's needs",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "They decided to cater the conference to make sure everyone was well-fed."
+      ],
+      "ipa": "ˈketɚ"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "confer",
+      "definitionCN": "商討研討、授予",
+      "definitionEN": "to discuss something with others, or to grant a title or honor",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "The president will confer with senior advisors before announcing the new policy."
+      ],
+      "ipa": "kənˈfɝ"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "captivation",
+      "definitionCN": "吸引力、迷惑、著迷",
+      "definitionEN": "the state of being charmed or fascinated",
+      "partOfSpeech": "名詞",
+      "examples": [
+        "The advertisement had a strong captivation effect on younger audiences."
+      ],
+      "ipa": "ˌkæptəˈveʃən"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "contradict",
+      "definitionCN": "牴觸、矛盾",
+      "definitionEN": "to assert the opposite of a statement, or to be inconsistent with",
+      "partOfSpeech": "動詞",
+      "examples": [
+        "His actions contradict his earlier promises."
+      ],
+      "ipa": "ˌkɑntrəˈdɪkt"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  },
+  {
+    "word": {
+      "term": "cognitive",
+      "definitionCN": "認知的、感知的",
+      "definitionEN": "relating to mental processes of perception and understanding",
+      "partOfSpeech": "形容詞",
+      "examples": [
+        "The training program helps improve the cognitive skills of employees.",
+        "The app is easy to use and reduces the cognitive load on users."
+      ],
+      "ipa": "ˈkɑgnətɪv"
+    },
+    "categoryIds": [
+      2,
+      19
+    ]
+  }
+]
