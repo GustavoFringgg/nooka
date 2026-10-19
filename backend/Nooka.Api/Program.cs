@@ -36,7 +36,7 @@ builder.Services.AddCors(options =>  // 註冊一定要在 builder 之前
 {
     options.AddPolicy("NuxtDev", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "https://nooka-wheat.vercel.app").AllowAnyHeader().AllowAnyMethod().AllowCredentials();
+        policy.WithOrigins("http://localhost:3000", "https://nooka-learning.vercel.app").AllowAnyHeader().AllowAnyMethod().AllowCredentials();
         // 前端呼叫 /api/auth/me、/api/auth/logout 時要帶 credentials: 'include',讓瀏覽器把 cookie 一起送過去
     });
 });
