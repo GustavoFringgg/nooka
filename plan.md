@@ -39,10 +39,10 @@
 - ~~測試案例~~ → 已完成:`StreakCalculatorTests.cs` 3 個 `[Fact]`(連續累加到今天、中間斷一天後 current 重算但 longest 保留歷史最長、今明兩天都沒紀錄時 current 歸零但 longest 不洗掉),`dotnet test` 全過(累計 6 個測試)
 - 順手把 Stage 1 遺留的 `Microsoft.EntityFrameworkCore` 版本衝突警告修掉:`Nooka.Api.csproj` 的 `Microsoft.EntityFrameworkCore.Design` 從 `10.0.11` 改成跟其他 EF 相關套件一致的 `10.0.9`
 
-### Stage 3 — 前端 Vitest 設定 + quiz.ts 測試
+### Stage 3 — 前端 Vitest 設定 + quiz.ts 測試 → 已完成
 
-- 加裝 `vitest`(`frontend/package.json` 新增 devDependency + `test` script),不需要 `@vue/test-utils`(測的是純函式,不是元件)
-- 測試案例:
+- ~~加裝 `vitest`~~ → 已完成:`frontend/package.json` 新增 devDependency + `"test": "vitest run"` script(`run` 模式跑一次就結束,適合 CI;沒加 `run` 預設是 watch mode),不需要 `@vue/test-utils`(測的是純函式,不是元件)
+- ~~測試案例~~ → 已完成:新增 `frontend/app/utils/quiz.test.ts`,5 個測試案例全過:
   - `buildQuizQuestions`:選項數量固定是 4(1 正確 + 3 干擾)、正確答案一定在選項裡、`count` 有帶時回傳數量符合
   - `buildTypingQuestions`:`prompt` 對應到 `word.definitionCN`、`count` 有帶時回傳數量符合
 
