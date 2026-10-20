@@ -55,5 +55,3 @@
 ## 跟 CLAUDE.md「G. 測試與 CI/CD」的關係
 
 這次只做 G 大項裡的「單元測試(Unit)」+ CI 串接部分,**不做**「整合測試(Integration,`WebApplicationFactory` 打真實/測試用 DB)」跟「E2E 測試(Playwright)」—— 這兩塊成本較高,且不是這次「證明會接 pipeline」的目的,先不排入。
-
-test: 測試 PR CI gate
