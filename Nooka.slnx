@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/backend/">
+    <Project Path="backend/Nooka.Api.Tests/Nooka.Api.Tests.csproj" />
     <Project Path="backend/Nooka.Api/Nooka.Api.csproj" />
   </Folder>
 </Solution>
