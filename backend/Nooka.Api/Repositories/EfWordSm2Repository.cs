@@ -3,20 +3,19 @@ using Nooka.Api.Data;
 using Nooka.Api.Models;
 using Nooka.Api.Models.Dtos.Request;
 using Nooka.Api.Models.Dtos.Response;
+using Nooka.Api.Services;
+
 
 public class EfWordSm2Repository : IWordSm2Repository
 {
     private const float InitialEF = 2.5f;
-    private const float MinEF = 1.3f;
-    private const float CorrectMultiplier = 1.05f;
-    private const float IncorrectMultiplier = 0.85f;
-
     private readonly AppDbContext _context;
     public EfWordSm2Repository(AppDbContext context)
     {
         _context = context;
     }
 
+    // TODO:10/20 專案複習
     public async Task RecordAnswersAsync(int userId, string mode, List<WordAnswerRequest> answers)
     {
         var wordIdList = answers.Select(a => a.WordId).ToList();
@@ -27,11 +26,9 @@ public class EfWordSm2Repository : IWordSm2Repository
 
         foreach (var answer in answers)
         {
-            var multiplier = answer.IsCorrect ? CorrectMultiplier : IncorrectMultiplier;
-
             if (existingRecords.TryGetValue(answer.WordId, out var existing))
             {
-                existing.EF = Math.Max(MinEF, existing.EF * multiplier);
+                existing.EF = Sm2EfCalculator.ApplyAnswer(existing.EF, answer.IsCorrect);
             }
             else
             {
@@ -40,7 +37,7 @@ public class EfWordSm2Repository : IWordSm2Repository
                     UserId = userId,
                     WordId = answer.WordId,
                     Mode = mode,
-                    EF = Math.Max(MinEF, InitialEF * multiplier)
+                    EF = Sm2EfCalculator.ApplyAnswer(InitialEF, answer.IsCorrect)
                 });
             }
         }

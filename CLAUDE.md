@@ -35,7 +35,7 @@
   - **不採用 SM-2 原本「依日期排程複習」的機制**(不維護 interval/下次複習日期):討論後認為天數排程的體驗跟單字卡(Leitner,天數制)重複,且會導致「今天到期單字複習完就沒題目可練」,跟產品想鼓勵一天多輪練習(呼應 `/progress` 熱力圖設計)衝突
   - 改成:每個單字只維護一個 `EF` 值,每輪出題時依 `weight = 1 / EF` 做**加權隨機抽選**(EF 越低/越常答錯,被抽中機率越高;EF 越高/越常答對,機率越低但仍有機會,不會變成 0)。刻意**不做保證抽中**(例如「答錯的字下一輪一定出現」),純機率版本保留隨機性與樂趣
 - **開發階段**:先做 MVP(會員 + 卡片學習 + SM-2),AI 功能列為 Phase 2,MVP 完成上線後再疊加
-  - **接下來的開發順序(2026/09/28 定案,2026/10/13 調整)**:**C(內容管理 Admin 後台)→ D(完成 /progress 真資料串接)→ E(學習紀錄 SM-2)→ B(會員系統補 refresh token)→ A(學習核心收尾:發音/RWD/loading 畫面等)→ H(部署)**。C 排在 D 前面雖然不算 MVP 範圍,但原因是先有 Admin 後台才能好好管理單字內容,不用手動戳 Supabase,之後開發/測試 SM-2 演算法時比較方便新增調整單字。2026/10/13 在原本的 D(SM-2)前面插入新的 D(完成 /progress 真資料串接),原 D 往後推成 E,原 E/F/G(介面/測試/部署)依序推成 F/G/H——原因是 `/progress` 統計列可以直接用現有 `GET /api/progress/summary` 加總,不需要等 SM-2 定案就能做完,順手先把這塊收掉。
+  - **接下來的開發順序(2026/09/28 定案,2026/10/13 調整)**:**C(內容管理 Admin 後台)→ D(完成 /progress 真資料串接)→ E(學習紀錄 SM-2)→ B(會員系統補 refresh token)→ A(學習核心收尾:發音/RWD/loading 畫面等)→ H(部署)**。C 排在 D 前面雖然不算 MVP 範圍,但原因是先有 Admin 後台才能好好管理單字內容,不用手動戳 Supabase,之後開發/測試 SM-2 演算法時比較方便新增調整單字。2026/10/13 在原本的 D(SM-2)前面插入新的 D(完成 /progress 真資料串接),原 D 往後推成 E,原 E/F/G(介面/測試/部署)依序推成 F/G/H——原因是 `/progress` 統計列可以直接用現有 `GET /api/progress/summary` 加總,不需要等 SM-2 定案就能做完,順手先把這塊收掉。2026/10/19:**H(部署)已提前完成並上線**(B 的 refresh token 仍待補,A 的收尾項目也還有剩,見下方對應大項),中間順手插入了 `/overview` 總覽頁真資料串接(不在原排序內,見「已完成的基礎建設」)。
   - **AI 功能方向(2026/08/20 討論)**:鎖定以下兩個,都是「後台/演算法輔助,使用者無感」性質
     1. **AI 輔助產生卡片內容**:AI 讀 DB 現有分類/單字(避免重複、抓上下文)生成新單字的中英釋義、例句、詞性,存 DB 標記「待審核」,審核管道兩個都要保留:(a)內容管理 Admin 後台 UI(見下方 C 大項),(b)LINE Messaging API 推播通知 + 按鈕核准(用 postback 夾帶單字 ID,不 parse 純文字回覆,避免多筆待審時對不上),核准後才正式發布
        - **現成資料源(2026/10/15 調查)**,減少 AI 瞎生、降低人工 curate 成本:釋義用 **Free Dictionary API**(`dictionaryapi.dev`,包裝自 Wiktionary);分級單字表用 **Oxford 3000/5000** 或 **CEFR-J wordlist**(對應 JLPT N5~N1 分級的概念);例句用 **Tatoeba**(本身就有英中例句對);詞頻/常用度用 **COCA** 或 **SUBTLEX** 詞頻清單;音標(`ipa` 欄位)用 **CMU Pronouncing Dictionary** 或開源 `ipa-dict`,不用手動輸入;發音朗讀已用瀏覽器內建 Web Speech API(`typing.vue` 已實作),不用額外找工具
@@ -68,6 +68,7 @@
 - Admin 後台 API 全部完成,合併在單一 `AdminController`(跟 `plan.md` 原規劃的兩個獨立 controller 不同,功能等價):分類 CRUD(`GET/POST/PUT/DELETE /api/admin/categories`)、單字 CRUD + 分頁查詢(`GET/POST/PUT/DELETE /api/admin/words`,`PUT` 在同一個 transaction 裡 diff 增減 `WordCategories` 關聯)、`Word.Term`/`Category.Name` 都有 DB unique index,違反時回傳 409;全部 `[Authorize(Roles = "Admin")]`
 - Admin 後台前端:`/admin` middleware + `AppNav.vue`「資料管理」條件式連結已完成;`/admin/categories` 分類管理頁已完成串 API(列表/新增/編輯/刪除);`/admin/words` 單字管理頁已完成新增/編輯/刪除串 API,列表可展開看例句,分類篩選(只顯示有單字的分類)、關鍵字搜尋(400ms debounce)都已接上 `GET /api/admin/words` 查詢,**分頁 UI 還沒做**(2026/10/12 定案:管理後台用傳統分頁 component,不做無限捲動——無限捲動對瀏覽內容才有意義,管理後台需要看到總筆數;分頁 component 排到 MVP 結束後再做,目前先把前端 `pageSize` 跟後端上限都調大,一次撈全部頂著)
 - 選擇題/打字拼寫 SM-2 啟發的 EF 加權抽選**全部完成(2026/10/15)**:`WordSm2Progress` 表(`UserId`+`WordId`+`Mode` 複合鍵,只存 `EF`)、`POST /api/WordSm2/answers`(批次更新 EF)、`GET /api/WordSm2/words`(依 `weight = 1/EF` 加權隨機抽選出題);`choice.vue`/`typing.vue` 登入時改打這兩支 API,未登入維持原本公開 API 跟隨機出題;`typing.vue` 額外加了「同一字錯滿 3 次(含跳過)才算不熟悉」的容錯規則;細節見 `plan.md`
+- `/overview` 總覽頁**全部完成串真實資料(2026/10/16)**:登入狀態改用真的 `useIsLoggedIn()`(取代假的 `useDemoLoggedIn()`,該 composable 已刪除);單字庫總數/主題書架數直接打現成的 `GET /api/words`/`GET /api/categories` 算 `.length`;「已學字數」格改方向顯示**連續學習天數**(沿用 `/progress` 同一支 `GET /api/activity/summary` 的 `streak.currentStreak`,視覺做成數字疊在放大火焰 emoji 中間);「每日一字/每日一句」改成純前端靜態 JSON(`frontend/app/data/dailyWords.json`,30 筆)、`onMounted` 用 `Math.random()` 隨機選一筆,跟 `Words` 資料表無關,各使用者看到的可能不同;「最容易忘記的 5 個字」新增後端 `GET /api/WordSm2/weakest?mode=Choice&count=5`(`EfWordSm2Repository.GetWeakestWordsAsync`,篩 `EF < 2.5` 初始值、`OrderBy(EF).ThenBy(Term)`,回傳帶 `EF` 的 `WeakestWordResponse` DTO),前端用 `(2.5-EF)/(2.5-1.3)*100` 算進度條百分比;部署、分階段細節見 git 歷史上的 `plan.md`(2026/10/16 commit)
 
 ---
 
@@ -145,11 +146,11 @@ CI/CD 把關方式:GitHub Actions 在 PR 階段跑上述測試,擋合併進 main
 
 ## H. 部署與基礎建設
 
-狀態:未開始
+狀態:**已完成(2026/10/19)**,前後端皆已上線(不同網域)
 
-1. 前端 Vercel 設定
-2. 後端 Google Cloud Run 設定
-3. CORS / Cookie(`SameSite=None; Secure`)設定
+1. ~~前端 Vercel 設定~~ → 已完成:`https://nooka-learning.vercel.app`,API base 透過 `NUXT_PUBLIC_API_BASE` 環境變數覆寫 `nuxt.config.ts` 預設的 `http://localhost:5016`
+2. ~~後端 Google Cloud Run 設定~~ → 已完成:新增 `backend/Nooka.Api/Dockerfile`(多階段建置,`mcr.microsoft.com/dotnet/sdk:10.0` build → `aspnet:10.0` runtime,`ASPNETCORE_HTTP_PORTS=8080`)
+3. ~~CORS / Cookie(`SameSite=None; Secure`)設定~~ → 已完成:`Program.cs` CORS policy 明確列出 Vercel 網域(`WithOrigins` + `AllowCredentials`);`AuthController` 的 `access_token` cookie 依 `IWebHostEnvironment.IsDevelopment()` 切換 ——本機開發 `Secure=false`/`SameSite=Lax`,正式環境 `Secure=true`/`SameSite=None`(跨網域 cookie 必須如此瀏覽器才會夾帶),`Logout` 刪除 cookie 時也帶上相同設定,否則本機設的 cookie 刪不掉正式環境的
 4. (暫緩)Redis 快取 / refresh token 撤銷名單 — 等 Cloud Run 開多 instance 或需要撤銷機制時再評估,現階段可用內建 `IMemoryCache`
 
 ---
