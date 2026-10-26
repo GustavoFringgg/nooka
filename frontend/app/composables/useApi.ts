@@ -4,7 +4,8 @@ export const useApiUrl = (path: string) => {
   return `${config.public.apiBase}${path}`
 }
 
-// 呼叫 useApiUrl("/api/categories"),會回傳 "http://localhost:5016/api/categories"
+// 呼叫 useApiUrl("/api/categories"),現在 apiBase 是空字串,會回傳相對路徑 "/api/categories"
+// 這個相對路徑會被 nuxt.config.ts 的 routeRules 攔截,代理轉發到真正的後端網址,瀏覽器看到的永遠是同網域
 
 export const useApiFetch = <T>(path: string, options: Record<string, unknown> = {}) => {
   const headers = import.meta.server ? useRequestHeaders(["cookie"]) : undefined
