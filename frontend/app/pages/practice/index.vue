@@ -263,13 +263,13 @@ const goToFlashcard = () => {
     <AppNav />
 
     <div class="flex-1 min-h-0 bg-paper-bg-alt flex flex-col">
-      <div class="max-w-[1440px] mx-auto px-12 w-full flex-1 min-h-0 flex flex-col">
+      <div class="max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-12 w-full flex-1 min-h-0 flex flex-col">
         <div class="max-w-[1040px] mx-auto pt-8 w-full shrink-0">
-          <div class="mb-6 flex flex-wrap gap-4">
+          <div class="mb-6 flex gap-2 sm:gap-4">
             <button
               v-if="selectedMode === 'flashcard'"
               type="button"
-              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-primary text-paper-bg"
+              class="flex-1 min-w-0 rounded-full px-3 py-3 sm:px-6 sm:py-5 text-center text-sm sm:text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-primary text-paper-bg"
               @click="selectMode('flashcard')"
             >
               單字卡
@@ -278,7 +278,7 @@ const goToFlashcard = () => {
               v-else
               fill="var(--color-paper-primary)"
               text-color="var(--color-paper-bg)"
-              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-fg/8 text-paper-muted/70"
+              class="flex-1 min-w-0 rounded-full px-3 py-3 sm:px-6 sm:py-5 text-center text-sm sm:text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-fg/8 text-paper-muted/70"
               @click="selectMode('flashcard')"
             >
               單字卡
@@ -287,7 +287,7 @@ const goToFlashcard = () => {
             <button
               v-if="selectedMode === 'choice'"
               type="button"
-              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-primary text-paper-bg"
+              class="flex-1 min-w-0 rounded-full px-3 py-3 sm:px-6 sm:py-5 text-center text-sm sm:text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-primary text-paper-bg"
               :disabled="!selectedBook"
               @click="selectMode('choice')"
             >
@@ -297,7 +297,7 @@ const goToFlashcard = () => {
               v-else
               fill="var(--color-paper-primary)"
               text-color="var(--color-paper-bg)"
-              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-fg/8 text-paper-muted/70"
+              class="flex-1 min-w-0 rounded-full px-3 py-3 sm:px-6 sm:py-5 text-center text-sm sm:text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-fg/8 text-paper-muted/70"
               :disabled="!selectedBook"
               @click="selectMode('choice')"
             >
@@ -307,7 +307,7 @@ const goToFlashcard = () => {
             <button
               v-if="selectedMode === 'typing'"
               type="button"
-              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-primary text-paper-bg"
+              class="flex-1 min-w-0 rounded-full px-3 py-3 sm:px-6 sm:py-5 text-center text-sm sm:text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-primary text-paper-bg"
               @click="selectMode('typing')"
             >
               打字拼寫
@@ -316,7 +316,7 @@ const goToFlashcard = () => {
               v-else
               fill="var(--color-paper-primary)"
               text-color="var(--color-paper-bg)"
-              class="flex-1 min-w-40 rounded-full px-6 py-5 text-center text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-fg/8 text-paper-muted/70"
+              class="flex-1 min-w-0 rounded-full px-3 py-3 sm:px-6 sm:py-5 text-center text-sm sm:text-base font-semibold transition-transform duration-250 ease-out cursor-pointer hover:-translate-y-0.5 bg-paper-fg/8 text-paper-muted/70"
               @click="selectMode('typing')"
             >
               打字拼寫
@@ -324,8 +324,10 @@ const goToFlashcard = () => {
           </div>
         </div>
 
-        <div class="flex-1 min-h-0 pb-8 flex flex-col lg:flex-row gap-12">
-          <div class="styled-scrollbar lg:flex-[1.15] h-full min-h-0 grid grid-cols-5 gap-6 content-start box-border overflow-y-auto pt-7 pr-1">
+        <div class="flex-1 min-h-0 pb-8 flex flex-col lg:flex-row gap-4 lg:gap-12">
+          <div
+            class="styled-scrollbar lg:flex-[1.15] h-full min-h-0 grid grid-cols-3 lg:grid-cols-5 gap-6 content-start box-border overflow-y-auto pt-7 pr-1"
+          >
             <div v-for="{ book, stats } in booksWithStats" :key="book.id" class="cursor-pointer" @click="selectBook(book.id)">
               <div
                 class="flex rounded-l-[3px] rounded-r-[10px] transition-transform duration-250 ease-out hover:-translate-y-2.5 hover:-rotate-[1.5deg] hover:shadow-[0_26px_34px_-18px_rgba(43,42,37,0.4)]"
@@ -366,7 +368,7 @@ const goToFlashcard = () => {
                     </div>
                   </div>
                   <div>
-                    <div class="font-display text-[20px] text-white leading-tight" style="text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15)">
+                    <div class="font-display text-[15px] text-white leading-tight" style="text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15)">
                       {{ book.name }}
                     </div>
                   </div>
@@ -380,33 +382,35 @@ const goToFlashcard = () => {
           >
             <div v-if="selectedBook" class="flex items-center gap-3 mb-1.5">
               <div class="w-3.5 h-3.5 rounded-[4px]" :style="{ background: selectedBook.color ?? '#8a7a3e' }" />
-              <span class="font-display text-[26px] text-paper-fg">{{ selectedBook.name }}</span>
+              <span class="font-display text-[20px] text-paper-fg">{{ selectedBook.name }}</span>
             </div>
             <!-- <p v-if="selectedBook" class="mb-5 text-paper-muted text-[13.5px]">{{ selectedBook.count }} 個單字</p> -->
             <!-- TODO: 之後改用api  words.value.length 來補資料 -->
-            <div class="styled-scrollbar grid grid-cols-2 gap-2 flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1.5 content-start">
-              <div v-for="w in words" :key="w.id" class="py-3 px-1 border-b border-paper-fg/12 box-border">
+            <div
+              class="styled-scrollbar grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1.5 content-start"
+            >
+              <div v-for="w in words" :key="w.id" class="py-1.5 px-1 border-b border-paper-fg/12 box-border">
                 <div class="flex items-baseline justify-between gap-2">
-                  <span class="font-display text-[17px] text-paper-fg">{{ w.term }}</span>
-                  <span class="text-paper-muted text-[12.5px] text-right">{{ w.definitionCN }}</span>
+                  <span class="font-display text-[14px] text-paper-fg">{{ w.term }}</span>
+                  <span class="text-paper-muted text-[11px] text-right">{{ w.definitionCN }}</span>
                 </div>
-                <div class="flex items-center justify-between gap-2 mt-1">
-                  <div class="flex items-center gap-1.5">
-                    <span class="text-[#9c9384] text-[11.5px]" style="font-family: ui-monospace, &quot;SF Mono&quot;, monospace">
+                <div class="flex items-center justify-between gap-2 mt-0.5">
+                  <div class="flex items-center gap-1">
+                    <span class="text-[#9c9384] text-[10px]" style="font-family: ui-monospace, &quot;SF Mono&quot;, monospace">
                       /{{ w.ipa ?? "" }}/
                     </span>
                     <span
-                      class="w-6.5 h-6.5 rounded-full flex items-center justify-center text-[#9c9384] cursor-pointer transition-colors duration-150 hover:bg-paper-fg/8 hover:text-paper-primary"
+                      class="w-5 h-5 rounded-full flex items-center justify-center text-[#9c9384] cursor-pointer transition-colors duration-150 hover:bg-paper-fg/8 hover:text-paper-primary"
                       @click="speak(w.term)"
                     >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M3 9v6h4l5 5V4L7 9H3z" />
                         <path d="M16.5 12c0-1.77-.77-3.29-2-4.24v8.48c1.23-.95 2-2.47 2-4.24z" opacity=".7" />
                       </svg>
                     </span>
                   </div>
                   <span
-                    class="text-[11px] px-1.5 py-0.5 rounded-full shrink-0"
+                    class="text-[10px] px-1 py-0.5 rounded-full shrink-0"
                     :style="{ color: posColor(w.partOfSpeech).text, background: posColor(w.partOfSpeech).bg }"
                   >
                     {{ w.partOfSpeech }}
