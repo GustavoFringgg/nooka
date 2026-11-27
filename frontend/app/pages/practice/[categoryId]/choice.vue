@@ -155,6 +155,17 @@ const handleKeydown = (e: KeyboardEvent) => {
 onMounted(() => window.addEventListener("keydown", handleKeydown))
 onUnmounted(() => window.removeEventListener("keydown", handleKeydown))
 
+const speak = (text: string) => {
+  if (typeof window === "undefined" || !window.speechSynthesis) return
+  const utterance = new SpeechSynthesisUtterance(text)
+  utterance.lang = "en-US"
+  speechSynthesis.speak(utterance)
+}
+
+onUnmounted(() => {
+  if (typeof window !== "undefined" && window.speechSynthesis) speechSynthesis.cancel()
+})
+
 const optionClasses = (option: QuizOption, index: number) => {
   if (!isAnswered.value) {
     const base = "bg-paper-bg-alt hover:border-paper-primary/40 hover:-translate-y-0.5 cursor-pointer"
@@ -245,11 +256,27 @@ const restartQuiz = async () => {
 
         <div
           :key="currentIndex"
-          class="rounded-3xl px-8 py-16 text-center mb-8 bg-paper-bg-alt border-2 border-paper-fg/25 shadow-[0_18px_40px_-20px_rgba(43,42,37,0.3)] animate-fade-rise"
+          class="rounded-3xl px-8 py-10 text-center mb-8 bg-paper-bg-alt border-2 border-paper-fg/25 shadow-[0_18px_40px_-20px_rgba(43,42,37,0.3)] animate-fade-rise"
         >
-          <h1 class="font-display font-normal text-4xl sm:text-5xl leading-snug m-0 text-paper-fg">
-            {{ currentQuestion.prompt }}
-          </h1>
+          <div class="flex items-center justify-center gap-3">
+            <h1 class="font-display font-normal text-4xl sm:text-5xl leading-snug m-0 text-paper-fg">
+              {{ currentQuestion.prompt }}
+            </h1>
+            <button
+              v-if="direction === 'enToCn'"
+              type="button"
+              class="w-10 h-10 rounded-full flex items-center justify-center text-paper-muted cursor-pointer transition-colors duration-150 hover:bg-paper-fg/8 hover:text-paper-primary"
+              @click="speak(currentQuestion.word.term)"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 9v6h4l5 5V4L7 9H3z" />
+                <path d="M16.5 12c0-1.77-.77-3.29-2-4.24v8.48c1.23-.95 2-2.47 2-4.24z" opacity=".7" />
+              </svg>
+            </button>
+          </div>
+          <p v-if="direction === 'enToCn' && currentQuestion.word.examples?.[0]" class="mt-7 text-sm text-paper-muted italic">
+            {{ currentQuestion.word.examples[0] }}
+          </p>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
@@ -331,9 +358,21 @@ const restartQuiz = async () => {
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <article v-for="entry in missed" :key="entry.question.word.id" class="rounded-2xl p-5 bg-paper-bg-alt border border-paper-fg/10">
               <div class="flex items-baseline justify-between mb-1.5">
-                <h3 class="font-display font-normal text-lg m-0 text-paper-fg">
-                  {{ entry.question.word.term }}
-                </h3>
+                <div class="flex items-center gap-1.5">
+                  <h3 class="font-display font-normal text-lg m-0 text-paper-fg">
+                    {{ entry.question.word.term }}
+                  </h3>
+                  <button
+                    type="button"
+                    class="w-6 h-6 rounded-full flex items-center justify-center text-paper-muted cursor-pointer transition-colors duration-150 hover:bg-paper-fg/8 hover:text-paper-primary"
+                    @click="speak(entry.question.word.term)"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M3 9v6h4l5 5V4L7 9H3z" />
+                      <path d="M16.5 12c0-1.77-.77-3.29-2-4.24v8.48c1.23-.95 2-2.47 2-4.24z" opacity=".7" />
+                    </svg>
+                  </button>
+                </div>
                 <span class="text-xs text-paper-accent shrink-0">{{ entry.question.word.partOfSpeech }}</span>
               </div>
               <p class="text-sm text-paper-muted m-0">{{ entry.question.word.definitionCN }}</p>
@@ -394,9 +433,21 @@ const restartQuiz = async () => {
               {{ card.label }}
             </div>
             <div class="flex items-baseline justify-between gap-3 mb-1.5">
-              <h3 class="font-display font-normal text-xl m-0 text-paper-fg">
-                {{ card.word.term }}
-              </h3>
+              <div class="flex items-center gap-1.5">
+                <h3 class="font-display font-normal text-xl m-0 text-paper-fg">
+                  {{ card.word.term }}
+                </h3>
+                <button
+                  type="button"
+                  class="w-6 h-6 rounded-full flex items-center justify-center text-paper-muted cursor-pointer transition-colors duration-150 hover:bg-paper-fg/8 hover:text-paper-primary"
+                  @click="speak(card.word.term)"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 9v6h4l5 5V4L7 9H3z" />
+                    <path d="M16.5 12c0-1.77-.77-3.29-2-4.24v8.48c1.23-.95 2-2.47 2-4.24z" opacity=".7" />
+                  </svg>
+                </button>
+              </div>
               <span class="text-xs text-paper-muted shrink-0">{{ card.word.partOfSpeech }}</span>
             </div>
             <p class="text-[15px] mb-1 text-paper-fg">{{ card.word.definitionCN }}</p>
